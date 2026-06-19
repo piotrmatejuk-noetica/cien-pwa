@@ -61,7 +61,22 @@ const JOURNAL_PROMPTS = {
 // INIT
 // ============================================
 
+function detectFestivalDay() {
+  const now = new Date();
+  const h = now.getHours();
+  let y = now.getFullYear(), m = now.getMonth()+1, d = now.getDate();
+  if (h < 6) {
+    const prev = new Date(now); prev.setDate(prev.getDate()-1);
+    y = prev.getFullYear(); m = prev.getMonth()+1; d = prev.getDate();
+  }
+  const today = `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+  const days = ['2026-07-03','2026-07-04','2026-07-05'];
+  if (days.includes(today)) return today;
+  return now < new Date('2026-07-03T06:00:00') ? '2026-07-03' : '2026-07-05';
+}
+
 async function init() {
+  State.schedule.activeDay = detectFestivalDay();
   await loadData();
   setupRouter();
   setupClock();
@@ -218,10 +233,29 @@ function renderSchedule() {
 
   const eventsHTML = renderEventsList(dayEvents);
 
+  const favs = getFavorites();
+  const dayFavEvents = dayEvents.filter(e => favs.includes(e.id));
+  const favHTML = dayFavEvents.length ? `
+    <div class="favs-section">
+      <div class="favs-title">⭐ Mój plan na dziś</div>
+      ${dayFavEvents.map(ev => {
+        const zone = (State.data?.festival?.zones || []).find(z => z.id === ev.zone) || {};
+        const color = zone.color || ZONES_MAP[ev.zone]?.color || '#888';
+        const icon = zone.icon || ZONES_MAP[ev.zone]?.icon || '●';
+        return `<div class="event-card" style="border-left-color:${color}" onclick="openEventModal('${ev.id}')">
+          <div class="event-time">${formatTime(ev.start)} <span class="event-duration">→ ${formatTime(ev.end)}</span></div>
+          <div class="event-title">${ev.title}</div>
+          <div class="event-zone-tag" style="color:${color}">${icon} ${zone.shortName || ev.zone}</div>
+        </div>`;
+      }).join('')}
+    </div>
+    <div class="divider" style="margin:0 1rem 0.5rem"></div>` : '';
+
   container.innerHTML = `
     <div class="day-tabs">${dayTabsHTML}</div>
     ${nowHTML}
     <div class="zone-filter">${zoneChipsHTML}</div>
+    ${favHTML}
     <div class="events-list">${eventsHTML}</div>
   `;
 }
@@ -311,6 +345,10 @@ function renderEventsList(events) {
         <div class="event-title">${ev.title}</div>
         ${ev.artist ? `<div class="event-artist">${ev.artist}</div>` : ''}
         <div class="event-zone-tag" style="color:${color}">${icon} ${zone.shortName || zone.name || ev.zone}</div>
+        <button class="fav-btn ${getFavorites().includes(ev.id) ? 'active' : ''}"
+                onclick="event.stopPropagation();toggleFavorite('${ev.id}')">
+          ${getFavorites().includes(ev.id) ? '★' : '☆'}
+        </button>
       </div>`);
   });
 
@@ -1114,6 +1152,18 @@ function escHtml(str) {
     .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 
+function getFavorites() {
+  try { return JSON.parse(localStorage.getItem('cien_favs_2026') || '[]'); } catch { return []; }
+}
+
+function toggleFavorite(evId) {
+  const favs = getFavorites();
+  const idx = favs.indexOf(evId);
+  if (idx >= 0) favs.splice(idx, 1); else favs.push(evId);
+  localStorage.setItem('cien_favs_2026', JSON.stringify(favs));
+  renderSchedule();
+}
+
 // ============================================
 // UTILITIES
 // ============================================
@@ -1165,7 +1215,8 @@ Object.assign(window, {
   setPoiType, highlightZone, openPoiModal,
   setJournalStage, autoSaveJournal, saveJournalEntry, emailJournalEntry, toggleEntry,
   callHelp, triggerInstall, dismissInstall,
-  sdToggleTag, sdSaveProfile, sdUpdatePreview, sdOpenAddMeeting, sdConfirmAddMeeting, sdDeleteMeeting, sdContact
+  sdToggleTag, sdSaveProfile, sdUpdatePreview, sdOpenAddMeeting, sdConfirmAddMeeting, sdDeleteMeeting, sdContact,
+  toggleFavorite
 });
 
 // ============================================
