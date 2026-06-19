@@ -1,0 +1,21 @@
+{
+  "name": "CIEŃ Festiwal 2026",
+  "short_name": "CIEŃ",
+  "description": "Twój przewodnik po festiwalu przemiany. Zamek Świny, 3–5 lipca 2026.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0A0A0A",
+  "theme_color": "#C9A84C",
+  "orientation": "portrait-primary",
+  "lang": "pl",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ],
+  "categories": ["entertainment", "lifestyle"],
+  "shortcuts": [
+    { "name": "Teraz na scenie", "url": "/#teraz", "description": "Co dzieje się teraz" },
+    { "name": "Punkt pomocy", "url": "/#sacrum", "description": "Wsparcie i harm reduction" }
+  ]
+}

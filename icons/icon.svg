@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#0A0A0A"/>
+  <circle cx="256" cy="256" r="200" fill="none" stroke="#C9A84C" stroke-width="8"/>
+  <text x="256" y="200" text-anchor="middle" fill="#C9A84C" font-family="serif" font-size="80" font-weight="bold">C</text>
+  <text x="256" y="310" text-anchor="middle" fill="#F5E6C8" font-family="serif" font-size="40">CIEŃ</text>
+  <line x1="156" y1="340" x2="356" y2="340" stroke="#C9A84C" stroke-width="2"/>
+  <text x="256" y="375" text-anchor="middle" fill="#8B7355" font-family="serif" font-size="28">2026</text>
+</svg>

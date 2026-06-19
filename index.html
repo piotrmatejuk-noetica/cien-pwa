@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#C9A84C">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="CIEŃ">
+  <meta name="description" content="Przewodnik uczestnika CIEŃ Festiwal 2026 — Zamek Świny, 3–5 lipca">
+  <meta name="mobile-web-app-capable" content="yes">
+
+  <title>CIEŃ Festiwal 2026</title>
+
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/svg+xml" href="icons/icon.svg">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=EB+Garamond:ital,wght@0,400;0,500;1,400&display=swap">
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+
+<div id="app">
+
+  <!-- INSTALL BANNER -->
+  <div id="install-banner">
+    <div class="install-text">
+      <strong>Dodaj CIEŃ do ekranu</strong> — działa offline
+    </div>
+    <button class="install-btn" onclick="triggerInstall()">Zainstaluj</button>
+    <button class="install-dismiss" onclick="dismissInstall()">✕</button>
+  </div>
+
+  <!-- HEADER -->
+  <header id="app-header">
+    <div class="logo">
+      <span class="logo-mark">CIEŃ</span>
+      <span class="stage-badge" id="stage-badge">2026</span>
+    </div>
+    <div class="now-time" id="header-time">—</div>
+  </header>
+
+  <!-- CONTENT -->
+  <main id="content">
+
+    <!-- VIEW: SLOW DATING -->
+    <div class="view" id="view-slowdating">
+      <div id="slowdating-content"></div>
+    </div>
+
+    <!-- VIEW: TERAZ -->
+    <div class="view" id="view-teraz">
+      <div id="schedule-content">
+        <div style="padding:2rem;text-align:center;color:var(--szary)">
+          <div class="skeleton" style="height:40px;margin-bottom:1rem"></div>
+          <div class="skeleton" style="height:80px;margin-bottom:0.5rem"></div>
+          <div class="skeleton" style="height:80px"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- VIEW: MAPA -->
+    <div class="view" id="view-mapa">
+      <div class="view-header">
+        <div class="view-title">Mapa Zamku</div>
+        <div class="view-subtitle">Strefy festiwalu i punkty na terenie</div>
+      </div>
+      <div id="map-content">
+        <div style="padding:2rem;text-align:center;color:var(--szary)">
+          <div class="skeleton" style="height:200px;margin-bottom:1rem"></div>
+          <div class="skeleton" style="height:60px"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- VIEW: DZIENNIK -->
+    <div class="view" id="view-dziennik">
+      <div class="view-header">
+        <div class="view-title">Dziennik Przemiany</div>
+        <div class="view-subtitle">Prywatne — zostaje na Twoim urządzeniu</div>
+      </div>
+      <div id="journal-content"></div>
+    </div>
+
+    <!-- VIEW: SACRUM -->
+    <div class="view" id="view-sacrum">
+      <div id="sacrum-content"></div>
+    </div>
+
+    <!-- VIEW: INFO -->
+    <div class="view" id="view-info">
+      <div class="view-header">
+        <div class="view-title">Info Praktyczne</div>
+        <div class="view-subtitle">Dojazd, co zabrać, kontakt</div>
+      </div>
+      <div id="info-content"></div>
+    </div>
+
+  </main>
+
+  <!-- BOTTOM NAV -->
+  <nav id="bottom-nav">
+    <button class="nav-btn" data-view="teraz">
+      <span class="nav-icon">🕐</span>
+      <span class="nav-label">Teraz</span>
+    </button>
+    <button class="nav-btn" data-view="mapa">
+      <span class="nav-icon">🗺</span>
+      <span class="nav-label">Mapa</span>
+    </button>
+    <button class="nav-btn nav-btn--highlight" data-view="slowdating">
+      <span class="nav-icon">💘</span>
+      <span class="nav-label">Slow Dating</span>
+    </button>
+    <button class="nav-btn" data-view="dziennik">
+      <span class="nav-icon">☽</span>
+      <span class="nav-label">Dziennik</span>
+    </button>
+    <button class="nav-btn" data-view="sacrum">
+      <span class="nav-icon">🛡</span>
+      <span class="nav-label">Sacrum</span>
+    </button>
+    <button class="nav-btn" data-view="info">
+      <span class="nav-icon">ℹ</span>
+      <span class="nav-label">Info</span>
+    </button>
+  </nav>
+
+</div><!-- #app -->
+
+<!-- MATCH MODAL -->
+<div id="dating-match-modal">
+  <div class="match-modal-inner">
+    <div class="match-title">TO MATCH!</div>
+    <div class="match-subtitle">Oboje chcecie porozmawiać 💘</div>
+    <div class="match-photos">
+      <div class="match-own-photo match-photo"></div>
+      <div class="match-heart">❤</div>
+      <div class="match-their-photo match-photo"></div>
+    </div>
+    <div class="match-their-name"></div>
+    <button class="dating-btn-gold" onclick="goToMatchChat()" style="width:100%;margin-top:1.5rem">
+      Napisz wiadomość →
+    </button>
+    <button onclick="closeMatchModal()" class="dating-btn-text" style="margin-top:0.5rem">
+      Może później
+    </button>
+  </div>
+</div>
+
+<!-- EVENT / POI MODAL -->
+<div id="event-modal">
+  <div class="modal-overlay" onclick="if(event.target===this)closeEventModal()">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-zone-badge"></div>
+      <h2 class="modal-title"></h2>
+      <div class="modal-artist"></div>
+      <div class="modal-time"></div>
+      <p class="modal-description"></p>
+      <div class="modal-tags" style="margin-top:0.75rem"></div>
+      <button class="modal-close" onclick="closeEventModal()">Zamknij</button>
+    </div>
+  </div>
+</div>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
+<script src="firebase-config.js"></script>
+
+<script src="app.js"></script>
+<script src="dating.js"></script>
+</body>
+</html>

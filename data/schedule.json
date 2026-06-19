@@ -1,0 +1,182 @@
+{
+  "festival": {
+    "name": "CIEŃ Festiwal",
+    "edition": "2026",
+    "location": "Zamek Świny, gmina Bolków",
+    "dates": ["2026-07-03", "2026-07-04", "2026-07-05"],
+    "stages": {
+      "nigredo": { "day": "2026-07-03", "label": "Nigredo", "subtitle": "Otwarcie bram. Zstąpienie w nigredo." },
+      "albedo":  { "day": "2026-07-04", "label": "Albedo",  "subtitle": "Oczyszczenie. Praca z tym, co wypłynęło." },
+      "rubedo":  { "day": "2026-07-05", "label": "Rubedo",  "subtitle": "Integracja. Uroboros zamyka się." }
+    },
+    "zones": [
+      {
+        "id": "podswiadomosci",
+        "name": "Strefa Podświadomości",
+        "shortName": "Podświadomości",
+        "color": "#7B3F82",
+        "icon": "🌀",
+        "subtitle": "Woda · Księżyc",
+        "koordynator": "Magdalena Gajdzińska",
+        "description": "Hipnoza, NVC, praca z wewnętrznym dzieckiem i językiem, który odsłania cień. Schodzimy pod powierzchnię — tam, gdzie pamięć nie jest narracją, tylko obrazem.",
+        "location": "Wieża Wschodnia"
+      },
+      {
+        "id": "sacrum",
+        "name": "Strefa Sacrum",
+        "shortName": "Sacrum",
+        "color": "#C9A84C",
+        "icon": "🔥",
+        "subtitle": "Ogień · Kościotrup · Grzyby",
+        "koordynator": "Rafał Robaszkiewicz",
+        "description": "Psychodeliki, ISTDP, biochemia cienia, redukcja szkód. Twarda, uczciwa praca z tym, czego ciało i psyche jeszcze nie zintegrowały.",
+        "location": "Kaplica"
+      },
+      {
+        "id": "anima",
+        "name": "Strefa Anima/Animus",
+        "shortName": "Anima/Animus",
+        "color": "#4A6FA5",
+        "icon": "☯",
+        "subtitle": "Księżyc · Słońce",
+        "koordynator": "Adam Ligęza",
+        "description": "Relacje bez masek, taniec cieni, slow dating, spotkanie przeciwieństw. Jung pisał, że coniunctio oppositorum jest sednem indywiduacji — tutaj je ćwiczymy.",
+        "location": "Dziedziniec"
+      },
+      {
+        "id": "umbra",
+        "name": "Scena Główna",
+        "shortName": "Scena Główna",
+        "color": "#E05C1A",
+        "icon": "⚡",
+        "subtitle": "Uroboros · Spirala",
+        "koordynator": "",
+        "description": "Ciało, ruch, muzyka. Koncerty i nocne DJ sety od organic house przez afro, tribal, po micro house i psytrance. Tu cień tańczy.",
+        "location": "Dziedziniec Główny"
+      },
+      {
+        "id": "gnoza",
+        "name": "Kino Festiwalowe",
+        "shortName": "Kino",
+        "color": "#2D7D46",
+        "icon": "🎬",
+        "subtitle": "Oko · Projekcja · Shadow play",
+        "koordynator": "Everet Papa",
+        "description": "Seanse filmowe, warsztaty kolażu, spotkania z twórcami. Kino jako jaskinia Platona odwrócona: oświetlamy cień, zamiast oglądać jego projekcje.",
+        "location": "Sala Rycerska"
+      },
+      {
+        "id": "lochy",
+        "name": "Lochy",
+        "shortName": "Lochy",
+        "color": "#8B4513",
+        "icon": "🕯",
+        "subtitle": "Ciemność · Głębia · Transformacja",
+        "koordynator": "Michał Migała",
+        "description": "Transy hipnotyczne, koncert mis i gongów w ciemności. Najgłębsza przestrzeń festiwalu — schodzisz do podziemi zamku, gdzie cień jest dosłowny.",
+        "location": "Piwnice"
+      }
+    ]
+  },
+  "events": [
+
+
+    { "id":"e001", "zone":"podswiadomosci", "title":"Darmowe konsultacje terapeutyczne", "artist":"Team PSH", "description":"Bezpłatne konsultacje terapeutyczne dla uczestników festiwalu.", "start":"2026-07-03T12:01:00", "end":"2026-07-03T13:30:00", "tags":["konsultacje","bezpłatne"] },
+    { "id":"e002", "zone":"podswiadomosci", "title":"Otwarcie Strefy Podświadomości", "artist":"Artur Makieła, Magdalena Gajdzińska", "description":"Uroczyste otwarcie Strefy Podświadomości przez koordynatorów.", "start":"2026-07-03T13:30:00", "end":"2026-07-03T15:00:00", "tags":["otwarcie","ceremonia"] },
+    { "id":"e003", "zone":"podswiadomosci", "title":"Przestań ćpać cierpienie — o roli i granicach wybaczania", "artist":"Anna Dąbrowska", "description":"Prelekcja o psychologicznych mechanizmach wybaczania, jego granicach i roli w procesie zdrowienia.", "start":"2026-07-03T15:00:00", "end":"2026-07-03T16:30:00", "tags":["prelekcja","psychologia","wybaczanie"] },
+    { "id":"e004", "zone":"podswiadomosci", "title":"Nerw błędny — cud czy scam?", "artist":"Michał Roczek", "description":"Krytyczne spojrzenie na modę na stymulację nerwu błędnego. Co nauka mówi, a co to mit?", "start":"2026-07-03T16:30:00", "end":"2026-07-03T18:00:00", "tags":["prelekcja","neurologia","nauka"] },
+    { "id":"e005", "zone":"podswiadomosci", "title":"Słowo i Cień — jak język ujawnia to, czego nie chcemy widzieć", "artist":"Dr Małgorzata Majewska", "description":"Językoznawcza analiza mechanizmów obronnych: jak słowa, których używamy, ujawniają ukryte treści psychiczne.", "start":"2026-07-03T18:00:00", "end":"2026-07-03T19:30:00", "tags":["prelekcja","język","cień"] },
+
+    { "id":"e006", "zone":"sacrum", "title":"Darmowe konsultacje neuropsychologiczne", "artist":"Jakub Schimmelpfennig, Weronika Wąstakowska", "description":"Bezpłatne konsultacje neuropsychologiczne dla uczestników.", "start":"2026-07-03T12:00:00", "end":"2026-07-03T13:30:00", "tags":["konsultacje","bezpłatne","neuropsychologia"] },
+    { "id":"e007", "zone":"sacrum", "title":"Otwarcie Strefy SACRUM", "artist":"Team SACRUM", "description":"Uroczyste otwarcie Strefy SACRUM.", "start":"2026-07-03T13:30:00", "end":"2026-07-03T15:00:00", "tags":["otwarcie","ceremonia"] },
+    { "id":"e008", "zone":"sacrum", "title":"7 filarów zdrowia w kulturze zapierdolu", "artist":"Grzegorz Gabrył", "description":"Prelekcja o tym, jak kultura pracy bez granic niszczy nasze zdrowie i jak się temu oprzeć.", "start":"2026-07-03T15:00:00", "end":"2026-07-03T16:30:00", "tags":["prelekcja","zdrowie","kultura"] },
+    { "id":"e009", "zone":"sacrum", "title":"Mniej psychoanalizy, więcej biochemii — zanim znów «wybaczysz matce, zbadaj stan organizmu»", "artist":"Weronika Wąstakowska", "description":"O tym, jak stan biochemiczny ciała wpływa na psychikę i dlaczego warto zacząć od badań, nie od terapii.", "start":"2026-07-03T16:30:00", "end":"2026-07-03T18:00:00", "tags":["prelekcja","biochemia","psychosomatyka"] },
+    { "id":"e010", "zone":"sacrum", "title":"Jak ogarnąć ziomka? — podstawy Psycare'u", "artist":"Owidiusz Okłota", "description":"Praktyczne narzędzia psychologicznej pierwszej pomocy dla osób w trudnych stanach na imprezach i festiwalach.", "start":"2026-07-03T18:00:00", "end":"2026-07-03T19:00:00", "tags":["harm-reduction","psycare","warsztat"] },
+
+    { "id":"e011", "zone":"anima", "title":"Otwarcie Strefy Anima/Animus", "artist":"Adam Ligęza", "description":"Uroczyste otwarcie strefy relacji i przeciwieństw.", "start":"2026-07-03T12:00:00", "end":"2026-07-03T13:30:00", "tags":["otwarcie","ceremonia"] },
+    { "id":"e012", "zone":"anima", "title":"Afrykańska moc medycyny serca", "artist":"Łukasz Bieliński", "description":"Eksploracja afrykańskich tradycji uzdrawiania opartych na otwarciu serca i relacji z wspólnotą.", "start":"2026-07-03T13:30:00", "end":"2026-07-03T15:00:00", "tags":["prelekcja","afryka","serce"] },
+    { "id":"e013", "zone":"anima", "title":"Pancerny Umysł. Psychologia odporności i pewności siebie", "artist":"Michał Nycz", "description":"Jak budować psychologiczną odporność bez ucieczki od siebie — w oparciu o realne narzędzia psychologii.", "start":"2026-07-03T15:00:00", "end":"2026-07-03T16:30:00", "tags":["prelekcja","odporność","pewność siebie"] },
+    { "id":"e014", "zone":"anima", "title":"SLOW DATING", "artist":"Maciek Kołodziejczyk EUPHIRE", "description":"Eksperyment społeczny — spotkanie z nieznajomym bez masek, pośpiechu i algorytmów.", "start":"2026-07-03T16:30:00", "end":"2026-07-03T18:00:00", "tags":["slow-dating","relacje","warsztat"] },
+    { "id":"e015", "zone":"anima", "title":"SLOW DATING", "artist":"Maciek Kołodziejczyk EUPHIRE", "description":"Eksperyment społeczny — spotkanie z nieznajomym bez masek, pośpiechu i algorytmów. Druga edycja.", "start":"2026-07-03T18:30:00", "end":"2026-07-03T20:00:00", "tags":["slow-dating","relacje","warsztat"] },
+
+    { "id":"e016", "zone":"gnoza", "title":"Warsztaty Kolażu Intuicyjnego — Nigredo", "artist":"Agnieszka Dąbrowska", "description":"Twórcze wejście w cień przez kolaż. Materiały zapewnione. Etap Nigredo — rozpad form.", "start":"2026-07-03T15:00:00", "end":"2026-07-03T16:30:00", "tags":["warsztat","kolaż","twórczość","nigredo"] },
+    { "id":"e017", "zone":"gnoza", "title":"Dobrostan na styku wiary i nauki. Czy duchowość da się badać empirycznie?", "artist":"Bartosz Babiak", "description":"Przegląd badań łączących praktyki duchowe z mierzalnymi efektami zdrowotnymi. Gdzie nauka spotyka transcendencję.", "start":"2026-07-03T16:30:00", "end":"2026-07-03T18:00:00", "tags":["prelekcja","nauka","duchowość"] },
+    { "id":"e018", "zone":"gnoza", "title":"Pokaz filmu «Dream On: Hipnoza»", "artist":"reż. Bruno Brejt", "description":"Dokument eksplorujący hipnozę jako narzędzie terapeutyczne i artystyczne. Reżyseria: Bruno Brejt.", "start":"2026-07-03T20:30:00", "end":"2026-07-03T22:00:00", "tags":["film","hipnoza","pokaz"] },
+
+    { "id":"e019", "zone":"lochy", "title":"Transy Hipnotyczne", "artist":"Team PSH", "description":"Prowadzone sesje transu grupowego w ciemności podziemi zamku.", "start":"2026-07-03T16:30:00", "end":"2026-07-03T18:00:00", "tags":["trans","hipnoza","ciemność"] },
+    { "id":"e020", "zone":"lochy", "title":"Transy Hipnotyczne", "artist":"Team PSH", "description":"Prowadzone sesje transu grupowego w ciemności podziemi zamku. Edycja wieczorna.", "start":"2026-07-03T18:30:00", "end":"2026-07-03T20:00:00", "tags":["trans","hipnoza","ciemność"] },
+
+    { "id":"e021", "zone":"umbra", "title":"Saska Session", "artist":"Saska Session", "description":"trip hop", "start":"2026-07-03T18:00:00", "end":"2026-07-03T19:00:00", "tags":["muzyka","live","trip-hop"] },
+    { "id":"e022", "zone":"umbra", "title":"Vixen", "artist":"Vixen", "description":"trap ballady", "start":"2026-07-03T19:00:00", "end":"2026-07-03T20:00:00", "tags":["muzyka","live","trap"] },
+    { "id":"e023", "zone":"umbra", "title":"The Saint", "artist":"The Saint", "description":"organic house, afro house", "start":"2026-07-03T20:00:00", "end":"2026-07-03T21:30:00", "tags":["muzyka","live","organic-house","afro"] },
+    { "id":"e024", "zone":"umbra", "title":"Aftersunday", "artist":"Aftersunday", "description":"indie dance, progressive", "start":"2026-07-03T21:30:00", "end":"2026-07-03T23:00:00", "tags":["muzyka","live","indie-dance","progressive"] },
+    { "id":"e025", "zone":"umbra", "title":"Deaf Can Dance", "artist":"Deaf Can Dance", "description":"micro house, minimal", "start":"2026-07-03T23:00:00", "end":"2026-07-04T00:30:00", "tags":["muzyka","dj","micro-house","minimal"] },
+    { "id":"e026", "zone":"umbra", "title":"Glasse", "artist":"Glasse", "description":"organic house, tribal, afro", "start":"2026-07-04T00:30:00", "end":"2026-07-04T02:00:00", "tags":["muzyka","dj","organic-house","tribal"] },
+    { "id":"e027", "zone":"umbra", "title":"Leon", "artist":"Leon", "description":"melodic, progressive, organic", "start":"2026-07-04T02:00:00", "end":"2026-07-04T03:30:00", "tags":["muzyka","dj","melodic","progressive"] },
+
+
+    { "id":"e028", "zone":"podswiadomosci", "title":"Darmowe konsultacje terapeutyczne", "artist":"Team PSH + SACRUM", "description":"Bezpłatne konsultacje terapeutyczne.", "start":"2026-07-04T09:00:00", "end":"2026-07-04T10:00:00", "tags":["konsultacje","bezpłatne"] },
+    { "id":"e029", "zone":"podswiadomosci", "title":"Sztuka samowspółczucia — hipnotyczne spotkanie z wewnętrznym dzieckiem", "artist":"Magdalena Gajdzińska", "description":"Warsztat hipnotyczny pracy z wewnętrznym dzieckiem — łagodne wejście w to, co w nas najbardziej zranione.", "start":"2026-07-04T10:00:00", "end":"2026-07-04T11:30:00", "tags":["warsztat","hipnoza","wewnętrzne-dziecko","samowspółczucie"] },
+    { "id":"e030", "zone":"podswiadomosci", "title":"Sny w analityce jungowskiej", "artist":"Sandra Zabiełło", "description":"Jak czytać sny jako materiał psychoanalityczny. Metody Junga w praktyce — własne sny jako punkt wyjścia.", "start":"2026-07-04T11:30:00", "end":"2026-07-04T13:00:00", "tags":["prelekcja","jungowski","sny","analityka"] },
+    { "id":"e031", "zone":"podswiadomosci", "title":"Cień w ciele — hipnotyczno-somatyczna praca z wypartymi emocjami", "artist":"Agnieszka Kochanowska", "description":"Integracja podejść hipnotycznych i somatycznych w pracy z emocjami, które zostały zepchnięte do ciała.", "start":"2026-07-04T13:00:00", "end":"2026-07-04T14:30:00", "tags":["warsztat","hipnoza","somatyka","ciało"] },
+    { "id":"e032", "zone":"podswiadomosci", "title":"Jak NVC może wspierać proces ewolucji świadomości", "artist":"Łukasz Bieliński", "description":"Porozumienie Bez Przemocy (NVC) jako narzędzie wglądu w siebie i transformacji relacji.", "start":"2026-07-04T14:30:00", "end":"2026-07-04T16:00:00", "tags":["prelekcja","NVC","komunikacja","świadomość"] },
+    { "id":"e033", "zone":"podswiadomosci", "title":"Wszystko, co chcielibyście wiedzieć o hipnozie lecz baliście się zapytać", "artist":"Artur Makieła", "description":"Format Q&A — otwarta rozmowa o hipnozie, mitach, faktach i tym, czego się boimy się zapytać.", "start":"2026-07-04T16:30:00", "end":"2026-07-04T18:00:00", "tags":["prelekcja","hipnoza","Q&A"] },
+    { "id":"e034", "zone":"podswiadomosci", "title":"Algorytmy Duszy — łącząc analitykę jungowską z IT", "artist":"Mateusz Marzoch", "description":"Nieoczekiwane połączenie: jak myślenie analityka danych spotyka się z psychologią głębi Junga.", "start":"2026-07-04T18:00:00", "end":"2026-07-04T19:30:00", "tags":["prelekcja","jungowski","technologia"] },
+
+    { "id":"e035", "zone":"sacrum", "title":"Mapa Cienia w ujęciu ISTDP", "artist":"Adam Ligęza", "description":"Intensywna Krótkoterminowa Psychoterapia Dynamiczna (ISTDP) jako narzędzie mapowania nieświadomych konfliktów.", "start":"2026-07-04T10:00:00", "end":"2026-07-04T11:30:00", "tags":["prelekcja","ISTDP","cień","psychoterapia"] },
+    { "id":"e036", "zone":"sacrum", "title":"Uzależnienia bez tabu. Nowoczesne podejście do redukcji szkód.", "artist":"Rafał Robaszkiewicz", "description":"Odejście od modelu abstynencji jako jedynej drogi — harm reduction w praktyce klinicznej i kulturze festiwalowej.", "start":"2026-07-04T11:30:00", "end":"2026-07-04T13:00:00", "tags":["prelekcja","uzależnienia","harm-reduction"] },
+    { "id":"e037", "zone":"sacrum", "title":"Czy psychodeliki mogą leczyć ciało?", "artist":"Jakub Schimmelpfennig", "description":"Przegląd badań nad zastosowaniem substancji psychodelicznych w leczeniu chorób somatycznych.", "start":"2026-07-04T13:00:00", "end":"2026-07-04T14:30:00", "tags":["prelekcja","psychodeliki","nauka","medycyna"] },
+    { "id":"e038", "zone":"sacrum", "title":"Wydobycie prawdy z Cienia ze wsparciem technologii organicznej inteligencji Konopi", "artist":"Eryk Gontarz", "description":"Rola konopi w procesie introspekcji i pracy z cieniem — doświadczenie i badania.", "start":"2026-07-04T14:30:00", "end":"2026-07-04T16:00:00", "tags":["prelekcja","konopie","cień","introspekcja"] },
+    { "id":"e039", "zone":"sacrum", "title":"Mapowanie odmiennych stanów świadomości", "artist":"dr Paweł Motyka", "description":"Systematyka odmiennych stanów — od transu przez psychodelikę po granicę świadomości.", "start":"2026-07-04T16:30:00", "end":"2026-07-04T18:00:00", "tags":["prelekcja","odmienne-stany","świadomość"] },
+    { "id":"e040", "zone":"sacrum", "title":"Cień marketingu samego siebie. Dlaczego ci, którzy mają najwięcej do zaoferowania, najgorzej o tym mówią", "artist":"Bartłomiej Garbiec", "description":"Psychologiczne blokady w mówieniu o sobie — i jak cień sabotuje autentyczną widoczność.", "start":"2026-07-04T18:00:00", "end":"2026-07-04T19:30:00", "tags":["prelekcja","marketing","cień","komunikacja"] },
+
+    { "id":"e041", "zone":"anima", "title":"Od marzeń do zwycięstwa", "artist":"Mariusz Narel — Leśny Viking", "description":"Historia o tym, jak marzenia konfrontują się z rzeczywistością — i co zostaje, gdy wygrasz to, o czym marzyłeś.", "start":"2026-07-04T10:00:00", "end":"2026-07-04T11:30:00", "tags":["prelekcja","marzenia","sukces"] },
+    { "id":"e042", "zone":"anima", "title":"Jak relacje wydobywają z nas to, co najgorsze, i to, co najlepsze", "artist":"Michał Lebiedź", "description":"Relacje jako lustro — mechanizmy projekcji, przeniesienia i nieoczekiwanych darów, jakie niosą trudne związki.", "start":"2026-07-04T11:30:00", "end":"2026-07-04T13:00:00", "tags":["prelekcja","relacje","psychologia"] },
+    { "id":"e043", "zone":"anima", "title":"RELACJE BEZ MASEK — jak przestać udawać i zacząć być sobą", "artist":"Dawid Świetek", "description":"Warsztat autentyczności w relacjach — mechanizmy masek i praktyczne ćwiczenia zdejmowania ich.", "start":"2026-07-04T13:00:00", "end":"2026-07-04T14:30:00", "tags":["warsztat","relacje","autentyczność"] },
+    { "id":"e044", "zone":"anima", "title":"«Wszystko, czego się bałem, już się wydarzyło» — o rozwoju, którego nikt sobie nie życzy", "artist":"Michał Migała", "description":"O nieuchronności strachu, akceptacji tego, co się boimy stracić, i o wzroście, który przychodzi przez załamanie.", "start":"2026-07-04T14:30:00", "end":"2026-07-04T16:00:00", "tags":["prelekcja","strach","rozwój"] },
+    { "id":"e045", "zone":"anima", "title":"Integracja Tańca Cieni", "artist":"Kamil Mross", "description":"Ruchowa praca z cieniem przez improwizację i taniec — łączenie nieakceptowanych części przez ekspresję ciała.", "start":"2026-07-04T16:00:00", "end":"2026-07-04T17:30:00", "tags":["warsztat","taniec","ciało","integracja"] },
+    { "id":"e046", "zone":"anima", "title":"Punkt Zero. Droga Wojownika do tego, co po drugiej stronie strachu", "artist":"Iwona Guzowska", "description":"Mistrzyni boksu mówi o tym, co rozgrywa się w środku, gdy wszystko na zewnątrz jest na krawędzi.", "start":"2026-07-04T17:30:00", "end":"2026-07-04T19:00:00", "tags":["prelekcja","strach","sport","odwaga"] },
+
+    { "id":"e047", "zone":"gnoza", "title":"Cień Herbaty — O subtelności białych i głębi ciemnych herbat Indii", "artist":"Anna Kozłowska", "description":"Ceremonia parzenia herbaty jako praktyka uważności i kontakt z cieniem przez smak.", "start":"2026-07-04T09:00:00", "end":"2026-07-04T10:00:00", "tags":["warsztat","herbata","uważność"] },
+    { "id":"e048", "zone":"gnoza", "title":"Warsztaty Kolażu Intuicyjnego — Albedo", "artist":"Agnieszka Dąbrowska", "description":"Twórcze wejście w cień przez kolaż. Etap Albedo — oczyszczanie i wyłanianie.", "start":"2026-07-04T11:30:00", "end":"2026-07-04T13:00:00", "tags":["warsztat","kolaż","twórczość","albedo"] },
+    { "id":"e049", "zone":"gnoza", "title":"O strachu Stachu, czyli podróż kamperem przez lęk", "artist":"Oliwia Witkowska", "description":"Opowieść o podróży solo kamperem jako metaforze konfrontacji ze strachem i odkrywania własnych granic.", "start":"2026-07-04T13:00:00", "end":"2026-07-04T14:30:00", "tags":["prelekcja","strach","podróż"] },
+    { "id":"e050", "zone":"gnoza", "title":"Pokaz filmu «Kontrakt»", "artist":"reż. Bruno Brejt", "description":"Pokaz filmowy. Reżyseria: Bruno Brejt.", "start":"2026-07-04T16:00:00", "end":"2026-07-04T17:30:00", "tags":["film","pokaz"] },
+    { "id":"e051", "zone":"gnoza", "title":"Spotkanie z twórcami filmów", "artist":"Everet Papa, Bruno Brejt, Anna Dąbrowska, Team PSH", "description":"Dyskusja po projekcjach — spotkanie z reżyserami i twórcami festiwalowego kina.", "start":"2026-07-04T17:30:00", "end":"2026-07-04T19:00:00", "tags":["spotkanie","film","dyskusja"] },
+
+    { "id":"e052", "zone":"lochy", "title":"Transy Hipnotyczne", "artist":"Team PSH", "description":"Prowadzone sesje transu grupowego w ciemności podziemi zamku.", "start":"2026-07-04T13:00:00", "end":"2026-07-04T14:30:00", "tags":["trans","hipnoza","ciemność"] },
+    { "id":"e053", "zone":"lochy", "title":"Transy Hipnotyczne", "artist":"Team PSH", "description":"Prowadzone sesje transu grupowego. Edycja popołudniowa.", "start":"2026-07-04T14:30:00", "end":"2026-07-04T16:00:00", "tags":["trans","hipnoza","ciemność"] },
+    { "id":"e054", "zone":"lochy", "title":"Koncert mis i gongów w ciemności", "artist":"Leszek Angulski", "description":"Dźwiękowy podróż w absolutnej ciemności podziemi zamku. Mis tybetańskie i gongi.", "start":"2026-07-04T17:30:00", "end":"2026-07-04T19:00:00", "tags":["muzyka","misy","gongi","ciemność","sound-healing"] },
+
+    { "id":"e055", "zone":"umbra", "title":"Henryk Grygian — warsztat", "artist":"Henryk Grygian", "description":"Poranny warsztat ruchowy na scenie głównej.", "start":"2026-07-04T10:00:00", "end":"2026-07-04T11:30:00", "tags":["warsztat","ruch","ciało"] },
+    { "id":"e056", "zone":"umbra", "title":"Kamil Mross — ucieleśniona podróż w Nieświadomość", "artist":"Kamil Mross", "description":"Poruszający pokaz łączący ruch, trans i pracę z nieświadomością na scenie głównej.", "start":"2026-07-04T13:00:00", "end":"2026-07-04T15:00:00", "tags":["performance","ruch","nieświadomość"] },
+    { "id":"e057", "zone":"umbra", "title":"Artur Makieła — show hipnozy scenicznej", "artist":"Artur Makieła", "description":"Spektakularny pokaz hipnozy scenicznej — edukacja przez rozrywkę.", "start":"2026-07-04T15:00:00", "end":"2026-07-04T16:30:00", "tags":["pokaz","hipnoza","show"] },
+    { "id":"e058", "zone":"umbra", "title":"Pete Fish Orchestra — zabierz swój instrument!", "artist":"Pete Fish Orchestra", "description":"Otwarta sesja orkiestry — zabierz swój instrument i graj razem z Pete Fish Orchestra.", "start":"2026-07-04T18:00:00", "end":"2026-07-04T19:30:00", "tags":["muzyka","live","improwizacja","participatory"] },
+    { "id":"e059", "zone":"umbra", "title":"Seb", "artist":"Seb", "description":"organic house, afro house", "start":"2026-07-04T20:00:00", "end":"2026-07-04T21:30:00", "tags":["muzyka","dj","organic-house","afro"] },
+    { "id":"e060", "zone":"umbra", "title":"Tommy Gustav", "artist":"Tommy Gustav", "description":"house", "start":"2026-07-04T21:30:00", "end":"2026-07-04T23:00:00", "tags":["muzyka","dj","house"] },
+    { "id":"e061", "zone":"umbra", "title":"Raidho", "artist":"Raidho", "description":"organic house, tribal", "start":"2026-07-04T23:00:00", "end":"2026-07-05T00:30:00", "tags":["muzyka","dj","organic-house","tribal"] },
+    { "id":"e062", "zone":"umbra", "title":"kEczuP", "artist":"kEczuP", "description":"house", "start":"2026-07-05T00:30:00", "end":"2026-07-05T02:00:00", "tags":["muzyka","dj","house"] },
+    { "id":"e063", "zone":"umbra", "title":"Adam Suski", "artist":"Adam Suski", "description":"psytrance", "start":"2026-07-05T02:00:00", "end":"2026-07-05T03:00:00", "tags":["muzyka","dj","psytrance"] },
+    { "id":"e064", "zone":"umbra", "title":"Keenarf", "artist":"Keenarf", "description":"deep, tech, minimal", "start":"2026-07-05T03:00:00", "end":"2026-07-05T04:00:00", "tags":["muzyka","dj","deep","tech","minimal"] },
+
+
+    { "id":"e065", "zone":"podswiadomosci", "title":"Darmowe konsultacje terapeutyczne", "artist":"Team PSH + SACRUM", "description":"Bezpłatne konsultacje terapeutyczne — ostatni dzień.", "start":"2026-07-05T09:00:00", "end":"2026-07-05T10:00:00", "tags":["konsultacje","bezpłatne"] },
+    { "id":"e066", "zone":"podswiadomosci", "title":"Dlaczego fascynuje nas zbrodnia? True crime jako czarne lustro ludzkiej psychiki", "artist":"Paula Alex", "description":"Psychologiczna analiza fenomenu true crime — co nasze fascynacje morderstwami mówią o naszej własnej psychice.", "start":"2026-07-05T10:00:00", "end":"2026-07-05T11:30:00", "tags":["prelekcja","true-crime","psychologia","cień"] },
+    { "id":"e067", "zone":"podswiadomosci", "title":"Neuroshow: zobacz fale mózgowe podczas zmiany stanu świadomości", "artist":"Miła Orlińska", "description":"Na żywo: pokaz neurofeedbacku podczas zmiany stanu świadomości. Zobaczysz swój mózg w akcji.", "start":"2026-07-05T11:30:00", "end":"2026-07-05T13:00:00", "tags":["pokaz","neurologia","świadomość","EEG"] },
+    { "id":"e068", "zone":"podswiadomosci", "title":"Integracja Doświadczeń Festiwalowych", "artist":"TEAM PSH + SACRUM", "description":"Grupowa sesja integracyjna zamykająca festiwal. Przestrzeń do podzielenia się tym, co przeżyłeś.", "start":"2026-07-05T13:00:00", "end":"2026-07-05T14:30:00", "tags":["integracja","ceremonia","zamknięcie"] },
+
+    { "id":"e069", "zone":"sacrum", "title":"W głąb i z powrotem: psychodeliczna podróż przez cień", "artist":"Magdalena Gajdzińska", "description":"Integracyjna rozmowa o psychodelicznych doświadczeniach jako spotkaniu z cieniem i drodze powrotu.", "start":"2026-07-05T10:00:00", "end":"2026-07-05T11:30:00", "tags":["prelekcja","psychodeliki","cień","integracja"] },
+    { "id":"e070", "zone":"sacrum", "title":"Szałwia wieszcza — portal do innych wymiarów czy narzędzie terapeutyczne?", "artist":"Tomasz Kwieciński", "description":"Salvia divinorum — między tradycją szamańską a współczesnymi badaniami nad jej potencjałem terapeutycznym.", "start":"2026-07-05T11:30:00", "end":"2026-07-05T13:00:00", "tags":["prelekcja","salvia","psychodeliki","szamanizm"] },
+    { "id":"e071", "zone":"sacrum", "title":"Przyszłość polskich psychodelików", "artist":"Piotr Matejuk", "description":"Stan i perspektywy legalizacji i klinicznego zastosowania psychodelików w Polsce — co wiemy, co możliwe, co planujemy.", "start":"2026-07-05T13:00:00", "end":"2026-07-05T14:30:00", "tags":["prelekcja","psychodeliki","Polska","przyszłość"] },
+
+    { "id":"e072", "zone":"anima", "title":"Cykliczność, stres i energia — psychologia kobiecego funkcjonowania w świecie ciągłego przekraczania granic", "artist":"Aleksandra Langiewicz", "description":"O tym, jak cykl kobiecego ciała i psychiki zderza się ze światem zaprojektowanym wbrew niemu.", "start":"2026-07-05T10:00:00", "end":"2026-07-05T11:30:00", "tags":["prelekcja","kobiecość","cykl","stres"] },
+    { "id":"e073", "zone":"anima", "title":"Jak nie zarządzać kryzysem? — opowieść o 25 latach w rapie i biznesie", "artist":"Wini", "description":"Szczera rozmowa o kryzysach, porażkach i tym, czego nauczyły 25 lat w rapie i biznesie.", "start":"2026-07-05T11:30:00", "end":"2026-07-05T13:00:00", "tags":["prelekcja","kryzys","muzyka","biznes"] },
+
+    { "id":"e074", "zone":"gnoza", "title":"Warsztaty Kolażu Intuicyjnego — Rubedo", "artist":"Agnieszka Dąbrowska", "description":"Trzecia i ostatnia część warsztatów kolażu. Etap Rubedo — integracja, złoto.", "start":"2026-07-05T10:00:00", "end":"2026-07-05T11:30:00", "tags":["warsztat","kolaż","twórczość","rubedo"] },
+
+    { "id":"e075", "zone":"umbra", "title":"Justyna Danielska — Gimnastyka Słowiańska", "artist":"Justyna Danielska", "description":"Poranne przebudzenie ciała przez Gimnastykę Słowiańską — starożytne praktyki ruchowe dla współczesnych ciał.", "start":"2026-07-05T09:00:00", "end":"2026-07-05T10:00:00", "tags":["warsztat","ruch","gimnastyka","słowiańska"] },
+    { "id":"e076", "zone":"umbra", "title":"Sunshine Racket", "artist":"Sunshine Racket", "description":"house, progressive, deep", "start":"2026-07-05T10:00:00", "end":"2026-07-05T11:30:00", "tags":["muzyka","dj","house","progressive"] },
+    { "id":"e077", "zone":"umbra", "title":"Keenarf", "artist":"Keenarf", "description":"deep house, organic", "start":"2026-07-05T11:30:00", "end":"2026-07-05T13:00:00", "tags":["muzyka","dj","deep-house","organic"] },
+    { "id":"e078", "zone":"umbra", "title":"Agamu Agora", "artist":"Agamu Agora", "description":"world music — zamknięcie festiwalu", "start":"2026-07-05T13:00:00", "end":"2026-07-05T17:00:00", "tags":["muzyka","live","world-music","finał"] }
+
+  ]
+}
