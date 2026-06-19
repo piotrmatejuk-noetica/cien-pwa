@@ -189,15 +189,14 @@ function renderSchedule() {
 
   // Day tabs
   const days = ['2026-07-03', '2026-07-04', '2026-07-05'];
+  const DAY_LABELS = { '2026-07-03': '3 VII', '2026-07-04': '4 VII', '2026-07-05': '5 VII' };
   const dayTabsHTML = days.map(day => {
     const stage = DAY_STAGES[day];
-    const d = new Date(day);
-    const dateStr = d.toLocaleDateString('pl-PL', { day: 'numeric', month: 'VII' === undefined ? 'long' : 'numeric' });
     const active = State.schedule.activeDay === day;
     return `
       <button class="day-tab ${stage} ${active ? 'active' : ''}" onclick="setActiveDay('${day}')">
         <div class="tab-stage">${stage}</div>
-        <div class="tab-date">${d.getDate()}.${String(d.getMonth()+1).padStart(2,'0')}.VII</div>
+        <div class="tab-date">${DAY_LABELS[day]}</div>
       </button>`;
   }).join('');
 
@@ -211,9 +210,6 @@ function renderSchedule() {
         ${z.icon} ${z.shortName}
       </button>`)
   ].join('');
-
-  // Now banner
-  const nowHTML = renderNowBanner(events);
 
   // Events for current day + zone
   // Festival day runs 06:00–05:59, so after-midnight sets belong to the previous day
@@ -230,6 +226,10 @@ function renderSchedule() {
     if (aOrd !== bOrd) return aOrd - bOrd;
     return a.start.localeCompare(b.start);
   });
+
+  // Now banner — only from the active day's events (skip before festival starts)
+  const festivalStarted = new Date() >= new Date('2026-07-03T06:00:00');
+  const nowHTML = festivalStarted ? renderNowBanner(dayEvents) : '';
 
   const eventsHTML = renderEventsList(dayEvents);
 
@@ -1171,7 +1171,10 @@ function toggleFavorite(evId) {
 function getFestivalDay(iso) {
   const d = new Date(iso);
   if (d.getHours() < 6) d.setDate(d.getDate() - 1);
-  return d.toISOString().slice(0, 10);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
 }
 
 function formatTime(iso) {
