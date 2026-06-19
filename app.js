@@ -83,6 +83,8 @@ async function init() {
   setupInstallPrompt();
   registerSW();
   navigateTo(location.hash.slice(1) || 'teraz');
+  const splash = document.getElementById('splash-screen');
+  if (splash) setTimeout(() => splash.classList.add('hidden'), 400);
 }
 
 async function loadData() {
@@ -636,9 +638,15 @@ function renderSacrum() {
 
   container.innerHTML = `
     <div class="sacrum-hero">
-      <div class="sacrum-hero-icon">🛡</div>
-      <div class="sacrum-hero-title">Sacrum — Punkt Pomocy</div>
-      <div class="sacrum-hero-sub">Zawsze dostępny. Bez oceniania. Poufnie.</div>
+      <div class="sacrum-logo-wrap">
+        <svg viewBox="0 0 240 60" class="sacrum-svg-logo" aria-label="SACRUM">
+          <text x="120" y="48" text-anchor="middle"
+                font-family="'Helvetica Neue', Arial, sans-serif"
+                font-size="52" font-weight="300" letter-spacing="14"
+                fill="#3BAFBA">SACRUM</text>
+        </svg>
+      </div>
+      <div class="sacrum-hero-sub">Punkt Pomocy · Zawsze dostępny · Bez oceniania</div>
     </div>
 
     <button class="emergency-btn" onclick="callHelp()">
@@ -915,7 +923,7 @@ function registerSW() {
 const SD_TAGS = [
   'Psychodeliki', 'Hipnoza', 'Jung', 'Taniec', 'Muzyka', 'Psychologia',
   'Buddyzm', 'Sztuka', 'Natura', 'Medytacja', 'Trauma', 'NVC',
-  'Filozofia', 'Ruch', 'Dźwięk', 'Integrator'
+  'Filozofia', 'Ruch', 'Dźwięk', 'Integracja'
 ];
 
 function getSDProfile() {
@@ -954,6 +962,10 @@ function renderSlowDatingLocal() {
     </div>`;
 
   const sessionsHTML = `
+    <div class="sd-anima-hero">
+      <img src="icons/ksiezyc-slonce.jpg" alt="Anima Animus" class="sd-anima-img">
+      <div class="sd-anima-label">Anima / Animus · Księżyc · Słońce</div>
+    </div>
     <div class="sd-sessions">
       <div class="sd-session-pill">💘 Piątek 16:30–18:00 · Anima/Animus</div>
       <div class="sd-session-pill">💘 Piątek 18:30–20:00 · Anima/Animus</div>
