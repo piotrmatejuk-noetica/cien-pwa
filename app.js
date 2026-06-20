@@ -5,6 +5,199 @@
 'use strict';
 
 // ============================================
+// AUTH — Google Identity Services + Facebook JS SDK
+// ============================================
+
+const GOOGLE_CLIENT_ID = '276733228376-gp5g220ahi1bq8k615makqotij21s9v6.apps.googleusercontent.com';
+// FB_APP_ID pochodzi z firebase-config.js (załadowanego wcześniej w HTML)
+
+function _initFacebook() {
+  const appId = window.CIEN_FB_APP_ID;
+  if (!appId || appId === 'REPLACE_FB_APP_ID') return;
+  const doInit = () => FB.init({ appId, cookie: true, xfbml: false, version: 'v20.0' });
+  if (typeof FB !== 'undefined') { doInit(); return; }
+  window.fbAsyncInit = doInit;
+}
+
+let _fbApp = null;
+let _fbAuth = null;
+
+function initFirebase() {
+  if (typeof FIREBASE_CONFIG === 'undefined' || FIREBASE_CONFIG.apiKey === 'REPLACE_ME') return;
+  try {
+    _fbApp = firebase.initializeApp(FIREBASE_CONFIG);
+    _fbAuth = firebase.auth();
+  } catch (e) {
+    console.warn('[auth] Firebase init failed:', e);
+  }
+}
+
+function _setUser(uid, email, name) {
+  localStorage.setItem('cien_user_id', uid);
+  if (email) localStorage.setItem('cien_user_email', email);
+  if (name)  localStorage.setItem('cien_user_name', name);
+  hideAuthScreen();
+}
+
+function showAuthScreen() {
+  document.getElementById('auth-screen').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+}
+
+function hideAuthScreen() {
+  document.getElementById('auth-screen').style.display = 'none';
+  document.getElementById('app').style.display = '';
+}
+
+function skipAuth() {
+  const guestId = 'guest_' + Math.random().toString(36).slice(2, 10);
+  localStorage.setItem('cien_user_id', guestId);
+  hideAuthScreen();
+}
+
+function showEmailAuth() {
+  document.getElementById('auth-panel-main').style.display = 'none';
+  document.getElementById('auth-panel-email').style.display = '';
+  document.getElementById('auth-error').textContent = '';
+}
+
+function hideEmailAuth() {
+  document.getElementById('auth-panel-email').style.display = 'none';
+  document.getElementById('auth-panel-main').style.display = '';
+}
+
+function _authError(msg) {
+  const el = document.getElementById('auth-error');
+  if (el) el.textContent = msg;
+}
+
+// --- GOOGLE (Google Identity Services — FedCM flow, nie wymaga konfiguracji originu) ---
+let _googleInitialized = false;
+
+function _googleCredentialCallback({ credential }) {
+  try {
+    const payload = JSON.parse(atob(credential.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+    _setUser('google_' + payload.sub, payload.email, payload.name);
+  } catch (e) {
+    _authError('Błąd przetwarzania odpowiedzi Google');
+  }
+}
+
+function _initGoogleAuth() {
+  if (typeof google === 'undefined' || !google.accounts) return;
+  if (_googleInitialized) return;
+  _googleInitialized = true;
+  google.accounts.id.initialize({
+    client_id: GOOGLE_CLIENT_ID,
+    // FedCM: Chrome 108+ pomija weryfikację JavaScript origins — działa na każdej domenie
+    use_fedcm_for_prompt: true,
+    callback: _googleCredentialCallback,
+    cancel_on_tap_outside: true,
+  });
+  // Prerenderuj przycisk (ukryty) jako fallback gdy One Tap/FedCM nie działa
+  const container = document.getElementById('google-btn-container');
+  if (container) {
+    try {
+      google.accounts.id.renderButton(container, {
+        type: 'standard',
+        shape: 'rectangular',
+        theme: 'outline',
+        text: 'signin_with',
+        size: 'large',
+        width: 300,
+      });
+    } catch (_) {}
+  }
+}
+
+function authGoogle() {
+  if (typeof google === 'undefined' || !google.accounts) {
+    _authError('Google Sign-In się ładuje — spróbuj za chwilę');
+    setTimeout(() => {
+      if (typeof google !== 'undefined' && google.accounts) { _initGoogleAuth(); authGoogle(); }
+    }, 1500);
+    return;
+  }
+  _initGoogleAuth();
+  google.accounts.id.prompt((notification) => {
+    if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+      // FedCM/One Tap nie wyświetlony — pokaż wyrenderowany przycisk Google
+      const container = document.getElementById('google-btn-container');
+      const mainBtn  = document.querySelector('.auth-btn-google');
+      if (container && mainBtn) {
+        mainBtn.style.display = 'none';
+        container.style.display = 'flex';
+        container.style.justifyContent = 'center';
+        container.style.margin = '0 0 0.75rem 0';
+      } else {
+        // Ostateczny fallback — komunikat
+        _authError('Google Sign-In niedostępny. Użyj email lub Facebook.');
+      }
+    }
+  });
+}
+
+// --- FACEBOOK (Facebook JS SDK) ---
+function authFacebook() {
+  if (typeof FB === 'undefined') {
+    _authError('Facebook SDK się ładuje, spróbuj ponownie za chwilę');
+    return;
+  }
+  if (!window.CIEN_FB_APP_ID || window.CIEN_FB_APP_ID === 'REPLACE_FB_APP_ID') {
+    _authError('Brak konfiguracji Facebook App ID — dodaj go w firebase-config.js');
+    return;
+  }
+  FB.login((response) => {
+    if (!response.authResponse) {
+      _authError('Logowanie Facebook anulowane');
+      return;
+    }
+    const uid = response.authResponse.userID;
+    FB.api('/me', { fields: 'email,name' }, (user) => {
+      _setUser('fb_' + uid, user.email, user.name);
+    });
+  }, { scope: 'public_profile,email' });
+}
+
+// --- EMAIL ---
+async function authEmail() {
+  const email = document.getElementById('auth-email').value.trim();
+  const pass  = document.getElementById('auth-pass').value;
+  if (!email) { _authError('Podaj adres email'); return; }
+
+  if (_fbAuth && pass) {
+    try {
+      await _fbAuth.signInWithEmailAndPassword(email, pass);
+      return;
+    } catch (e) {
+      _authError(e.message || 'Nieprawidłowy email lub hasło');
+      return;
+    }
+  }
+  const uid = 'email_' + btoa(email).replace(/[^a-z0-9]/gi, '').slice(0, 12);
+  _setUser(uid, email, null);
+}
+
+async function authEmailRegister() {
+  const email = document.getElementById('auth-email').value.trim();
+  const pass  = document.getElementById('auth-pass').value;
+  if (!email) { _authError('Podaj adres email'); return; }
+
+  if (_fbAuth && pass) {
+    if (pass.length < 6) { _authError('Hasło musi mieć min. 6 znaków'); return; }
+    try {
+      await _fbAuth.createUserWithEmailAndPassword(email, pass);
+      return;
+    } catch (e) {
+      _authError(e.message || 'Błąd rejestracji');
+      return;
+    }
+  }
+  const uid = 'email_' + btoa(email).replace(/[^a-z0-9]/gi, '').slice(0, 12);
+  _setUser(uid, email, null);
+}
+
+// ============================================
 // STATE
 // ============================================
 
@@ -19,7 +212,8 @@ const State = {
     activePOIType: 'all'
   },
   journal: {
-    activeStage: 'nigredo'
+    activeStage: 'nigredo',
+    activeTab: 'journal'
   },
   modalEvent: null
 };
@@ -42,20 +236,144 @@ const DAY_STAGES = {
 const JOURNAL_PROMPTS = {
   nigredo: [
     'Co chcę zostawić za sobą podczas tego festiwalu? Co chcę rozpuścić?',
-    'Które emocje najtrudniej mi przyjąć? Co one mówią?',
-    'Co przykryłem w sobie, żeby móc funkcjonować? Co teraz wychodzi na powierzchnię?'
+    'Które emocje najtrudniej mi przyjąć? Co one próbują mi powiedzieć?',
+    'Co przykryłem w sobie, żeby móc funkcjonować? Co teraz wychodzi na powierzchnię?',
+    'Jaki fragment siebie przywiozłem tu, który dawno nie był widziany?',
+    'Co mnie tu sprowadziło naprawdę — pod warstwą oczywistej odpowiedzi?',
+    'Czego boję się zobaczyć w sobie na tym festiwalu?',
+    'Co w zachowaniu innych dziś mnie drażniło lub irytowało? Co to mówi o mnie?',
+    'Jakie słowa, obrazy lub dźwięki z dzisiejszego dnia wracają bez zaproszenia?',
+    'Gdyby twój Cień mógł tu przemówić — co by powiedział?',
+    'Co schowałem do torby zanim tu przyjechałem — i czy czas to wyjąć?'
   ],
   albedo: [
     'Co widzę wyraźniej niż wczoraj? Co się oczyściło?',
     'Kogo spotkałem dziś — w sobie lub w innych — z czym się rozpoznałem?',
-    'Jaki obraz, uczucie lub myśl wracają do mnie tego dnia?'
+    'Jaki obraz, uczucie lub myśl wracają do mnie tego dnia?',
+    'Które doświadczenie z dzisiejszego dnia poruszyło coś, czego się nie spodziewałem?',
+    'Co do tej pory zatrzymujesz dla siebie? Co chciałbyś wyrazić głośno?',
+    'Który moment dziś był najbliższy ciszy w środku — bez myśli, bez oceny?',
+    'Z kim nawiązałem kontakt, który wydaje się nieprzypadkowy? Co to połączenie mówi?',
+    'Co ze stref festiwalu (Sacrum, Anima/Animus, Umbra) zostaje w moim ciele?',
+    'Jak czuje się moje ciało teraz, kiedy siadam i naprawdę słucham siebie?',
+    'Która stara historia o sobie staje się dziś mniej prawdziwa?'
   ],
   rubedo: [
     'Co zabiorę ze sobą z tego doświadczenia? Co we mnie zostanie?',
     'Jak będę traktował siebie inaczej po powrocie? Co konkretnie zmienię?',
-    'Komu lub czemu chcę podziękować za to, co przeżyłem?'
+    'Komu lub czemu chcę podziękować za to, co przeżyłem?',
+    'Jedno zdanie, które opisuje to, czego nauczyłem się o sobie na CIEŃ Festiwalu.',
+    'Co z tego co przeżyłem wcielę w codzienne życie — konkretne działanie, nie hasło?',
+    'Jaką historię o sobie zabierasz z Zamku Świny, żeby opowiedzieć ją inaczej?',
+    'Który archetyp — Cień, Anima/Animus, Jaźń, Bohater — był tu dla mnie najgłośniejszy?',
+    'Co chcę powiedzieć sobie sprzed festiwalu?',
+    'Jak to doświadczenie zmienia sposób, w jaki będę patrzeć na relacje z innymi?',
+    'Zamknij oczy. Zrób wdech. Co czujesz w ciele teraz, gdy festiwal dobiega końca?'
   ]
 };
+
+// ============================================
+// KOŁO ŻYCIA — DATA (WAR Kwestionariusz)
+// ============================================
+
+const WHEEL_AREAS = [
+  {
+    id: 'finanse', name: 'Finanse i praca', shortName: 'Praca', color: '#C9A84C',
+    questions: [
+      'Czuję satysfakcję z poziomu swoich zarobków',
+      'Czuję entuzjazm i sens myśląc o swojej pracy',
+      'Czuję się szanowany/a w miejscu pracy',
+      'Czuję, że w pracy mogę w pełni rozwinąć skrzydła',
+      'Zachowuję zdrowy balans między pracą a życiem prywatnym',
+      'Czuję bezpieczeństwo finansowe',
+      'W moim środowisku pracy panuje pozytywna atmosfera',
+      'Moje pomysły i sugestie w pracy są brane pod uwagę',
+      'Stanowisko, które zajmuję, odpowiada moim kwalifikacjom i ambicjom',
+      'Odczuwam ogólną satysfakcję z pracy i poziomu zarobków'
+    ]
+  },
+  {
+    id: 'relacje', name: 'Rodzina i relacje', shortName: 'Relacje', color: '#E07070',
+    questions: [
+      'Czuję się kochany/a i akceptowany/a przez bliskich',
+      'W moich relacjach panuje otwartość i zaufanie',
+      'Mam kogoś, do kogo mogę się zwrócić w trudnych chwilach',
+      'Jestem zadowolony/a z ilości czasu spędzanego z bliskimi',
+      'W mojej rodzinie sprawnie rozwiązujemy nieporozumienia',
+      'Czuję bliskość z osobami, które są dla mnie ważne',
+      'Każdy w mojej rodzinie może swobodnie wyrażać swoje zdanie',
+      'Jestem zadowolony/a z komunikacji w moich relacjach',
+      'Czuję, że moje relacje dają mi siłę i wsparcie',
+      'Odczuwam ogólną satysfakcję z mojego życia rodzinnego i partnerskiego'
+    ]
+  },
+  {
+    id: 'zdrowie', name: 'Zdrowie i ciało', shortName: 'Zdrowie', color: '#5BAD92',
+    questions: [
+      'Ogólnie jestem zadowolony/a ze swojego stanu zdrowia',
+      'Jestem sprawny/a fizycznie i mam dużo energii',
+      'Regularnie dbam o ciało — ruch, sen, odżywianie',
+      'Sypiam dobrze i budzę się wypoczęty/a',
+      'W ostatnim miesiącu byłem/am pełen/pełna energii i animuszu',
+      'W ostatnim miesiącu byłem/am wyciszony/a i spokojny/a',
+      'Czynności wymagające wysiłku fizycznego nie sprawiają mi problemu',
+      'Dzięki regularnym badaniom jestem świadomy/a swojego stanu zdrowia',
+      'Mój organizm funkcjonuje prawidłowo',
+      'Stan mojego zdrowia pozwala mi w pełni cieszyć się życiem'
+    ]
+  },
+  {
+    id: 'pasje', name: 'Czas wolny i pasje', shortName: 'Pasje', color: '#7B5EA7',
+    questions: [
+      'Mam czas i przestrzeń na to, co mnie pasjonuje',
+      'Moje hobby sprawia mi autentyczną radość',
+      'Moja pasja daje mi poczucie wolności i sensu',
+      'Potrafię skutecznie odpoczywać i regenerować siły',
+      'W ostatnim miesiącu spałem/am wystarczająco długo',
+      'W ostatnim miesiącu nie czułem/am się przytłoczony/a obowiązkami',
+      'Moje życie nie ogranicza się tylko do pracy i obowiązków',
+      'W ostatnim miesiącu miałem/am wystarczająco dużo czasu tylko dla siebie',
+      'Mam wystarczająco dużo dni wolnych i urlopu w ciągu roku',
+      'Jestem zadowolony/a ze sposobu, w jaki spędzam czas wolny'
+    ]
+  },
+  {
+    id: 'rozwoj', name: 'Rozwój osobisty', shortName: 'Rozwój', color: '#4A90D9',
+    questions: [
+      'Wiem, dokąd zmierzam w swoim życiu',
+      'Mam konkretny plan działania na swoje cele',
+      'Biorę pełną odpowiedzialność za własny rozwój',
+      'Potrafię się skutecznie motywować do działania',
+      'Znam swoje zalety i potrafię je wykorzystać',
+      'Moje cele życiowe motywują mnie do ich realizacji',
+      'Rozumiem i akceptuję etap rozwoju, na którym się teraz znajduję',
+      'Wiem, jak zmienić konkretne rzeczy, by poprawić jakość swojego życia',
+      'Mam poczucie, że nieustannie dowiaduję się czegoś nowego o sobie',
+      'Z czasem staję się coraz lepszą wersją siebie'
+    ]
+  },
+  {
+    id: 'sens', name: 'Duchowość i sens', shortName: 'Sens', color: '#3BAFBA',
+    questions: [
+      'Czuję, że moje życie ma głębszy sens',
+      'Żyję w zgodzie ze swoimi wartościami',
+      'Akceptuję to, co przynosi mi życie',
+      'Odczuwam wewnętrzny spokój i harmonię',
+      'Dążę do wewnętrznej wolności i spokoju ducha',
+      'We wszystkim staram się znaleźć coś pozytywnego',
+      'Mój światopogląd pomaga mi radzić sobie z trudnościami',
+      'Moje cele życiowe są źródłem satysfakcji, nie frustracji',
+      'Akceptuję to, że w życiu nie wszystko jest pewne i przewidywalne',
+      'Czuję się częścią czegoś większego niż ja sam/a'
+    ]
+  }
+];
+
+const WHEEL_SOLUTION_Q = [
+  'Co w tym obszarze już działa dobrze — z czego możesz być dumny/a?',
+  'Gdybyś ocenił/a ten obszar o 2 punkty wyżej — co konkretnie byłoby inaczej w Twoim życiu?',
+  'Jaki jeden konkretny krok możesz podjąć w ciągu najbliższych 7 dni?'
+];
 
 // ============================================
 // INIT
@@ -76,6 +394,7 @@ function detectFestivalDay() {
 }
 
 async function init() {
+  initFirebase();
   State.schedule.activeDay = detectFestivalDay();
   await loadData();
   setupRouter();
@@ -85,20 +404,41 @@ async function init() {
   navigateTo(location.hash.slice(1) || 'teraz');
   const splash = document.getElementById('splash-screen');
   if (splash) setTimeout(() => splash.classList.add('hidden'), 400);
+
+  const loggedIn = localStorage.getItem('cien_user_id');
+  if (!loggedIn) {
+    setTimeout(() => showAuthScreen(), 450);
+  }
+  // Inicjuj Google One Tap i Facebook SDK
+  _initFacebook();
+  if (typeof google !== 'undefined' && google.accounts) {
+    _initGoogleAuth();
+  } else {
+    window.addEventListener('load', () => setTimeout(_initGoogleAuth, 300));
+  }
+  if (_fbAuth) {
+    _fbAuth.onAuthStateChanged(user => {
+      if (user) {
+        _setUser(user.uid, user.email, user.displayName);
+      }
+    });
+  }
 }
 
 async function loadData() {
   try {
-    const [scheduleRes, poisRes] = await Promise.all([
+    const [scheduleRes, poisRes, speakersRes] = await Promise.all([
       fetch('data/schedule.json'),
-      fetch('data/pois.json')
+      fetch('data/pois.json'),
+      fetch('data/speakers.json').catch(() => null)
     ]);
     const schedule = await scheduleRes.json();
     const pois = await poisRes.json();
-    State.data = { ...schedule, ...pois };
+    const speakers = speakersRes ? await speakersRes.json().catch(() => ({})) : {};
+    State.data = { ...schedule, ...pois, speakers };
   } catch (e) {
     console.error('Failed to load data:', e);
-    State.data = { events: [], zones: [], pois: [], festival: { zones: [] } };
+    State.data = { events: [], zones: [], pois: [], festival: { zones: [] }, speakers: {} };
   }
 }
 
@@ -189,6 +529,10 @@ function renderSchedule() {
   const events = State.data.events || [];
   const zones = State.data.festival?.zones || [];
 
+  // TU I TERAZ — zawsze na górze, wszystkie strefy
+  const festivalStarted = new Date() >= new Date('2026-07-03T06:00:00');
+  const tuITerazHTML = festivalStarted ? renderTuITeraz(events) : '';
+
   // Day tabs
   const days = ['2026-07-03', '2026-07-04', '2026-07-05'];
   const DAY_LABELS = { '2026-07-03': '3 VII', '2026-07-04': '4 VII', '2026-07-05': '5 VII' };
@@ -229,10 +573,6 @@ function renderSchedule() {
     return a.start.localeCompare(b.start);
   });
 
-  // Now banner — only from the active day's events (skip before festival starts)
-  const festivalStarted = new Date() >= new Date('2026-07-03T06:00:00');
-  const nowHTML = festivalStarted ? renderNowBanner(dayEvents) : '';
-
   const eventsHTML = renderEventsList(dayEvents);
 
   const favs = getFavorites();
@@ -254,11 +594,84 @@ function renderSchedule() {
     <div class="divider" style="margin:0 1rem 0.5rem"></div>` : '';
 
   container.innerHTML = `
+    ${tuITerazHTML}
     <div class="day-tabs">${dayTabsHTML}</div>
-    ${nowHTML}
     <div class="zone-filter">${zoneChipsHTML}</div>
     ${favHTML}
     <div class="events-list">${eventsHTML}</div>
+  `;
+}
+
+function renderTuITeraz(allEvents) {
+  const now = new Date();
+
+  // Eventy trwające teraz — ze WSZYSTKICH stref i dni
+  const nowEvents = allEvents.filter(ev => {
+    const start = new Date(ev.start);
+    const end = new Date(ev.end);
+    return now >= start && now <= end;
+  });
+
+  let content = '';
+  let labelText = '';
+
+  if (nowEvents.length > 0) {
+    labelText = 'TU I TERAZ';
+    content = nowEvents.map(ev => {
+      const zone = (State.data?.festival?.zones || []).find(z => z.id === ev.zone) || {};
+      const color = zone.color || ZONES_MAP[ev.zone]?.color || '#888';
+      const icon = zone.icon || ZONES_MAP[ev.zone]?.icon || '●';
+      const isMainStage = ev.zone === 'umbra';
+      return `
+        <div class="tu-i-teraz-card ${isMainStage ? 'tu-i-teraz-main' : ''}"
+             style="border-left-color:${color}"
+             onclick="openEventModal('${ev.id}')">
+          ${isMainStage ? `<div class="tu-i-teraz-main-label">🎵 SCENA GŁÓWNA — TERAZ</div>` : ''}
+          <div class="event-time">
+            ${formatTime(ev.start)} <span class="event-duration">→ ${formatTime(ev.end)}</span>
+          </div>
+          <div class="event-title">${ev.title}</div>
+          ${ev.artist ? `<div class="event-artist">${ev.artist}</div>` : ''}
+          <div class="event-zone-tag" style="color:${color}">${icon} ${zone.shortName || zone.name || ev.zone}</div>
+        </div>`;
+    }).join('');
+  } else {
+    // Za chwilę — kolejne 2-3 wydarzenia ze wszystkich stref
+    const upcoming = allEvents
+      .filter(ev => new Date(ev.start) > now)
+      .sort((a, b) => new Date(a.start) - new Date(b.start))
+      .slice(0, 3);
+
+    if (upcoming.length === 0) return '';
+
+    labelText = 'ZA CHWILĘ';
+    content = upcoming.map(ev => {
+      const zone = (State.data?.festival?.zones || []).find(z => z.id === ev.zone) || {};
+      const color = zone.color || ZONES_MAP[ev.zone]?.color || '#888';
+      const icon = zone.icon || ZONES_MAP[ev.zone]?.icon || '●';
+      return `
+        <div class="tu-i-teraz-card"
+             style="border-left-color:${color}"
+             onclick="openEventModal('${ev.id}')">
+          <div class="event-time">
+            ${formatTime(ev.start)} <span class="event-duration">→ ${formatTime(ev.end)}</span>
+          </div>
+          <div class="event-title">${ev.title}</div>
+          ${ev.artist ? `<div class="event-artist">${ev.artist}</div>` : ''}
+          <div class="event-zone-tag" style="color:${color}">${icon} ${zone.shortName || zone.name || ev.zone}</div>
+        </div>`;
+    }).join('');
+  }
+
+  return `
+    <div class="tu-i-teraz-section">
+      <div class="tu-i-teraz-header">
+        <span class="tu-i-teraz-dot"></span>
+        <span class="tu-i-teraz-label">${labelText}</span>
+      </div>
+      <div class="tu-i-teraz-events">${content}</div>
+    </div>
+    <div class="tu-i-teraz-separator"></div>
   `;
 }
 
@@ -384,8 +797,7 @@ function openEventModal(eventId) {
   modal.querySelector('.modal-zone-badge').style.color = color;
   modal.querySelector('.modal-zone-badge').innerHTML = `${icon} ${zone.shortName || zone.name || ev.zone}`;
   modal.querySelector('.modal-title').textContent = ev.title;
-  modal.querySelector('.modal-artist').textContent = ev.artist || '';
-  modal.querySelector('.modal-artist').style.display = ev.artist ? 'block' : 'none';
+  modal.querySelector('.modal-artist').style.display = 'none';
   modal.querySelector('.modal-time').innerHTML = `
     🕐 ${formatTime(ev.start)} – ${formatTime(ev.end)}
     <span class="event-duration">(${getDuration(ev.start, ev.end)})</span>
@@ -396,6 +808,33 @@ function openEventModal(eventId) {
   const tagsEl = modal.querySelector('.modal-tags');
   if (tagsEl) {
     tagsEl.innerHTML = (ev.tags || []).map(t => `<span class="tag">${t}</span>`).join('');
+  }
+
+  // Speaker card
+  const speakerEl = modal.querySelector('.modal-speaker');
+  if (speakerEl) {
+    const speakers = State.data?.speakers || {};
+    const artistName = ev.artist || '';
+    const speakerData = artistName ? (speakers[artistName] ||
+      Object.entries(speakers).find(([k]) => artistName.includes(k) || k.includes(artistName.split(' ').pop()))?.[1]) : null;
+
+    if (artistName) {
+      speakerEl.style.display = 'block';
+      const img = speakerEl.querySelector('.modal-speaker-photo');
+      if (speakerData?.photo) {
+        img.src = speakerData.photo;
+        img.style.display = 'block';
+      } else {
+        img.style.display = 'none';
+      }
+      const bioEl = speakerEl.querySelector('.modal-speaker-bio');
+      const nameHtml = `<strong style="color:var(--pergamin);font-size:0.95rem">${artistName}</strong>`;
+      const roleHtml = speakerData?.role ? `<span style="color:var(--szary);font-size:0.8rem;display:block;margin:0.15rem 0 0.4rem">${speakerData.role}</span>` : '<br>';
+      const bioHtml = speakerData?.bio ? `<span>${speakerData.bio}</span>` : '';
+      bioEl.innerHTML = nameHtml + roleHtml + bioHtml;
+    } else {
+      speakerEl.style.display = 'none';
+    }
   }
 
   modal.querySelector('.modal-overlay').classList.add('open');
@@ -526,6 +965,24 @@ function openPoiModal(poiId) {
 function renderJournal() {
   const container = document.getElementById('journal-content');
   if (!container) return;
+  const tab = State.journal.activeTab || 'journal';
+
+  const tabsHTML = `<div class="dziennik-tabs">
+    <button class="dziennik-tab ${tab==='journal'?'active':''}" onclick="setDziennikTab('journal')">☽ Dziennik</button>
+    <button class="dziennik-tab ${tab==='wheel'?'active':''}" onclick="setDziennikTab('wheel')">⊙ Koło życia</button>
+  </div>`;
+
+  if (tab === 'wheel') {
+    const wd = getWheelData();
+    if (wd.showResults) {
+      container.innerHTML = tabsHTML + buildWheelResultsHTML(wd.answers || {});
+      drawWheelChart();
+    } else {
+      container.innerHTML = tabsHTML + buildWheelQuestionnaireHTML(wd.answers || {});
+      drawWheelChart();
+    }
+    return;
+  }
 
   const stage = State.journal.activeStage;
   const prompts = JOURNAL_PROMPTS[stage] || [];
@@ -534,10 +991,9 @@ function renderJournal() {
   const stageColors = { nigredo: '#6B6BFF', albedo: '#E8E0D0', rubedo: '#8B2B2B' };
   const stageSymbols = { nigredo: '☽', albedo: '○', rubedo: '☀' };
 
-  const arcHTML = ['nigredo', 'albedo', 'rubedo'].map((s, i) => {
+  const arcHTML = ['nigredo', 'albedo', 'rubedo'].map(s => {
     const days = { nigredo: '3.07', albedo: '4.07', rubedo: '5.07' };
-    return `
-      <div class="arc-stage ${s} ${stage === s ? 'active' : ''}" onclick="setJournalStage('${s}')">
+    return `<div class="arc-stage ${s} ${stage===s?'active':''}" onclick="setJournalStage('${s}')">
         <div class="arc-stage-symbol" style="color:${stageColors[s]}">${stageSymbols[s]}</div>
         <div class="arc-stage-name">${s}</div>
         <div class="arc-stage-date">${days[s]}</div>
@@ -546,7 +1002,6 @@ function renderJournal() {
 
   const savedEntries = getJournalEntries();
   const currentEntry = savedEntries.find(e => e.stage === stage) || {};
-
   const pastEntriesHTML = savedEntries.filter(e => e.text && e.stage !== stage).map(e => `
     <div class="past-entry" onclick="toggleEntry(this)">
       <div class="past-entry-header">
@@ -556,35 +1011,35 @@ function renderJournal() {
       <div class="past-entry-preview">${e.text}</div>
     </div>`).join('');
 
-  container.innerHTML = `
+  container.innerHTML = tabsHTML + `
     <div class="alchemy-arc">${arcHTML}</div>
-
     <div class="journal-prompt">
       <div class="prompt-label">Pytanie dnia</div>
       <div class="prompt-text">${prompt}</div>
     </div>
-
     <div class="journal-entry-area">
-      <textarea class="journal-textarea"
-                id="journal-text-${stage}"
-                placeholder="Pisz tutaj — to tylko dla Ciebie. Nie ma właściwej ani złej odpowiedzi."
-                oninput="autoSaveJournal('${stage}', this.value)">${currentEntry.text || ''}</textarea>
+      <textarea class="journal-textarea" id="journal-text-${stage}"
+        placeholder="Pisz tutaj — to tylko dla Ciebie. Nie ma właściwej ani złej odpowiedzi."
+        oninput="autoSaveJournal('${stage}', this.value)">${currentEntry.text || ''}</textarea>
     </div>
-
     <div class="journal-actions">
       <button class="btn btn-gold" onclick="saveJournalEntry('${stage}')">Zapisz</button>
       <button class="btn btn-outline" onclick="emailJournalEntry('${stage}')">✉ Wyślij sobie</button>
     </div>
-
     ${savedEntries.filter(e => e.text && e.stage !== stage).length > 0 ? `
-    <div class="section-sep"></div>
-    <div class="past-entries-title">Poprzednie wpisy</div>
-    ${pastEntriesHTML}` : ''}
+      <div class="section-sep"></div>
+      <div class="past-entries-title">Poprzednie wpisy</div>
+      ${pastEntriesHTML}` : ''}
   `;
 }
 
 function setJournalStage(stage) {
   State.journal.activeStage = stage;
+  renderJournal();
+}
+
+function setDziennikTab(tab) {
+  State.journal.activeTab = tab;
   renderJournal();
 }
 
@@ -629,6 +1084,306 @@ function toggleEntry(el) {
 }
 
 // ============================================
+// KOŁO ŻYCIA — FUNCTIONS
+// ============================================
+
+const _wAnim = { cur: null, raf: null };
+
+function getWheelData() {
+  try { return JSON.parse(localStorage.getItem('cien_wheel_2026') || '{}'); }
+  catch { return {}; }
+}
+
+function saveWheelData(data) {
+  localStorage.setItem('cien_wheel_2026', JSON.stringify(data));
+}
+
+function setWheelAnswer(areaId, qi, val) {
+  const wd = getWheelData();
+  if (!wd.answers) wd.answers = {};
+  if (!wd.answers[areaId]) wd.answers[areaId] = [];
+  wd.answers[areaId][qi] = val;
+  saveWheelData(wd);
+
+  const area = WHEEL_AREAS.find(a => a.id === areaId);
+  [1,2,3,4,5].forEach(n => {
+    const btn = document.getElementById(`wbtn-${areaId}-${qi}-${n}`);
+    if (!btn) return;
+    if (n === val) {
+      btn.classList.add('active');
+      btn.style.background = area.color;
+      btn.style.borderColor = area.color;
+      btn.style.color = '#1a1a1a';
+    } else {
+      btn.classList.remove('active');
+      btn.style.background = '';
+      btn.style.borderColor = '';
+      btn.style.color = '';
+    }
+  });
+
+  const allAnswers = wd.answers;
+  const completed = WHEEL_AREAS.filter(a => {
+    const ans = allAnswers[a.id] || [];
+    return a.questions.every((_, i) => (ans[i] || 0) > 0);
+  }).length;
+
+  const fill = document.getElementById('wheel-prog-fill');
+  const text = document.getElementById('wheel-prog-text');
+  if (fill) fill.style.width = `${(completed / WHEEL_AREAS.length) * 100}%`;
+  if (text) text.textContent = `${completed} z ${WHEEL_AREAS.length} obszarów`;
+
+  const areaAnswers = allAnswers[areaId] || [];
+  const areaOk = area.questions.every((_, i) => (areaAnswers[i] || 0) > 0);
+  const areaBlock = document.getElementById(`warea-${areaId}`);
+  if (areaBlock) {
+    areaBlock.classList.toggle('done', areaOk);
+    const check = document.getElementById(`wcheck-${areaId}`);
+    if (check) check.style.display = areaOk ? '' : 'none';
+  }
+
+  const allDone = completed === WHEEL_AREAS.length;
+  const resultsBtn = document.getElementById('wheel-results-btn');
+  if (resultsBtn) resultsBtn.style.display = allDone ? '' : 'none';
+
+  drawWheelChart();
+}
+
+function showWheelResults() {
+  const wd = getWheelData();
+  wd.showResults = true;
+  saveWheelData(wd);
+  renderJournal();
+}
+
+function resetWheel() {
+  saveWheelData({});
+  renderJournal();
+}
+
+function saveWheelSolutionAnswer(areaId, qi, val) {
+  const wd = getWheelData();
+  if (!wd.solutions) wd.solutions = {};
+  if (!wd.solutions[areaId]) wd.solutions[areaId] = {};
+  wd.solutions[areaId][qi] = val;
+  saveWheelData(wd);
+}
+
+function getWheelSolution(areaId, qi) {
+  const wd = getWheelData();
+  return (wd.solutions && wd.solutions[areaId] && wd.solutions[areaId][qi]) || '';
+}
+
+function buildWheelQuestionnaireHTML(answers) {
+  const completed = WHEEL_AREAS.filter(a => {
+    const ans = answers[a.id] || [];
+    return a.questions.every((_, i) => (ans[i] || 0) > 0);
+  }).length;
+  const allDone = completed === WHEEL_AREAS.length;
+
+  const areasHTML = WHEEL_AREAS.map(area => {
+    const ans = answers[area.id] || [];
+    const areaOk = area.questions.every((_, i) => (ans[i] || 0) > 0);
+    const questionsHTML = area.questions.map((q, qi) => {
+      const val = ans[qi] || 0;
+      const btns = [1,2,3,4,5].map(n =>
+        `<button class="wheel-rating-btn${val===n?' active':''}"
+          id="wbtn-${area.id}-${qi}-${n}"
+          onclick="setWheelAnswer('${area.id}',${qi},${n})"
+          ${val===n?`style="background:${area.color};border-color:${area.color};color:#1a1a1a"`:''}>
+          ${n}</button>`).join('');
+      return `<div class="wheel-question">
+        <div class="wheel-q-text">${q}</div>
+        <div class="wheel-rating-row">${btns}</div>
+      </div>`;
+    }).join('');
+    return `<div class="wheel-area-block${areaOk?' done':''}" id="warea-${area.id}">
+      <div class="wheel-area-hdr" style="border-left:3px solid ${area.color}">
+        <span>${area.name}</span>
+        <span id="wcheck-${area.id}" class="wheel-check" style="color:${area.color};display:${areaOk?'':'none'}">✓</span>
+      </div>
+      ${questionsHTML}
+    </div>`;
+  }).join('');
+
+  return `<div class="wheel-intro-card">
+    <div class="wheel-title">Moje koło życia</div>
+    <p class="wheel-desc">Oceń każde stwierdzenie w skali 1–5 (1 = wcale, 5 = w pełni).</p>
+    <div class="wheel-chart-wrap" style="margin:0.75rem 0"><canvas id="wheel-chart"></canvas></div>
+    <div class="wheel-prog-bar"><div class="wheel-prog-fill" id="wheel-prog-fill" style="width:${(completed/WHEEL_AREAS.length)*100}%"></div></div>
+    <div class="wheel-prog-text" id="wheel-prog-text">${completed} z ${WHEEL_AREAS.length} obszarów</div>
+  </div>
+  ${areasHTML}
+  <button id="wheel-results-btn" class="btn btn-gold" style="width:100%;margin:1rem 0 1.5rem;display:${allDone?'':'none'}" onclick="showWheelResults()">Pokaż moje koło →</button>`;
+}
+
+function buildWheelResultsHTML(answers) {
+  const scores = WHEEL_AREAS.map(area => {
+    const ans = answers[area.id] || [];
+    const avg = ans.length ? ans.reduce((a,b)=>a+b,0)/ans.length : 0;
+    return { area, score: Math.round(avg * 2 * 10) / 10 };
+  });
+  const avg = (scores.reduce((s,x)=>s+x.score,0)/scores.length).toFixed(1);
+
+  const areasHTML = scores.map(({area, score}) => {
+    const solHTML = WHEEL_SOLUTION_Q.map((q, qi) =>
+      `<div class="wheel-sol-q">
+        <div class="wheel-sol-label">${q}</div>
+        <textarea class="wheel-sol-textarea" rows="2"
+          placeholder="Twoja odpowiedź..."
+          onchange="saveWheelSolutionAnswer('${area.id}',${qi},this.value)">${getWheelSolution(area.id, qi)}</textarea>
+      </div>`).join('');
+    return `<div class="wheel-result-area">
+      <div class="wheel-result-row">
+        <span class="wheel-result-name" style="color:${area.color}">${area.name}</span>
+        <span class="wheel-result-score" style="color:${area.color}">${score}/10</span>
+      </div>
+      <div class="wheel-result-bar">
+        <div class="wheel-result-fill" style="width:${score*10}%;background:${area.color}"></div>
+      </div>
+      <div class="wheel-sol-section">
+        <div class="wheel-sol-title">Pytania rozwiązaniowe</div>
+        ${solHTML}
+      </div>
+    </div>`;
+  }).join('');
+
+  return `<div class="wheel-results-header">
+    <div class="wheel-results-title">Twoje koło życia</div>
+    <div class="wheel-results-avg">Średnia: <strong>${avg}/10</strong></div>
+  </div>
+  <div class="wheel-chart-wrap"><canvas id="wheel-chart"></canvas></div>
+  ${areasHTML}
+  <button class="btn btn-outline" style="width:100%;margin:0.5rem 0" onclick="emailWheelResults()">✉ Wyślij sobie wyniki</button>
+  <button class="btn btn-outline" style="width:100%;margin-bottom:1.5rem" onclick="resetWheel()">Wypełnij ponownie</button>`;
+}
+
+function _getWheelScores(answers) {
+  return WHEEL_AREAS.map(area => {
+    const ans = (answers[area.id] || []).filter(v => v > 0);
+    const avg = ans.length ? ans.reduce((a,b)=>a+b,0)/ans.length : 0;
+    return avg * 2; // 0-10
+  });
+}
+
+function drawWheelChart() {
+  const canvas = document.getElementById('wheel-chart');
+  if (!canvas) return;
+  const wd = getWheelData();
+  const targets = _getWheelScores(wd.answers || {});
+
+  if (!_wAnim.cur || _wAnim.cur.length !== targets.length) {
+    _wAnim.cur = targets.map(() => 0);
+  }
+  if (_wAnim.raf) { cancelAnimationFrame(_wAnim.raf); _wAnim.raf = null; }
+
+  const dpr = window.devicePixelRatio || 1;
+  const wrap = canvas.parentElement;
+  const size = Math.min(wrap.offsetWidth || 260, 260);
+  canvas.width = size * dpr;
+  canvas.height = size * dpr;
+  canvas.style.width = size + 'px';
+  canvas.style.height = size + 'px';
+
+  function tick() {
+    let settled = true;
+    for (let i = 0; i < _wAnim.cur.length; i++) {
+      const diff = targets[i] - _wAnim.cur[i];
+      if (Math.abs(diff) > 0.05) { _wAnim.cur[i] += diff * 0.2; settled = false; }
+      else _wAnim.cur[i] = targets[i];
+    }
+    _drawWheelFrame(canvas, size, dpr, _wAnim.cur);
+    if (!settled) _wAnim.raf = requestAnimationFrame(tick);
+    else _wAnim.raf = null;
+  }
+  _wAnim.raf = requestAnimationFrame(tick);
+}
+
+function _drawWheelFrame(canvas, size, dpr, scores) {
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.scale(dpr, dpr);
+
+  const cx = size / 2, cy = size / 2;
+  const radius = size / 2 - 38;
+  const n = WHEEL_AREAS.length;
+  const sectorAngle = (2 * Math.PI) / n;
+  const startOff = -Math.PI / 2;
+
+  // Grid rings (hexagonal)
+  [0.2, 0.4, 0.6, 0.8, 1.0].forEach(f => {
+    ctx.beginPath();
+    for (let i = 0; i <= n; i++) {
+      const a = startOff + i * sectorAngle;
+      const x = cx + radius * f * Math.cos(a);
+      const y = cy + radius * f * Math.sin(a);
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    ctx.strokeStyle = f === 1.0 ? 'rgba(245,240,232,0.18)' : 'rgba(245,240,232,0.07)';
+    ctx.lineWidth = 1; ctx.stroke();
+  });
+
+  // Spoke dividers
+  for (let i = 0; i < n; i++) {
+    const a = startOff + i * sectorAngle;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(cx + radius * Math.cos(a), cy + radius * Math.sin(a));
+    ctx.strokeStyle = 'rgba(245,240,232,0.12)';
+    ctx.lineWidth = 1; ctx.stroke();
+  }
+
+  // FIFA sectors — each area is a colored pie wedge
+  for (let i = 0; i < n; i++) {
+    const startA = startOff + i * sectorAngle;
+    const endA = startA + sectorAngle;
+    const r = radius * Math.max(0, Math.min(scores[i], 10)) / 10;
+    if (r < 1) continue;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, r, startA, endA);
+    ctx.closePath();
+    ctx.fillStyle = WHEEL_AREAS[i].color + '50';
+    ctx.fill();
+    ctx.strokeStyle = WHEEL_AREAS[i].color;
+    ctx.lineWidth = 1.5; ctx.stroke();
+  }
+
+  // Labels at midpoint of each sector
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  for (let i = 0; i < n; i++) {
+    const midA = startOff + i * sectorAngle + sectorAngle / 2;
+    const lr = radius + 24;
+    ctx.fillStyle = WHEEL_AREAS[i].color;
+    ctx.font = `bold 10px 'Helvetica Neue', Arial, sans-serif`;
+    ctx.fillText(WHEEL_AREAS[i].shortName, cx + lr * Math.cos(midA), cy + lr * Math.sin(midA));
+
+    const score = scores[i];
+    if (score >= 1) {
+      const scoreR = radius * Math.min(score, 10) / 10 * 0.55;
+      ctx.fillStyle = 'rgba(255,255,255,0.9)';
+      ctx.font = `bold 9px 'Helvetica Neue', Arial, sans-serif`;
+      ctx.fillText(score.toFixed(1), cx + scoreR * Math.cos(midA), cy + scoreR * Math.sin(midA));
+    }
+  }
+}
+
+function emailWheelResults() {
+  const wd = getWheelData();
+  const answers = wd.answers || {};
+  const lines = WHEEL_AREAS.map(area => {
+    const ans = answers[area.id] || [];
+    const avg = ans.length ? ans.reduce((a,b)=>a+b,0)/ans.length : 0;
+    return `${area.name}: ${(avg*2).toFixed(1)}/10`;
+  });
+  const subject = encodeURIComponent('Moje koło życia — CIEŃ Festiwal 2026');
+  const body = encodeURIComponent(`Moje koło życia — CIEŃ Festiwal 2026\n\n${lines.join('\n')}`);
+  window.location.href = `mailto:?subject=${subject}&body=${body}`;
+}
+
+// ============================================
 // VIEW: SACRUM (HARM REDUCTION)
 // ============================================
 
@@ -639,12 +1394,8 @@ function renderSacrum() {
   container.innerHTML = `
     <div class="sacrum-hero">
       <div class="sacrum-logo-wrap">
-        <svg viewBox="0 0 240 60" class="sacrum-svg-logo" aria-label="SACRUM">
-          <text x="120" y="48" text-anchor="middle"
-                font-family="'Helvetica Neue', Arial, sans-serif"
-                font-size="52" font-weight="300" letter-spacing="14"
-                fill="#3BAFBA">SACRUM</text>
-        </svg>
+        <img src="icons/ksiezyc-slonce.jpg" class="sacrum-mandala-img" alt="SACRUM">
+        <img src="icons/sacrum-logo.png" class="sacrum-svg-logo" alt="SACRUM">
       </div>
       <div class="sacrum-hero-sub">Punkt Pomocy · Zawsze dostępny · Bez oceniania</div>
     </div>
@@ -739,6 +1490,42 @@ function renderSacrum() {
         <div class="sacrum-card-body">
           Sprawdź w harmonogramie sesje integracyjne — są zaplanowane każdego ranka.<br>
           SACRUM oferuje też sesje indywidualne — <a href="mailto:kontakt@cienfestiwal.com" style="color:var(--zloto)">skontaktuj się po festiwalu</a>.
+        </div>
+      </div>
+    </div>
+
+    <div class="section-sep"></div>
+
+    <div class="sacrum-section">
+      <div class="sacrum-section-title">Darmowe konsultacje terapeutyczne</div>
+      <p style="color:var(--szary);font-size:0.9rem;margin:0 0 1rem">
+        Przez cały festiwal możesz porozmawiać z terapeutą. Bezpłatnie. Bez zapisu. Bez oceniania.<br>
+        Zgłoś się do punktu SACRUM lub złap terapeutę w kuluarach.
+      </p>
+
+      <div class="sacrum-card" style="border-left:3px solid #3BAFBA">
+        <div class="sacrum-card-title" style="color:#3BAFBA">🌿 Team SACRUM</div>
+        <div class="sacrum-card-body">
+          Centrum Terapii Psychodelicznych — hipnoterapia, terapia integracyjna, psychotraumatologia.<br><br>
+          <strong>Piotr Matejuk</strong> — hipnoterapeuta, psychotraumatolog, doktorant PAN<br>
+          <span style="color:var(--szary);font-size:0.85rem">Hipnoza kliniczna · Terapia psychodeliczna · Praca z traumą</span><br><br>
+          <a href="https://sacrum.life" target="_blank" style="color:#3BAFBA">sacrum.life →</a>
+        </div>
+      </div>
+
+      <div class="sacrum-card" style="border-left:3px solid #C9A84C;margin-top:0.75rem">
+        <div class="sacrum-card-title" style="color:#C9A84C">🎓 Team PSH</div>
+        <div class="sacrum-card-body">
+          Profesjonalna Szkoła Hipnoterapii — kadra wykładowców i absolwentów.<br><br>
+          Konsultacje z zakresu: hipnoterapia, praca z nieświadomością, integracja doświadczeń.<br><br>
+          <a href="https://hipnoterapia.edu.pl" target="_blank" style="color:#C9A84C">hipnoterapia.edu.pl →</a>
+        </div>
+      </div>
+
+      <div class="sacrum-card" style="margin-top:0.75rem;background:rgba(201,168,76,0.06)">
+        <div class="sacrum-card-body" style="font-size:0.88rem;color:var(--szary)">
+          Konsultacje mają charakter wsparcia i orientacji — nie zastępują długoterminowej psychoterapii.
+          Jeśli coś trudnego wychodzi na powierzchni podczas festiwalu — jesteśmy tu po to.
         </div>
       </div>
     </div>

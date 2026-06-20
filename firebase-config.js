@@ -1,52 +1,31 @@
 // ============================================
-// FIREBASE CONFIG — CIEŃ Festiwal 2026
+// CIEŃ FESTIWAL 2026 — Auth Config
 // ============================================
-// 1. Idź do https://console.firebase.google.com/
-// 2. Utwórz projekt "cien-festiwal-2026"
-// 3. Project Settings → Your apps → Add app → Web
-// 4. Wklej swój config poniżej
-// 5. W Authentication → Sign-in method: włącz Google + Email/Password
-// 6. W Firestore → Create database (production mode)
-// 7. W Storage → Get started
-// ============================================
-// FIRESTORE SECURITY RULES (wklej w Console → Firestore → Rules):
-/*
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /profiles/{uid} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && request.auth.uid == uid;
-    }
-    match /swipes/{swipeId} {
-      allow read: if request.auth != null && resource.data.from == request.auth.uid;
-      allow create: if request.auth != null && request.resource.data.from == request.auth.uid;
-    }
-    match /matches/{matchId} {
-      allow read: if request.auth != null && request.auth.uid in resource.data.users;
-      allow create, update: if request.auth != null;
-    }
-    match /matches/{matchId}/msgs/{msgId} {
-      allow read, create: if request.auth != null &&
-        request.auth.uid in get(/databases/$(database)/documents/matches/$(matchId)).data.users;
-    }
-  }
-}
-*/
-// STORAGE RULES (wklej w Console → Storage → Rules):
-/*
-rules_version = '2';
-service firebase.storage {
-  match /b/{bucket}/o {
-    match /profiles/{uid}/photo {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && request.auth.uid == uid;
-    }
-  }
-}
-*/
+//
+// GOOGLE SIGN-IN ✓ — działa, używa client ID z projektu SACRUM
+//   ⚠ Jeśli pojawi się błąd "origin mismatch" po deploy na Netlify:
+//   → console.cloud.google.com → projekt scenic-cedar-268716
+//   → APIs & Services → Credentials → kliknij OAuth 2.0 Client ID
+//   → Authorized JavaScript Origins → dodaj: https://cien-festiwal-2026.netlify.app
+//
+// FACEBOOK SIGN-IN ✓ — App ID wklejony, kod gotowy
+//   ⚠ Aby działało dla uczestników (nie tylko admina):
+//   → developers.facebook.com/apps/937795249248975
+//   → Settings → Basic → App Domains → dodaj: cien-festiwal-2026.netlify.app
+//   → Facebook Login → Settings → Valid OAuth Redirect URIs → dodaj domenę
+//   → App Review → zmień status na LIVE
+//
+// EMAIL SIGN-IN ✓ — działa od razu (localStorage fallback, bez backendu)
+//
+// FIREBASE (opcjonalnie — tylko do Firestore sync slow dating):
+//   → firebase.google.com → projekt cien-festiwal-2026 → Authentication → Enable Email
+//   → Project Settings → Add web app → skopiuj config poniżej
 // ============================================
 
+// Facebook App ID (ten sam co Matejuk AI Publisher)
+window.CIEN_FB_APP_ID = '937795249248975';
+
+// Firebase config (opcjonalny — zostaw REPLACE_ME jeśli nie używasz Firestore):
 const FIREBASE_CONFIG = {
   apiKey:            "REPLACE_ME",
   authDomain:        "REPLACE_ME.firebaseapp.com",
