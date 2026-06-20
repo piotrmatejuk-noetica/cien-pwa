@@ -141,7 +141,7 @@ function authGoogle() {
     if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
       // One Tap nie pokazany — przycisk już jest widoczny
       if (!container || container.style.display === 'none') {
-        _authError('Google Sign-In niedostępny. Użyj email lub Facebook.');
+        _authError('Google Sign-In niedostępny. Użyj email.');
       }
     }
   });
