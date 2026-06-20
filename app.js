@@ -8,7 +8,7 @@
 // AUTH — Google Identity Services + Facebook JS SDK
 // ============================================
 
-const GOOGLE_CLIENT_ID = '276733228376-gp5g220ahi1bq8k615makqotij21s9v6.apps.googleusercontent.com';
+const GOOGLE_CLIENT_ID = '797161544700-dsh51dd918bdqto7fpfpamlvq409m38e.apps.googleusercontent.com';
 // FB_APP_ID pochodzi z firebase-config.js (załadowanego wcześniej w HTML)
 
 function _initFacebook() {
@@ -99,12 +99,11 @@ function _initGoogleAuth() {
   _googleInitialized = true;
   google.accounts.id.initialize({
     client_id: GOOGLE_CLIENT_ID,
-    // FedCM: Chrome 108+ pomija weryfikację JavaScript origins — działa na każdej domenie
-    use_fedcm_for_prompt: true,
     callback: _googleCredentialCallback,
     cancel_on_tap_outside: true,
+    ux_mode: 'popup',
   });
-  // Prerenderuj przycisk (ukryty) jako fallback gdy One Tap/FedCM nie działa
+  // Prerenderuj przycisk — działa na wszystkich przeglądarkach (origin zarejestrowany)
   const container = document.getElementById('google-btn-container');
   if (container) {
     try {
@@ -114,25 +113,13 @@ function _initGoogleAuth() {
         theme: 'outline',
         text: 'signin_with',
         size: 'large',
-        width: 300,
+        width: 280,
       });
     } catch (_) {}
   }
 }
 
-function _isFedCMSupported() {
-  // FedCM jest dostępne w Chrome 108+ (oraz Edge 108+) — nie w Safari/Firefox
-  const ua = navigator.userAgent;
-  const chromeM = ua.match(/(?:Chrome|Edg)\/(\d+)/);
-  return !!(chromeM && parseInt(chromeM[1]) >= 108);
-}
-
 function authGoogle() {
-  if (!_isFedCMSupported()) {
-    // Safari / Firefox — FedCM niedostępne, Google Sign-In nie zadziała
-    _authError('Google Sign-In działa tylko w Chrome. Użyj Facebook lub email.');
-    return;
-  }
   if (typeof google === 'undefined' || !google.accounts) {
     _authError('Google Sign-In się ładuje — spróbuj za chwilę');
     setTimeout(() => {
@@ -141,17 +128,19 @@ function authGoogle() {
     return;
   }
   _initGoogleAuth();
+  // Pokaż wyrenderowany przycisk Google (działa na wszystkich przeglądarkach — origin zarejestrowany)
+  const container = document.getElementById('google-btn-container');
+  const mainGoogleBtn = document.querySelector('.auth-social-btn[onclick*="authGoogle"]');
+  if (container) {
+    if (mainGoogleBtn) mainGoogleBtn.style.display = 'none';
+    container.style.display = 'flex';
+    container.style.justifyContent = 'center';
+    container.style.margin = '0 0 0.5rem 0';
+  }
   google.accounts.id.prompt((notification) => {
     if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-      // FedCM/One Tap nie wyświetlony — pokaż wyrenderowany przycisk Google
-      const container = document.getElementById('google-btn-container');
-      const mainBtn  = document.querySelector('.auth-btn-google');
-      if (container && mainBtn) {
-        mainBtn.style.display = 'none';
-        container.style.display = 'flex';
-        container.style.justifyContent = 'center';
-        container.style.margin = '0 0 0.75rem 0';
-      } else {
+      // One Tap nie pokazany — przycisk już jest widoczny
+      if (!container || container.style.display === 'none') {
         _authError('Google Sign-In niedostępny. Użyj email lub Facebook.');
       }
     }
