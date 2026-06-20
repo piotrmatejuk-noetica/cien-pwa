@@ -3418,4 +3418,116 @@ img { display: block; max-width: 100%; }
   cursor: pointer; transition: border-color 0.15s;
   font-family: inherit;
 }
+
+/* ============================================
+   ONBOARDING — instrukcja instalacji i zasady
+   ============================================ */
+
+.onb-card {
+  margin: 1rem 1rem 0.5rem;
+  background: linear-gradient(135deg, #1a1410 0%, #0f0d0a 100%);
+  border: 1px solid rgba(201,168,76,0.28);
+  border-radius: 14px;
+  overflow: hidden;
+}
+.onb-head {
+  padding: 1.1rem 1.1rem 0.75rem;
+  border-bottom: 1px solid rgba(201,168,76,0.12);
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 0.5rem;
+}
+.onb-title {
+  font-family: var(--font-display);
+  font-size: 0.72rem; letter-spacing: 0.18em;
+  color: var(--zloto); text-transform: uppercase;
+  margin-bottom: 0.2rem;
+}
+.onb-sub {
+  font-size: 0.78rem; color: rgba(245,240,232,0.45);
+  font-family: var(--font-body); font-style: italic;
+}
+.onb-dismiss {
+  background: none; border: none; cursor: pointer;
+  color: rgba(245,240,232,0.3); font-size: 1rem; padding: 0;
+  line-height: 1; flex-shrink: 0; padding-top: 2px;
+}
+.onb-dismiss:hover { color: rgba(245,240,232,0.6); }
+
+.onb-section {
+  padding: 0.9rem 1.1rem;
+  border-bottom: 1px solid rgba(245,240,232,0.06);
+}
+.onb-section-title {
+  font-family: var(--font-display);
+  font-size: 0.65rem; letter-spacing: 0.14em;
+  color: var(--zloto-3); text-transform: uppercase;
+  margin-bottom: 0.75rem;
+}
+.onb-platforms {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 0.65rem;
+}
+.onb-platform {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 10px;
+  padding: 0.7rem 0.75rem;
+}
+.onb-platform-name {
+  font-family: var(--font-display);
+  font-size: 0.65rem; letter-spacing: 0.1em;
+  color: var(--pergamin); margin-bottom: 0.45rem;
+  display: flex; align-items: center; gap: 0.35rem;
+}
+.onb-platform-name svg { flex-shrink: 0; }
+.onb-steps {
+  margin: 0; padding: 0; list-style: none;
+}
+.onb-steps li {
+  font-family: var(--font-body);
+  font-size: 0.78rem; line-height: 1.45;
+  color: rgba(245,240,232,0.55);
+  padding: 0.18rem 0;
+  display: flex; gap: 0.4rem;
+}
+.onb-steps li::before {
+  content: attr(data-n);
+  color: var(--zloto); font-weight: bold;
+  flex-shrink: 0; min-width: 0.9rem;
+}
+.onb-step-icon {
+  display: inline-flex; align-items: center; justify-content: center;
+  background: rgba(201,168,76,0.15);
+  border: 1px solid rgba(201,168,76,0.3);
+  border-radius: 5px;
+  padding: 1px 5px;
+  font-size: 0.7rem; color: var(--zloto);
+  font-family: system-ui, sans-serif;
+  vertical-align: middle; margin: 0 1px;
+}
+
+.onb-rules {
+  padding: 0.9rem 1.1rem 0;
+}
+.onb-rules-list {
+  margin: 0; padding: 0; list-style: none;
+}
+.onb-rules-list li {
+  font-family: var(--font-body);
+  font-size: 0.85rem; line-height: 1.55;
+  color: rgba(245,240,232,0.7);
+  padding: 0.3rem 0;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  display: flex; gap: 0.6rem; align-items: baseline;
+}
+.onb-rules-list li:last-child { border-bottom: none; }
+.onb-rules-list li span:first-child { flex-shrink: 0; }
+
+.onb-btn {
+  display: block; width: calc(100% - 2.2rem); margin: 0.75rem 1.1rem 1rem;
+  background: none; border: 1px solid rgba(201,168,76,0.35);
+  border-radius: 8px; padding: 0.6rem 1rem;
+  font-family: var(--font-display); font-size: 0.65rem; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--zloto);
+  cursor: pointer; transition: background 0.15s, border-color 0.15s;
+}
+.onb-btn:hover { background: rgba(201,168,76,0.08); border-color: rgba(201,168,76,0.6); }
 .auth-social-btn:hover { border-color: rgba(245,240,232,0.3); }

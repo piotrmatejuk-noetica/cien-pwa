@@ -455,6 +455,71 @@ function updateHeader() {
 // VIEW: SCHEDULE (TERAZ)
 // ============================================
 
+function dismissOnboarding() {
+  localStorage.setItem('cien_ob', '1');
+  const el = document.getElementById('onb-card');
+  if (el) el.remove();
+}
+
+function _onboardingCard() {
+  if (localStorage.getItem('cien_ob')) return '';
+
+  const shareIcon = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>`;
+  const dotIcon = `<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>`;
+
+  return `
+<div class="onb-card" id="onb-card">
+  <div class="onb-head">
+    <div>
+      <div class="onb-title">Instrukcja aplikacji</div>
+      <div class="onb-sub">Dodaj do pulpitu — działa offline podczas festiwalu</div>
+    </div>
+    <button class="onb-dismiss" onclick="dismissOnboarding()" aria-label="Zamknij">✕</button>
+  </div>
+
+  <div class="onb-section">
+    <div class="onb-section-title">Jak zainstalować</div>
+    <div class="onb-platforms">
+      <div class="onb-platform">
+        <div class="onb-platform-name">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+          iPhone / iPad
+        </div>
+        <ul class="onb-steps">
+          <li data-n="1">Otwórz w Safari</li>
+          <li data-n="2">Tap <span class="onb-step-icon">${shareIcon}</span> Udostępnij</li>
+          <li data-n="3">„Dodaj do ekranu<br>głównego"</li>
+        </ul>
+      </div>
+      <div class="onb-platform">
+        <div class="onb-platform-name">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.523 15.341L14 6H10L6.477 15.341C5.58 15.638 5 16.476 5 17.5 5 18.881 6.119 20 7.5 20s2.5-1.119 2.5-2.5c0-.277-.046-.544-.13-.793L12 16l2.13.707c-.084.249-.13.516-.13.793 0 1.381 1.119 2.5 2.5 2.5s2.5-1.119 2.5-2.5c0-1.024-.58-1.862-1.477-2.159zM12 4.5a.5.5 0 100-1 .5.5 0 000 1z"/></svg>
+          Android
+        </div>
+        <ul class="onb-steps">
+          <li data-n="1">Otwórz w Chrome</li>
+          <li data-n="2">Tap <span class="onb-step-icon">${dotIcon}</span> menu</li>
+          <li data-n="3">„Dodaj do ekranu<br>głównego"</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="onb-rules">
+    <div class="onb-section-title">Zasady Cienia</div>
+    <ul class="onb-rules-list">
+      <li><span>🤝</span><span>Szanuj granice innych. Pytaj zanim dotkniesz.</span></li>
+      <li><span>📸</span><span>Zdjęcia i nagrania tylko za wyraźną zgodą osoby.</span></li>
+      <li><span>🍄</span><span>Substancje — wyłącznie w strefie SACRUM z opieką sitterów.</span></li>
+      <li><span>🛡</span><span>Coś się dzieje? Czill &amp; Heal, punkt Help lub kamizelka organizatora.</span></li>
+      <li><span>🌙</span><span>Cisza w strefach nocnych i namiotowych po 4:00.</span></li>
+    </ul>
+  </div>
+
+  <button class="onb-btn" onclick="dismissOnboarding()">Rozumiem, gotowy na Cień →</button>
+</div>`;
+}
+
 function renderSchedule() {
   const container = document.getElementById('schedule-content');
   if (!container || !State.data) return;
@@ -527,6 +592,7 @@ function renderSchedule() {
     <div class="divider" style="margin:0 1rem 0.5rem"></div>` : '';
 
   container.innerHTML = `
+    ${_onboardingCard()}
     ${tuITerazHTML}
     <div class="day-tabs">${dayTabsHTML}</div>
     <div class="zone-filter">${zoneChipsHTML}</div>
