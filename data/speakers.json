@@ -1,7 +1,7 @@
 {
   "Magdalena Gajdzińska": {
     "photo": "",
-    "bio": "",
+    "bio": "Hipnoza, NVC, praca z wewnętrznym dzieckiem i językiem, który odsłania cień. Schodzenie pod powierzchnię — tam, gdzie pamięć nie jest narracją, tylko obrazem.",
     "lecture": "Otwarcie Strefy Podświadomości / Sztuka samowspółczucia — hipnotyczne spotkanie z wewnętrznym dzieckiem / W głąb i z powrotem: psychodeliczna podróż przez cień",
     "role": "Koordynator Strefy Podświadomości",
     "zone": "podswiadomosci"
@@ -50,9 +50,9 @@
   },
   "Rafał Robaszkiewicz": {
     "photo": "",
-    "bio": "",
+    "bio": "Psychodeliki, ISTDP, biochemia cienia, redukcja szkód. Twarda, uczciwa praca z tym, czego ciało i psyche jeszcze nie zintegrowały.",
     "lecture": "Uzależnienia bez tabu. Nowoczesne podejście do redukcji szkód.",
-    "role": "Koordynator Strefy Sacrum",
+    "role": "Koordynator Strefy SACRUM",
     "zone": "sacrum"
   },
   "Grzegorz Gabrył": {
@@ -71,7 +71,7 @@
   },
   "Adam Ligęza": {
     "photo": "",
-    "bio": "",
+    "bio": "Relacje bez masek, taniec cieni, slow dating, spotkanie przeciwieństw. Jung pisał, że coniunctio oppositorum jest sednem indywiduacji — tutaj je ćwiczymy.",
     "lecture": "Otwarcie Strefy Anima/Animus / Mapa Cienia w ujęciu ISTDP",
     "role": "Koordynator Strefy Anima/Animus",
     "zone": "anima"
@@ -176,9 +176,9 @@
   },
   "Michał Migała": {
     "photo": "",
-    "bio": "",
+    "bio": "Transy hipnotyczne, koncert mis i gongów w ciemności. Najgłębsza przestrzeń festiwalu — schodzisz do podziemi zamku, gdzie cień jest dosłowny.",
     "lecture": "«Wszystko, czego się bałem, już się wydarzyło» — o rozwoju, którego nikt sobie nie życzy",
-    "role": "Koordynator Lochów / Prelegent",
+    "role": "Koordynator Lochów",
     "zone": "lochy"
   },
   "Kamil Mross": {
@@ -211,16 +211,16 @@
   },
   "Everet Papa": {
     "photo": "",
-    "bio": "",
+    "bio": "Seanse filmowe, warsztaty kolażu, spotkania z twórcami. Kino jako jaskinia Platona odwrócona: oświetlamy cień, zamiast oglądać jego projekcje.",
     "lecture": "Spotkanie z twórcami filmów",
     "role": "Koordynator Kino Festiwalowego",
     "zone": "gnoza"
   },
   "Bruno Brejt": {
     "photo": "",
-    "bio": "",
+    "bio": "Reżyser filmów dokumentalnych o hipnozie i psychologii. Kino jako jaskinia Platona odwrócona: oświetlamy cień, zamiast oglądać jego projekcje.",
     "lecture": "Pokaz filmu «Dream On: Hipnoza» / Pokaz filmu «Kontrakt»",
-    "role": "Reżyser / Twórca filmów",
+    "role": "Reżyser filmowy",
     "zone": "gnoza"
   },
   "Leszek Angulski": {

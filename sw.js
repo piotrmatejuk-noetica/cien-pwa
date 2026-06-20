@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cien-2026-v3';
+const CACHE_NAME = 'cien-2026-v4';
 const ASSETS = [
   '/',
   '/index.html',
@@ -6,6 +6,7 @@ const ASSETS = [
   '/app.js',
   '/team.js',
   '/data/schedule.json',
+  '/data/speakers.json',
   '/data/pois.json',
   '/manifest.json',
   '/icons/icon.svg',
