@@ -56,15 +56,24 @@ function skipAuth() {
   hideAuthScreen();
 }
 
+// Email quick login — email jako identyfikator, hasło opcjonalne
+function authEmailQuick() {
+  const email = (document.getElementById('auth-email')?.value || '').trim().toLowerCase();
+  if (!email || !email.includes('@')) {
+    _authError('Wpisz poprawny adres email');
+    return;
+  }
+  const uid  = 'email_' + btoa(email).replace(/[^a-zA-Z0-9]/g, '').slice(0, 20);
+  const name = email.split('@')[0];
+  _setUser(uid, email, name);
+}
+
 function showEmailAuth() {
-  document.getElementById('auth-panel-main').style.display = 'none';
-  document.getElementById('auth-panel-email').style.display = '';
-  document.getElementById('auth-error').textContent = '';
+  // legacy — no-op since email is now inline
 }
 
 function hideEmailAuth() {
-  document.getElementById('auth-panel-email').style.display = 'none';
-  document.getElementById('auth-panel-main').style.display = '';
+  // legacy — no-op
 }
 
 function _authError(msg) {
@@ -111,7 +120,19 @@ function _initGoogleAuth() {
   }
 }
 
+function _isFedCMSupported() {
+  // FedCM jest dostępne w Chrome 108+ (oraz Edge 108+) — nie w Safari/Firefox
+  const ua = navigator.userAgent;
+  const chromeM = ua.match(/(?:Chrome|Edg)\/(\d+)/);
+  return !!(chromeM && parseInt(chromeM[1]) >= 108);
+}
+
 function authGoogle() {
+  if (!_isFedCMSupported()) {
+    // Safari / Firefox — FedCM niedostępne, Google Sign-In nie zadziała
+    _authError('Google Sign-In działa tylko w Chrome. Użyj Facebook lub email.');
+    return;
+  }
   if (typeof google === 'undefined' || !google.accounts) {
     _authError('Google Sign-In się ładuje — spróbuj za chwilę');
     setTimeout(() => {
@@ -131,7 +152,6 @@ function authGoogle() {
         container.style.justifyContent = 'center';
         container.style.margin = '0 0 0.75rem 0';
       } else {
-        // Ostateczny fallback — komunikat
         _authError('Google Sign-In niedostępny. Użyj email lub Facebook.');
       }
     }

@@ -3386,3 +3386,36 @@ img { display: block; max-width: 100%; }
   font-size: 0.75rem; color: var(--szary);
   text-align: center; margin-bottom: 0.75rem;
 }
+
+/* ============================================
+   AUTH — przeprojektowany (email primary)
+   ============================================ */
+
+.auth-email-primary {
+  display: flex; gap: 0.5rem; margin-bottom: 0.25rem;
+}
+.auth-email-primary .auth-input {
+  flex: 1; margin-bottom: 0;
+}
+.auth-btn-cta {
+  background: var(--zloto); color: var(--noir);
+  border: none; border-radius: 8px;
+  padding: 0.65rem 1.1rem; font-size: 0.92rem; font-weight: 700;
+  cursor: pointer; white-space: nowrap;
+  transition: background 0.15s;
+}
+.auth-btn-cta:active { background: var(--zloto-2); }
+
+.auth-social-row {
+  display: flex; gap: 0.65rem; justify-content: center;
+}
+.auth-social-btn {
+  flex: 1; max-width: 160px;
+  display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+  background: var(--noir-4); color: var(--pergamin);
+  border: 1px solid rgba(245,240,232,0.15); border-radius: 8px;
+  padding: 0.6rem 0.75rem; font-size: 0.85rem; font-weight: 500;
+  cursor: pointer; transition: border-color 0.15s;
+  font-family: inherit;
+}
+.auth-social-btn:hover { border-color: rgba(245,240,232,0.3); }
