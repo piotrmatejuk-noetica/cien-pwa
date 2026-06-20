@@ -16,6 +16,8 @@ let _messages   = [];
 let _notes      = [];
 let _meetings   = [];
 let _notifTimers = [];
+let _teamInitialized      = false;
+let _chatInputListenerAdded = false;
 
 // ============================================
 // PocketBase helpers
@@ -32,8 +34,6 @@ async function _pb(path, opts = {}) {
   }
   return res.json();
 }
-
-function _encode(v) { return encodeURIComponent(v); }
 
 // ============================================
 // Team management
@@ -62,11 +62,10 @@ async function teamCreate(name) {
 async function teamJoin(code) {
   const uid   = localStorage.getItem('cien_user_id') || 'guest';
   const uname = localStorage.getItem('cien_user_name') || 'Uczestnik';
-  const list  = await _pb(`/api/collections/cien_teams/records?filter=${_encode(`(code='${code.toUpperCase()}')`)}&perPage=1`);
+  const list  = await _pb(`/api/collections/cien_teams/records?filter=${encodeURIComponent(`(code='${code.toUpperCase()}')`)}&perPage=1`);
   if (!list.items || !list.items.length) throw new Error('Nie znaleziono drużyny o tym kodzie');
-  const team = list.items[0];
-  let members = team.members || [];
-  if (typeof members === 'string') members = JSON.parse(members || '[]');
+  const team    = list.items[0];
+  const members = _parseTeamMembers(team);
   if (!members.find(m => m.uid === uid)) {
     members.push({ uid, name: uname });
     await _pb(`/api/collections/cien_teams/records/${team.id}`, {
@@ -103,6 +102,8 @@ function teamLeave() {
   localStorage.removeItem('cien_team_code');
   localStorage.removeItem('cien_team_name');
   _team = null;
+  _teamInitialized       = false;
+  _chatInputListenerAdded = false;
   _stopPoll();
   _messages = []; _notes = []; _meetings = [];
   renderTeamView();
@@ -150,8 +151,8 @@ async function _pollMessages() {
   try {
     const newMsgs = await _fetchMessages();
     if (newMsgs.length) {
-      _messages = [..._messages, ...newMsgs];
-      if (newMsgs.length) _lastMsgTs = newMsgs[newMsgs.length - 1].created;
+      _messages.push(...newMsgs);
+      _lastMsgTs = newMsgs[newMsgs.length - 1].created;
       _appendMessages(newMsgs);
     }
   } catch (_e) {}
@@ -242,6 +243,8 @@ function _scheduleMeetingNotif(m) {
 }
 
 async function _scheduleAllNotifs() {
+  _notifTimers.forEach(t => clearTimeout(t));
+  _notifTimers = [];
   const granted = await _requestNotifPerm();
   if (!granted || !_team) return;
   try {
@@ -296,6 +299,7 @@ function _tmplNoTeam() {
 
 function _tmplTeam() {
   const members = _parseMembersList();
+  const at = t => _chatTab === t ? 'active' : '';
   return `
 <div class="team-header">
   <div class="team-header-name">${_esc(_team.name)}</div>
@@ -304,18 +308,22 @@ function _tmplTeam() {
 </div>
 
 <div class="team-tabs">
-  <button class="team-tab ${_chatTab==='chat'     ? 'active':''}" onclick="switchTeamTab('chat')">💬 Chat</button>
-  <button class="team-tab ${_chatTab==='notes'    ? 'active':''}" onclick="switchTeamTab('notes')">📝 Notatki</button>
-  <button class="team-tab ${_chatTab==='meetings' ? 'active':''}" onclick="switchTeamTab('meetings')">📅 Spotkania</button>
+  <button class="team-tab ${at('chat')}"     data-tab="chat"     onclick="switchTeamTab('chat')">💬 Chat</button>
+  <button class="team-tab ${at('notes')}"    data-tab="notes"    onclick="switchTeamTab('notes')">📝 Notatki</button>
+  <button class="team-tab ${at('meetings')}" data-tab="meetings" onclick="switchTeamTab('meetings')">📅 Spotkania</button>
 </div>
 
 <div id="team-tab-body"></div>`;
 }
 
-function _parseMembersList() {
-  let members = _team.members || [];
-  if (typeof members === 'string') { try { members = JSON.parse(members); } catch(_e) { members = []; } }
+function _parseTeamMembers(team) {
+  let members = (team || _team).members || [];
+  if (typeof members === 'string') { try { members = JSON.parse(members); } catch (_e) { members = []; } }
   return members;
+}
+
+function _parseMembersList() {
+  return _parseTeamMembers(_team);
 }
 
 // ============================================
@@ -326,9 +334,7 @@ function switchTeamTab(tab) {
   _chatTab = tab;
   if (tab !== 'chat') _stopPoll();
   document.querySelectorAll('.team-tab').forEach(t =>
-    t.classList.toggle('active', t.textContent.toLowerCase().includes(
-      tab === 'chat' ? 'chat' : tab === 'notes' ? 'notatk' : 'spotkania'
-    ))
+    t.classList.toggle('active', t.dataset.tab === tab)
   );
   _renderChatTab();
   if (tab === 'chat') _startPoll();
@@ -369,14 +375,9 @@ function _msgHtml(m) {
 }
 
 function _appendMessages(newMsgs) {
-  const el = document.getElementById('team-messages');
-  if (!el) return;
   const end = document.getElementById('team-msgs-end');
-  newMsgs.forEach(m => {
-    const div = document.createElement('div');
-    div.innerHTML = _msgHtml(m);
-    el.insertBefore(div.firstElementChild, end);
-  });
+  if (!end) return;
+  newMsgs.forEach(m => end.insertAdjacentHTML('beforebegin', _msgHtml(m)));
   _scrollChat();
 }
 
@@ -386,7 +387,8 @@ function _scrollChat() {
 }
 
 function _setupChatInput() {
-  // auto-grow textarea on input
+  if (_chatInputListenerAdded) return;
+  _chatInputListenerAdded = true;
   document.addEventListener('input', e => {
     if (e.target.id === 'team-msg-input') {
       e.target.style.height = 'auto';
@@ -613,6 +615,8 @@ function _showTeamError(msg) {
 // ============================================
 
 async function initTeam() {
+  if (_teamInitialized) return;
+  _teamInitialized = true;
   const team = await teamLoad();
   if (team) {
     await _scheduleAllNotifs();

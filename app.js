@@ -5,19 +5,10 @@
 'use strict';
 
 // ============================================
-// AUTH — Google Identity Services + Facebook JS SDK
+// AUTH — Google Identity Services
 // ============================================
 
 const GOOGLE_CLIENT_ID = '797161544700-dsh51dd918bdqto7fpfpamlvq409m38e.apps.googleusercontent.com';
-// FB_APP_ID pochodzi z firebase-config.js (załadowanego wcześniej w HTML)
-
-function _initFacebook() {
-  const appId = window.CIEN_FB_APP_ID;
-  if (!appId || appId === 'REPLACE_FB_APP_ID') return;
-  const doInit = () => FB.init({ appId, cookie: true, xfbml: false, version: 'v20.0' });
-  if (typeof FB !== 'undefined') { doInit(); return; }
-  window.fbAsyncInit = doInit;
-}
 
 let _fbApp = null;
 let _fbAuth = null;
@@ -58,22 +49,13 @@ function skipAuth() {
 
 // Email quick login — email jako identyfikator, hasło opcjonalne
 function authEmailQuick() {
-  const email = (document.getElementById('auth-email')?.value || '').trim().toLowerCase();
-  if (!email || !email.includes('@')) {
-    _authError('Wpisz poprawny adres email');
-    return;
-  }
-  const uid  = 'email_' + btoa(email).replace(/[^a-zA-Z0-9]/g, '').slice(0, 20);
-  const name = email.split('@')[0];
+  const input = document.getElementById('auth-email');
+  if (!input || !input.value.trim()) { _authError('Wpisz adres email'); return; }
+  if (!input.validity.valid) { _authError('Wpisz poprawny adres email'); return; }
+  const email = input.value.trim().toLowerCase();
+  const uid   = 'email_' + btoa(email).replace(/[^a-zA-Z0-9]/g, '').slice(0, 20);
+  const name  = email.split('@')[0];
   _setUser(uid, email, name);
-}
-
-function showEmailAuth() {
-  // legacy — no-op since email is now inline
-}
-
-function hideEmailAuth() {
-  // legacy — no-op
 }
 
 function _authError(msg) {
@@ -134,8 +116,6 @@ function authGoogle() {
   if (container) {
     if (mainGoogleBtn) mainGoogleBtn.style.display = 'none';
     container.style.display = 'flex';
-    container.style.justifyContent = 'center';
-    container.style.margin = '0 0 0.5rem 0';
   }
   google.accounts.id.prompt((notification) => {
     if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
@@ -421,8 +401,7 @@ async function init() {
   }
   // Init team feature after auth check
   if (loggedIn && typeof initTeam === 'function') initTeam();
-  // Inicjuj Google One Tap i Facebook SDK
-  _initFacebook();
+  // Inicjuj Google One Tap
   if (typeof google !== 'undefined' && google.accounts) {
     _initGoogleAuth();
   } else {
@@ -866,82 +845,164 @@ function renderMap() {
   if (!container || !State.data) return;
 
   const zones = State.data.festival?.zones || [];
-  const pois = State.data.pois || [];
-  const areasMap = State.data.zones_map?.areas || [];
+  const pois  = State.data.pois || [];
 
-  // Build SVG map
-  const svgAreas = areasMap.map(area => `
-    <g class="map-zone-area" onclick="highlightZone('${area.id}')">
-      <rect x="${area.x}%" y="${area.y}%" width="${area.w}%" height="${area.h}%"
-            rx="4" fill="${area.color}" fill-opacity="0.35"
-            stroke="${area.color}" stroke-width="1.5" stroke-opacity="0.7"/>
-      <text x="${area.x + area.w/2}%" y="${area.y + area.h/2 - 1}%"
-            text-anchor="middle" dominant-baseline="middle"
-            fill="#F5E6C8" font-size="9" font-family="serif" font-weight="bold">
-        ${area.label.replace('\n', ' ')}
-      </text>
-    </g>`).join('');
+  const poiTypes  = ['all', 'food', 'water', 'toilet', 'help', 'info'];
+  const poiLabels = { all:'Wszystko', food:'🍲 Jadło', water:'💧 Woda', toilet:'🚻 Toalety', help:'🛡 Pomoc', info:'ℹ Info' };
 
-  // POI type tabs
-  const poiTypes = ['all', 'food', 'water', 'toilet', 'help', 'info'];
-  const poiLabels = { all: 'Wszystko', food: '🍲 Jadło', water: '💧 Woda', toilet: '🚻 Toalety', help: '🛡 Pomoc', info: 'ℹ Info' };
-
-  const poiTabsHTML = poiTypes.map(t => `
-    <button class="poi-tab ${State.map.activePOIType === t ? 'active' : ''}" onclick="setPoiType('${t}')">
-      ${poiLabels[t]}
-    </button>`).join('');
+  const poiTabsHTML = poiTypes.map(t =>
+    `<button class="poi-tab ${State.map.activePOIType===t?'active':''}" onclick="setPoiType('${t}')">${poiLabels[t]}</button>`
+  ).join('');
 
   const filteredPois = State.map.activePOIType === 'all' ? pois : pois.filter(p => p.type === State.map.activePOIType);
 
-  const poiListHTML = filteredPois.map(poi => `
-    <div class="poi-card" onclick="openPoiModal('${poi.id}')">
+  const poiListHTML = filteredPois.map(poi =>
+    `<div class="poi-card" onclick="openPoiModal('${poi.id}')">
       <div class="poi-icon">${poi.icon}</div>
       <div>
         <div class="poi-name">${poi.label}</div>
         <div class="poi-location">📍 ${poi.location}</div>
         <div class="poi-hours">${poi.hours}</div>
       </div>
-    </div>`).join('');
+    </div>`
+  ).join('');
 
-  // Zone legend
-  const legendHTML = zones.map(z => `
-    <div class="legend-item" onclick="highlightZone('${z.id}')">
+  const legendHTML = zones.map(z =>
+    `<div class="legend-item" onclick="highlightZone('${z.id}')">
       <div class="legend-dot" style="background:${z.color}"></div>
       <span class="legend-name">${z.shortName}</span>
-    </div>`).join('');
+    </div>`
+  ).join('');
 
   container.innerHTML = `
     <div class="map-container">
-      <div class="map-svg-wrap">
-        <svg class="map-svg" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
-          <!-- Castle outline -->
-          <rect x="10" y="15" width="80" height="70" rx="4"
-                fill="none" stroke="rgba(201,168,76,0.2)" stroke-width="0.5"/>
-          <!-- Towers -->
-          <rect x="8" y="13" width="12" height="12" rx="2"
-                fill="rgba(201,168,76,0.05)" stroke="rgba(201,168,76,0.3)" stroke-width="0.5"/>
-          <rect x="80" y="13" width="12" height="12" rx="2"
-                fill="rgba(201,168,76,0.05)" stroke="rgba(201,168,76,0.3)" stroke-width="0.5"/>
-          <rect x="8" y="75" width="12" height="12" rx="2"
-                fill="rgba(201,168,76,0.05)" stroke="rgba(201,168,76,0.3)" stroke-width="0.5"/>
-          <rect x="80" y="75" width="12" height="12" rx="2"
-                fill="rgba(201,168,76,0.05)" stroke="rgba(201,168,76,0.3)" stroke-width="0.5"/>
-          <!-- Label -->
-          <text x="50" y="95" text-anchor="middle" fill="rgba(201,168,76,0.4)"
-                font-size="4" font-family="serif">Zamek Świny — schemat poglądowy</text>
-          ${svgAreas}
-        </svg>
-      </div>
-
+      <div class="map-svg-wrap">${_buildCastleSVG()}</div>
       <div class="map-legend">${legendHTML}</div>
     </div>
-
     <div class="divider" style="margin:0 1rem"></div>
-
     <div class="poi-section-title">PUNKTY NA MAPIE</div>
     <div class="poi-tabs">${poiTabsHTML}</div>
     <div class="poi-list">${poiListHTML}</div>
   `;
+}
+
+function _buildCastleSVG() {
+  const Z = {
+    umbra:  '#E05C1A',
+    sacrum: '#C9A84C',
+    anima:  '#4A6FA5',
+    podsw:  '#7B3F82',
+    gnoza:  '#2D7D46',
+    lochy:  '#8B4513',
+  };
+
+  function zLabel(x, y, text, color, size) {
+    size = size || 8;
+    const lines = text.split('\n');
+    const lh    = size * 1.4;
+    const maxW  = Math.max(...lines.map(l => l.length)) * size * 0.6 + 10;
+    const bgH   = lines.length * lh + 6;
+    const bg    = `<rect x="${+(x - maxW / 2).toFixed(1)}" y="${+(y - bgH / 2).toFixed(1)}" width="${+maxW.toFixed(1)}" height="${+bgH.toFixed(1)}" rx="2.5" fill="rgba(10,9,8,0.82)"/>`;
+    const txts  = lines.map((l, i) =>
+      `<text x="${x}" y="${+(y + (i - (lines.length - 1) / 2) * lh + size * 0.38).toFixed(1)}" text-anchor="middle" fill="${color}" font-size="${size}" font-family="'EB Garamond',serif" font-weight="bold" letter-spacing="0.04em">${l}</text>`
+    ).join('');
+    return bg + txts;
+  }
+
+  // Castle outer wall polygon (main complex + UMBRA left wing)
+  const walls = 'M 102,62 L 228,62 L 256,82 L 274,126 L 274,182 L 266,230 L 244,262 L 198,274 L 152,274 L 108,264 L 88,242 L 68,214 L 68,155 L 40,155 L 40,100 L 68,100 L 68,80 L 84,68 Z';
+
+  return `<svg class="castle-map-svg" viewBox="0 0 340 385" width="100%" xmlns="http://www.w3.org/2000/svg">
+<defs>
+  <pattern id="fp" x="0" y="0" width="9" height="9" patternUnits="userSpaceOnUse" patternTransform="rotate(38)">
+    <line x1="0" y1="0" x2="0" y2="9" stroke="#182313" stroke-width="1.4"/>
+  </pattern>
+  <clipPath id="tc"><ellipse cx="170" cy="192" rx="163" ry="178"/></clipPath>
+</defs>
+
+<!-- Background -->
+<rect width="340" height="385" fill="#0a0908"/>
+<!-- Forest terrain -->
+<ellipse cx="170" cy="192" rx="163" ry="178" fill="#0e1509"/>
+<rect width="340" height="385" fill="url(#fp)" clip-path="url(#tc)" opacity="0.8"/>
+<ellipse cx="170" cy="192" rx="163" ry="178" fill="#0e1509" fill-opacity="0.5"/>
+
+<!-- Castle grounds fill -->
+<path d="${walls}" fill="#14120f"/>
+<!-- Castle outer walls — double line for thickness effect -->
+<path d="${walls}" fill="none" stroke="rgba(201,168,76,0.12)" stroke-width="6"/>
+<path d="${walls}" fill="none" stroke="rgba(201,168,76,0.6)" stroke-width="1.8" stroke-linejoin="round"/>
+
+<!-- Dashed path to Czill pavilion -->
+<path d="M 256,82 C 265,76 275,72 292,70" stroke="rgba(201,168,76,0.38)" stroke-width="1.2" fill="none" stroke-dasharray="3,2.5"/>
+
+<!-- ZONE: Wieża — Anima/Animus (upper) -->
+<rect x="102" y="62" width="126" height="50" fill="rgba(74,111,165,0.16)" stroke="${Z.anima}" stroke-width="1.2" stroke-opacity="0.55"/>
+<!-- Wieża internal divisions -->
+<line x1="102" y1="112" x2="228" y2="112" stroke="rgba(201,168,76,0.18)" stroke-width="0.7"/>
+<line x1="165" y1="112" x2="165" y2="152" stroke="rgba(201,168,76,0.18)" stroke-width="0.7"/>
+<!-- ZONE: Wieża — Podświadomości (lower-left) -->
+<rect x="102" y="112" width="63" height="40" fill="rgba(123,63,130,0.16)" stroke="${Z.podsw}" stroke-width="1.2" stroke-opacity="0.55"/>
+<!-- ZONE: Wieża — VIP Sala Świnek (lower-right) -->
+<rect x="165" y="112" width="63" height="40" fill="rgba(201,168,76,0.06)" stroke="rgba(201,168,76,0.28)" stroke-width="0.7"/>
+
+<!-- ZONE: Scena UMBRA -->
+<rect x="40" y="100" width="28" height="55" fill="rgba(224,92,26,0.2)" stroke="${Z.umbra}" stroke-width="1.5" stroke-opacity="0.75"/>
+<line x1="40" y1="118" x2="68" y2="118" stroke="rgba(224,92,26,0.22)" stroke-width="0.5"/>
+<line x1="40" y1="136" x2="68" y2="136" stroke="rgba(224,92,26,0.22)" stroke-width="0.5"/>
+
+<!-- ZONE: Kino Gnoza -->
+<rect x="118" y="205" width="104" height="55" fill="rgba(45,125,70,0.2)" stroke="${Z.gnoza}" stroke-width="1.5" stroke-opacity="0.7"/>
+
+<!-- ZONE: SACRUM (right-side pavilion) -->
+<rect x="238" y="132" width="58" height="64" fill="rgba(201,168,76,0.12)" stroke="${Z.sacrum}" stroke-width="1.5" stroke-opacity="0.72"/>
+<polyline points="238,142 267,128 296,142" stroke="${Z.sacrum}" stroke-width="1" stroke-opacity="0.35" fill="none"/>
+
+<!-- ZONE: Lochy (circular) -->
+<circle cx="72" cy="238" r="40" fill="rgba(139,69,19,0.2)" stroke="${Z.lochy}" stroke-width="1.5" stroke-opacity="0.78"/>
+<circle cx="72" cy="238" r="22" fill="none" stroke="rgba(139,69,19,0.22)" stroke-width="0.6"/>
+<circle cx="72" cy="238" r="8" fill="rgba(139,69,19,0.18)" stroke="rgba(139,69,19,0.32)" stroke-width="0.6"/>
+<line x1="72" y1="216" x2="72" y2="200" stroke="rgba(139,69,19,0.22)" stroke-width="0.6"/>
+<line x1="72" y1="260" x2="72" y2="276" stroke="rgba(139,69,19,0.22)" stroke-width="0.6"/>
+<line x1="50" y1="238" x2="34" y2="238" stroke="rgba(139,69,19,0.22)" stroke-width="0.6"/>
+<line x1="94" y1="238" x2="110" y2="238" stroke="rgba(139,69,19,0.22)" stroke-width="0.6"/>
+<line x1="57" y1="223" x2="46" y2="212" stroke="rgba(139,69,19,0.18)" stroke-width="0.5"/>
+<line x1="87" y1="223" x2="98" y2="212" stroke="rgba(139,69,19,0.18)" stroke-width="0.5"/>
+<line x1="57" y1="253" x2="46" y2="264" stroke="rgba(139,69,19,0.18)" stroke-width="0.5"/>
+<line x1="87" y1="253" x2="98" y2="264" stroke="rgba(139,69,19,0.18)" stroke-width="0.5"/>
+
+<!-- Czill & Heal pavilion (separate) -->
+<circle cx="292" cy="70" r="28" fill="rgba(30,60,30,0.14)" stroke="rgba(201,168,76,0.48)" stroke-width="1.5"/>
+<circle cx="292" cy="70" r="15" fill="none" stroke="rgba(201,168,76,0.18)" stroke-width="0.6"/>
+<polyline points="278,72 292,58 306,72" stroke="rgba(201,168,76,0.28)" stroke-width="0.8" fill="none"/>
+
+<!-- Bar U Alchemików -->
+<rect x="108" y="262" width="78" height="22" rx="2" fill="rgba(201,168,76,0.07)" stroke="rgba(201,168,76,0.3)" stroke-width="0.8"/>
+<!-- Gastro-Phase -->
+<rect x="196" y="248" width="64" height="38" rx="2" fill="rgba(80,60,30,0.14)" stroke="rgba(201,168,76,0.28)" stroke-width="0.8"/>
+
+<!-- Courtyard -->
+<rect x="110" y="158" width="122" height="44" rx="2" fill="none" stroke="rgba(201,168,76,0.1)" stroke-width="0.5" stroke-dasharray="3,3"/>
+
+<!-- Labels -->
+${zLabel(165, 88, 'ANIMA / ANIMUS', Z.anima, 7.5)}
+${zLabel(133, 134, 'PODŚW.', Z.podsw, 7)}
+${zLabel(196, 130, 'VIP', 'rgba(201,168,76,0.65)', 6)}
+${zLabel(54, 130, 'SCENA\nUMBRA', Z.umbra, 6.5)}
+${zLabel(72, 238, 'LOCHY', Z.lochy, 9)}
+${zLabel(267, 164, 'SACRUM', Z.sacrum, 8.5)}
+${zLabel(170, 233, 'KINO GNOZA', Z.gnoza, 8)}
+${zLabel(148, 273, 'Bar U Alchemików', 'rgba(201,168,76,0.7)', 5.5)}
+${zLabel(228, 267, 'Gastro\nPhase', 'rgba(201,168,76,0.62)', 5.5)}
+${zLabel(292, 70, 'Czill\n& Heal', 'rgba(201,168,76,0.82)', 6)}
+
+<!-- Attribution -->
+<text x="170" y="372" text-anchor="middle" fill="rgba(201,168,76,0.22)" font-size="4.5" font-family="serif" letter-spacing="0.14em">ZAMEK ŚWINY · MAPA STREF</text>
+<!-- North indicator -->
+<line x1="22" y1="356" x2="22" y2="344" stroke="rgba(201,168,76,0.38)" stroke-width="1.2"/>
+<polygon points="22,340 19,349 22,346 25,349" fill="rgba(201,168,76,0.38)"/>
+<text x="22" y="362" text-anchor="middle" fill="rgba(201,168,76,0.38)" font-size="5.5" font-family="serif">N</text>
+</svg>`;
 }
 
 function setPoiType(type) {
