@@ -510,8 +510,7 @@ function _onboardingCard() {
     <ul class="onb-rules-list">
       <li><span>🤝</span><span>Szanuj granice innych. Pytaj zanim dotkniesz.</span></li>
       <li><span>📸</span><span>Zdjęcia i nagrania tylko za wyraźną zgodą osoby.</span></li>
-      <li><span>🍄</span><span>Substancje — wyłącznie w strefie SACRUM z opieką sitterów.</span></li>
-      <li><span>🛡</span><span>Coś się dzieje? Czill &amp; Heal, punkt Help lub kamizelka organizatora.</span></li>
+<li><span>🛡</span><span>Coś się dzieje? Czill &amp; Heal, punkt Help lub kamizelka organizatora.</span></li>
       <li><span>🌙</span><span>Cisza w strefach nocnych i namiotowych po 4:00.</span></li>
     </ul>
   </div>
