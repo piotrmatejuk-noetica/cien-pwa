@@ -37,6 +37,7 @@ function _setUser(uid, email, name) {
   if (email) localStorage.setItem('cien_user_email', email);
   if (name)  localStorage.setItem('cien_user_name', name);
   hideAuthScreen();
+  if (typeof initTeam === 'function') initTeam();
 }
 
 function showAuthScreen() {
@@ -409,6 +410,8 @@ async function init() {
   if (!loggedIn) {
     setTimeout(() => showAuthScreen(), 450);
   }
+  // Init team feature after auth check
+  if (loggedIn && typeof initTeam === 'function') initTeam();
   // Inicjuj Google One Tap i Facebook SDK
   _initFacebook();
   if (typeof google !== 'undefined' && google.accounts) {
@@ -446,7 +449,7 @@ async function loadData() {
 // ROUTER
 // ============================================
 
-const VIEWS = ['teraz', 'mapa', 'slowdating', 'dziennik', 'sacrum', 'info'];
+const VIEWS = ['teraz', 'mapa', 'slowdating', 'dziennik', 'sacrum', 'druzyna', 'info'];
 
 function setupRouter() {
   window.addEventListener('hashchange', () => {
@@ -489,6 +492,7 @@ function renderView(view) {
     case 'slowdating':  renderSlowDating(); break;
     case 'dziennik':    renderJournal(); break;
     case 'sacrum':      renderSacrum(); break;
+    case 'druzyna':     renderTeamView(); break;
     case 'info':        renderInfo(); break;
   }
 }

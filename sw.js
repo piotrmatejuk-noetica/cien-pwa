@@ -1,9 +1,10 @@
-const CACHE_NAME = 'cien-2026-v1';
+const CACHE_NAME = 'cien-2026-v2';
 const ASSETS = [
   '/',
   '/index.html',
   '/app.css',
   '/app.js',
+  '/team.js',
   '/data/schedule.json',
   '/data/pois.json',
   '/manifest.json',
@@ -24,6 +25,23 @@ self.addEventListener('activate', e => {
       Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
     ).then(() => self.clients.claim())
   );
+});
+
+self.addEventListener('push', e => {
+  const data = e.data ? e.data.json().catch(() => ({})) : {};
+  e.waitUntil(
+    self.registration.showNotification(data.title || 'CIEŃ Festiwal', {
+      body:  data.body  || '',
+      icon:  '/icons/cien-logo.png',
+      badge: '/icons/cien-logo.png',
+      data:  data,
+    })
+  );
+});
+
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  e.waitUntil(clients.openWindow('/'));
 });
 
 self.addEventListener('fetch', e => {

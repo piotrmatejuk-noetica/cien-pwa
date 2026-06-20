@@ -54,6 +54,13 @@
       </button>
     </div>
 
+    <div class="auth-partners">
+      <div class="auth-partners-label">Partnerzy</div>
+      <div class="auth-partners-logos">
+        <img src="icons/sacrum-logo.png" alt="SACRUM" class="auth-partner-logo">
+      </div>
+    </div>
+
     <div id="auth-panel-email" style="display:none">
       <div id="auth-email-mode-label" class="auth-mode-label">Zaloguj się</div>
       <input class="auth-input" id="auth-email" type="email" placeholder="Adres email" autocomplete="email">
@@ -64,7 +71,6 @@
       <button class="auth-back" onclick="hideEmailAuth()">← Wróć</button>
     </div>
 
-    <button class="auth-skip" onclick="skipAuth()">Pomiń — dane zostają tylko na tym urządzeniu</button>
   </div>
 </div>
 
@@ -135,6 +141,11 @@
       <div id="sacrum-content"></div>
     </div>
 
+    <!-- VIEW: DRUZYNA -->
+    <div class="view" id="view-druzyna">
+      <div id="team-content"></div>
+    </div>
+
     <!-- VIEW: INFO -->
     <div class="view" id="view-info">
       <div class="view-header">
@@ -167,6 +178,10 @@
     <button class="nav-btn" data-view="sacrum">
       <img src="icons/ksiezyc-slonce.jpg" class="nav-sacrum-img" alt="Sacrum">
       <span class="nav-label">Sacrum</span>
+    </button>
+    <button class="nav-btn" data-view="druzyna">
+      <span class="nav-icon">🛡</span>
+      <span class="nav-label">Drużyna</span>
     </button>
     <button class="nav-btn" data-view="info">
       <span class="nav-icon">ℹ</span>
@@ -233,5 +248,6 @@
 
 <script src="app.js"></script>
 <script src="dating.js"></script>
+<script src="team.js"></script>
 </body>
 </html>

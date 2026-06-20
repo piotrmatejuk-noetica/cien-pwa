@@ -3067,10 +3067,10 @@ img { display: block; max-width: 100%; }
   gap: 0;
 }
 .auth-logo {
-  width: 72px; height: 72px;
+  width: 160px; height: 160px;
   object-fit: contain;
-  margin-bottom: 1rem;
-  filter: drop-shadow(0 0 16px rgba(201,168,76,0.3));
+  margin-bottom: 1.25rem;
+  filter: drop-shadow(0 0 24px rgba(201,168,76,0.22));
 }
 .auth-title {
   font-family: var(--font-display);
@@ -3147,14 +3147,32 @@ img { display: block; max-width: 100%; }
   padding: 0.5rem 0; width: 100%; text-align: center;
   margin-top: 0.25rem;
 }
-.auth-skip {
-  background: none; border: none;
-  color: rgba(245,240,232,0.3);
-  font-size: 0.75rem; cursor: pointer;
-  padding: 1rem 0 0; text-align: center;
-  line-height: 1.4; max-width: 260px;
+.auth-partners {
+  width: 100%;
+  text-align: center;
+  border-top: 1px solid rgba(245,240,232,0.08);
+  padding-top: 1.25rem;
+  margin-top: 1.5rem;
 }
-.auth-skip:hover { color: rgba(245,240,232,0.5); }
+.auth-partners-label {
+  font-size: 0.6rem;
+  letter-spacing: 0.18em;
+  color: rgba(245,240,232,0.22);
+  text-transform: uppercase;
+  margin-bottom: 0.75rem;
+}
+.auth-partners-logos {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1.5rem;
+}
+.auth-partner-logo {
+  height: 26px;
+  opacity: 0.4;
+  filter: grayscale(100%) brightness(1.5);
+  object-fit: contain;
+}
 
 /* Speaker in modal */
 .modal-speaker { padding: 0.75rem 0 0.25rem; }
@@ -3169,3 +3187,202 @@ img { display: block; max-width: 100%; }
   line-height: 1.55; overflow: hidden;
 }
 .modal-speaker::after { content: ''; display: table; clear: both; }
+
+/* ============================================
+   MOJA DRUŻYNA — Team Feature
+   ============================================ */
+
+/* No-team state */
+.team-no-team {
+  padding: 2rem 1.5rem 4rem;
+  display: flex; flex-direction: column; align-items: center;
+  min-height: 80vh;
+}
+.team-logo-wrap { margin-bottom: 1.5rem; }
+.team-logo-sm   { width: 80px; height: 80px; object-fit: contain; opacity: 0.7; }
+.team-heading {
+  font-family: 'Cinzel', serif; font-size: 1.4rem; font-weight: 700;
+  color: var(--zloto); text-align: center; margin-bottom: 0.5rem;
+}
+.team-sub {
+  text-align: center; color: var(--szary);
+  font-size: 0.85rem; line-height: 1.55; margin-bottom: 2rem;
+}
+.team-card {
+  width: 100%; max-width: 360px;
+  background: var(--noir-3); border: 1px solid rgba(201,168,76,0.14);
+  border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem;
+}
+.team-card-title {
+  font-family: 'Cinzel', serif; font-size: 0.75rem; letter-spacing: 0.12em;
+  color: var(--zloto); text-transform: uppercase; margin-bottom: 0.75rem;
+}
+.team-input {
+  display: block; width: 100%; box-sizing: border-box;
+  background: var(--noir-4); border: 1px solid rgba(245,240,232,0.12);
+  border-radius: 8px; color: var(--pergamin);
+  padding: 0.65rem 0.85rem; font-size: 0.92rem;
+  margin-bottom: 0.65rem; outline: none; font-family: inherit;
+  transition: border-color 0.2s;
+}
+.team-input:focus { border-color: var(--zloto); }
+.team-select { appearance: none; cursor: pointer; }
+.team-btn {
+  display: block; width: 100%; box-sizing: border-box;
+  padding: 0.7rem 1rem; border-radius: 8px; border: none;
+  font-size: 0.9rem; font-weight: 600; cursor: pointer;
+  transition: opacity 0.15s; font-family: inherit;
+}
+.team-btn:active { opacity: 0.75; }
+.team-btn-primary {
+  background: var(--zloto); color: var(--noir);
+}
+.team-btn-secondary {
+  background: transparent; color: var(--zloto);
+  border: 1px solid var(--zloto);
+}
+.team-btn-ghost {
+  background: transparent; color: var(--szary);
+  border: 1px solid rgba(245,240,232,0.15);
+}
+.team-divider {
+  color: var(--szary); font-size: 0.8rem;
+  margin: 0.75rem 0; text-align: center;
+}
+.team-error {
+  color: #e05252; font-size: 0.8rem;
+  text-align: center; margin-top: 0.5rem; min-height: 1.2em;
+}
+
+/* Team header */
+.team-header {
+  display: flex; align-items: center; gap: 0.5rem;
+  padding: 0.85rem 1rem 0;
+  border-bottom: 1px solid rgba(245,240,232,0.08);
+  background: var(--noir-2);
+  position: sticky; top: 0; z-index: 2;
+}
+.team-header-name {
+  font-family: 'Cinzel', serif; font-size: 1rem;
+  color: var(--zloto); flex: 1; white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis;
+}
+.team-header-meta { font-size: 0.75rem; color: var(--szary); }
+.team-code { color: var(--zloto-3); letter-spacing: 0.15em; }
+.team-leave-btn {
+  background: none; border: 1px solid rgba(245,240,232,0.15);
+  color: var(--szary); font-size: 0.7rem; padding: 0.3rem 0.6rem;
+  border-radius: 6px; cursor: pointer; white-space: nowrap;
+}
+
+/* Tabs */
+.team-tabs {
+  display: flex; border-bottom: 1px solid rgba(245,240,232,0.08);
+  background: var(--noir-2);
+}
+.team-tab {
+  flex: 1; background: none; border: none; color: var(--szary);
+  font-size: 0.78rem; padding: 0.65rem 0; cursor: pointer;
+  border-bottom: 2px solid transparent; transition: all 0.15s;
+  font-family: inherit;
+}
+.team-tab.active { color: var(--zloto); border-bottom-color: var(--zloto); }
+
+/* Chat */
+.team-messages {
+  padding: 1rem; overflow-y: auto; flex: 1;
+  min-height: calc(100vh - 300px);
+  display: flex; flex-direction: column; gap: 0.5rem;
+}
+.team-msg { display: flex; flex-direction: column; max-width: 78%; }
+.team-msg.mine { align-self: flex-end; align-items: flex-end; }
+.team-msg-name { font-size: 0.7rem; color: var(--szary); margin-bottom: 0.2rem; }
+.team-msg-bubble {
+  background: var(--noir-3); border-radius: 12px 12px 12px 3px;
+  padding: 0.55rem 0.8rem; font-size: 0.88rem; line-height: 1.45;
+  color: var(--pergamin); word-break: break-word;
+}
+.team-msg.mine .team-msg-bubble {
+  background: var(--zloto-2); color: var(--noir);
+  border-radius: 12px 12px 3px 12px;
+}
+.team-msg-ts { font-size: 0.65rem; color: var(--szary-2); margin-top: 0.2rem; }
+
+.team-chat-input-wrap {
+  display: flex; gap: 0.5rem; padding: 0.6rem 0.75rem;
+  border-top: 1px solid rgba(245,240,232,0.08);
+  background: var(--noir-2);
+  position: sticky; bottom: 60px; z-index: 2;
+}
+.team-msg-input {
+  flex: 1; background: var(--noir-4);
+  border: 1px solid rgba(245,240,232,0.12); border-radius: 10px;
+  color: var(--pergamin); padding: 0.55rem 0.75rem;
+  font-size: 0.9rem; outline: none; resize: none;
+  font-family: inherit; min-height: 36px; max-height: 120px;
+  overflow-y: auto;
+}
+.team-msg-input:focus { border-color: var(--zloto); }
+.team-send-btn {
+  background: var(--zloto); border: none; border-radius: 10px;
+  color: var(--noir); width: 42px; font-size: 1rem;
+  cursor: pointer; flex-shrink: 0;
+}
+
+/* Notes */
+.team-section { padding: 1rem; }
+.team-loading  { color: var(--szary); font-size: 0.85rem; text-align: center; padding: 2rem; }
+.team-empty    { color: var(--szary); font-size: 0.85rem; text-align: center; padding: 2rem; }
+.team-note-form {
+  background: var(--noir-3); border-top: 1px solid rgba(201,168,76,0.15);
+  padding: 1rem; margin: 0 -1rem;
+}
+.team-note-card {
+  background: var(--noir-3); border: 1px solid rgba(245,240,232,0.08);
+  border-radius: 10px; padding: 0.9rem; margin-bottom: 0.75rem;
+}
+.team-note-title {
+  font-family: 'Cinzel', serif; font-size: 0.9rem;
+  color: var(--zloto); margin-bottom: 0.25rem;
+}
+.team-note-lecture {
+  font-size: 0.72rem; color: var(--szary); margin-bottom: 0.2rem;
+}
+.team-note-author { font-size: 0.7rem; color: var(--szary-2); margin-bottom: 0.5rem; }
+.team-note-content { font-size: 0.85rem; color: var(--pergamin); line-height: 1.5; }
+
+/* Meetings */
+.team-meeting-card {
+  background: var(--noir-3); border: 1px solid rgba(201,168,76,0.2);
+  border-radius: 10px; padding: 0.9rem; margin-bottom: 0.75rem;
+  display: grid; grid-template-columns: auto 1fr;
+  grid-template-rows: auto auto auto;
+  gap: 0.1rem 0.75rem;
+}
+.team-meeting-day {
+  grid-column: 1; grid-row: 1;
+  font-size: 0.7rem; color: var(--zloto); text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.team-meeting-time {
+  grid-column: 1; grid-row: 2;
+  font-family: 'Cinzel', serif; font-size: 1.3rem; color: var(--zloto-3);
+  line-height: 1;
+}
+.team-meeting-title {
+  grid-column: 2; grid-row: 1 / 3;
+  font-size: 0.92rem; color: var(--pergamin);
+  display: flex; align-items: center;
+}
+.team-meeting-zone {
+  grid-column: 1 / 3; grid-row: 3;
+  font-size: 0.75rem; color: var(--szary); margin-top: 0.4rem;
+}
+.team-meeting-by {
+  grid-column: 1 / 3; grid-row: 4;
+  font-size: 0.68rem; color: var(--szary-2);
+}
+.team-notif-hint {
+  font-size: 0.75rem; color: var(--szary);
+  text-align: center; margin-bottom: 0.75rem;
+}
