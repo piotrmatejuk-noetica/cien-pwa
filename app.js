@@ -127,65 +127,6 @@ function authGoogle() {
   });
 }
 
-// --- FACEBOOK (Facebook JS SDK) ---
-function authFacebook() {
-  if (typeof FB === 'undefined') {
-    _authError('Facebook SDK się ładuje, spróbuj ponownie za chwilę');
-    return;
-  }
-  if (!window.CIEN_FB_APP_ID || window.CIEN_FB_APP_ID === 'REPLACE_FB_APP_ID') {
-    _authError('Brak konfiguracji Facebook App ID — dodaj go w firebase-config.js');
-    return;
-  }
-  FB.login((response) => {
-    if (!response.authResponse) {
-      _authError('Logowanie Facebook anulowane');
-      return;
-    }
-    const uid = response.authResponse.userID;
-    FB.api('/me', { fields: 'email,name' }, (user) => {
-      _setUser('fb_' + uid, user.email, user.name);
-    });
-  }, { scope: 'public_profile,email' });
-}
-
-// --- EMAIL ---
-async function authEmail() {
-  const email = document.getElementById('auth-email').value.trim();
-  const pass  = document.getElementById('auth-pass').value;
-  if (!email) { _authError('Podaj adres email'); return; }
-
-  if (_fbAuth && pass) {
-    try {
-      await _fbAuth.signInWithEmailAndPassword(email, pass);
-      return;
-    } catch (e) {
-      _authError(e.message || 'Nieprawidłowy email lub hasło');
-      return;
-    }
-  }
-  const uid = 'email_' + btoa(email).replace(/[^a-z0-9]/gi, '').slice(0, 12);
-  _setUser(uid, email, null);
-}
-
-async function authEmailRegister() {
-  const email = document.getElementById('auth-email').value.trim();
-  const pass  = document.getElementById('auth-pass').value;
-  if (!email) { _authError('Podaj adres email'); return; }
-
-  if (_fbAuth && pass) {
-    if (pass.length < 6) { _authError('Hasło musi mieć min. 6 znaków'); return; }
-    try {
-      await _fbAuth.createUserWithEmailAndPassword(email, pass);
-      return;
-    } catch (e) {
-      _authError(e.message || 'Błąd rejestracji');
-      return;
-    }
-  }
-  const uid = 'email_' + btoa(email).replace(/[^a-z0-9]/gi, '').slice(0, 12);
-  _setUser(uid, email, null);
-}
 
 // ============================================
 // STATE
