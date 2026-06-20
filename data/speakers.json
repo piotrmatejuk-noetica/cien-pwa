@@ -8,44 +8,44 @@
   },
   "Artur Makieła": {
     "photo": "",
-    "bio": "",
+    "bio": "Hipnoterapeuta i performer — pracuje na granicy gabinetu i sceny. Demistyfikuje hipnozę przez doświadczenie: najpierw wyjaśnia mechanizm, potem go pokazuje. Jego show hipnozy scenicznej to edukacja przez zaskoczenie.",
     "lecture": "Otwarcie Strefy Podświadomości / Wszystko, co chcielibyście wiedzieć o hipnozie lecz baliście się zapytać / show hipnozy scenicznej",
-    "role": "Prelegent",
+    "role": "Hipnoterapeuta",
     "zone": "podswiadomosci"
   },
   "Anna Dąbrowska": {
     "photo": "",
-    "bio": "",
+    "bio": "Terapeutka pracująca z traumą i procesami żałoby. Kwestionuje kulturowy przymus wybaczania — i wskazuje, gdzie kończy się zdrowe uwalnianie, a zaczyna retraumatyzacja.",
     "lecture": "Przestań ćpać cierpienie — o roli i granicach wybaczania",
     "role": "Prelegent",
     "zone": "podswiadomosci"
   },
   "Michał Roczek": {
     "photo": "",
-    "bio": "",
+    "bio": "Terapeuta i researcher z zacięciem do weryfikacji modnych trendów w psychofizjologii. Bierze pod lupę to, co staje się viralem zanim zdąży przejść przez peer-review.",
     "lecture": "Nerw błędny — cud czy scam?",
     "role": "Prelegent",
     "zone": "podswiadomosci"
   },
   "Małgorzata Majewska": {
     "photo": "",
-    "bio": "",
+    "bio": "Językoznawczyni i psycholożka — bada to, co wycieka między słowami. Mechanizmy obronne mają swój gramatyczny ślad: w czasie, w stronie biernej, w tym czego nie mówimy wprost.",
     "lecture": "Słowo i Cień — jak język ujawnia to, czego nie chcemy widzieć",
-    "role": "Prelegent",
+    "role": "Dr, językoznawczyni",
     "zone": "podswiadomosci"
   },
   "Jakub Schimmelpfennig": {
     "photo": "",
-    "bio": "",
+    "bio": "Neuropsycholog kliniczny — łączy diagnostykę funkcji poznawczych z eksplorującym podejściem do odmiennych stanów. Na festiwalu oferuje bezpłatne konsultacje i prelekcję o tym, gdzie psychodeliki spotykają medycynę somatyczną.",
     "lecture": "Darmowe konsultacje neuropsychologiczne / Czy psychodeliki mogą leczyć ciało?",
-    "role": "Prelegent",
+    "role": "Neuropsycholog",
     "zone": "sacrum"
   },
   "Weronika Wąstakowska": {
     "photo": "",
-    "bio": "",
+    "bio": "Neuropsycholożka z zainteresowaniem biochemią — stawia hipotezę, że wiele stanów psychicznych zaczyna się od stanu ciała. Zanim wrócisz do terapii, sprawdź wyniki badań.",
     "lecture": "Darmowe konsultacje neuropsychologiczne / Mniej psychoanalizy, więcej biochemii — zanim znów «wybaczysz matce, zbadaj stan organizmu»",
-    "role": "Prelegent",
+    "role": "Neuropsycholożka",
     "zone": "sacrum"
   },
   "Rafał Robaszkiewicz": {
@@ -55,18 +55,18 @@
     "role": "Koordynator Strefy SACRUM",
     "zone": "sacrum"
   },
-  "Grzegorz Gabrył": {
+  "Grzegorz Gabryś": {
     "photo": "",
-    "bio": "",
+    "bio": "Pracuje z ludźmi, którzy zapieprzają za dużo i wiedzą o tym za mało. Siedem filarów zdrowia to nie lista wellness — to diagnoza tego, co kultura pracy bez granic robi z ciałem i psychiką.",
     "lecture": "7 filarów zdrowia w kulturze zapierdolu",
     "role": "Prelegent",
     "zone": "sacrum"
   },
   "Owidiusz Okłota": {
     "photo": "",
-    "bio": "",
+    "bio": "Psycholog i praktyk harm reduction — szkoli wolontariuszy psycare na festiwalach i imprezach. Wie, jak rozpoznać kryzys, jak go nie pogłębić i kiedy wezwać pomoc medyczną.",
     "lecture": "Jak ogarnąć ziomka? — podstawy Psycare'u",
-    "role": "Prelegent",
+    "role": "Harm reduction, psycholog",
     "zone": "sacrum"
   },
   "Adam Ligęza": {
@@ -78,100 +78,100 @@
   },
   "Łukasz Bieliński": {
     "photo": "",
-    "bio": "",
+    "bio": "Praktyk NVC i badacz tradycji afrykańskich — łączy Porozumienie Bez Przemocy z medycyną rdzenną opartą na sercu i wspólnocie. Pracuje z tym, co blokuje kontakt: strachem, wstydem i brakiem języka dla własnych potrzeb.",
     "lecture": "Afrykańska moc medycyny serca / Jak NVC może wspierać proces ewolucji świadomości",
-    "role": "Prelegent",
+    "role": "Trener NVC",
     "zone": "anima"
   },
   "Michał Nycz": {
     "photo": "",
-    "bio": "",
+    "bio": "Psycholog sportowy i trener mentalny — pracuje z odpornością psychiczną bez uciekania od trudnych emocji. Pancerny umysł to nie brak wrażliwości, to zdolność do funkcjonowania gdy jest źle.",
     "lecture": "Pancerny Umysł. Psychologia odporności i pewności siebie",
-    "role": "Prelegent",
+    "role": "Psycholog sportowy",
     "zone": "anima"
   },
   "Maciek Kołodziejczyk": {
     "photo": "",
-    "bio": "",
+    "bio": "Facilitator Slow Dating — tworzy przestrzeń spotkania bez algorytmów, pośpiechu i masek społecznych. EUPHIRE to jego projekt eksperymentów z relacją jako praktyką obecności.",
     "lecture": "SLOW DATING",
     "role": "Prelegent / EUPHIRE",
     "zone": "anima"
   },
   "Agnieszka Dąbrowska": {
     "photo": "",
-    "bio": "",
+    "bio": "Artystka i terapeutka pracująca przez twórczość. Kolaż intuicyjny jako metoda wchodzenia w cień — trzy etapy przez trzy dni: rozpad (Nigredo), oczyszczenie (Albedo), integracja (Rubedo).",
     "lecture": "Warsztaty Kolażu Intuicyjnego — Nigredo / Albedo / Rubedo",
-    "role": "Prelegent",
+    "role": "Artystka, terapeutka",
     "zone": "gnoza"
   },
   "Bartosz Babiak": {
     "photo": "",
-    "bio": "",
+    "bio": "Badacz dobrostanu na styku nauki i duchowości — przegląda literatury empiryczne z zakresu psychologii pozytywnej, mindfulness i neurobiologii medytacji. Pyta, gdzie kończą się dane, a zaczyna wiara.",
     "lecture": "Dobrostan na styku wiary i nauki. Czy duchowość da się badać empirycznie?",
-    "role": "Prelegent",
+    "role": "Researcher",
     "zone": "gnoza"
   },
   "Sandra Zabiełło": {
     "photo": "",
-    "bio": "",
+    "bio": "Analityczka jungowska — pracuje ze snami jako materiałem psychoanalitycznym. Sny to nie zakodowane przepowiednie; to surowy, nieedytowany język psyche, który warto umieć czytać.",
     "lecture": "Sny w analityce jungowskiej",
-    "role": "Prelegent",
+    "role": "Analityczka jungowska",
     "zone": "podswiadomosci"
   },
   "Agnieszka Kochanowska": {
     "photo": "",
-    "bio": "",
+    "bio": "Hipnoterapeutka i terapeutka somatyczna — integruje podejście hipnotyczne z pracą z ciałem. Wyparte emocje nie znikają; osiadają w ciele jako napięcia, wzorce oddychania, chroniczny ból.",
     "lecture": "Cień w ciele — hipnotyczno-somatyczna praca z wypartymi emocjami",
-    "role": "Prelegent",
+    "role": "Hipnoterapeutka, terapeutka somatyczna",
     "zone": "podswiadomosci"
   },
   "Mateusz Marzoch": {
     "photo": "",
-    "bio": "",
+    "bio": "Analityk danych i psycholog — eksploruje zaskakujące punkty styku między myśleniem systemowym w IT a psychologią głębi Junga. Algorytm jako metafora kompleksu; baza danych jako mapa nieświadomości.",
     "lecture": "Algorytmy Duszy — łącząc analitykę jungowską z IT",
-    "role": "Prelegent",
+    "role": "Analityk danych, psycholog",
     "zone": "podswiadomosci"
   },
   "Eryk Gontarz": {
     "photo": "",
-    "bio": "",
+    "bio": "Badacz i praktyk pracy z konopiami jako narzędziem introspekcji — łączy tradycję fitoterapeutyczną z nowoczesnym rozumieniem endokannabinoidów i ich roli w przetwarzaniu emocji.",
     "lecture": "Wydobycie prawdy z Cienia ze wsparciem technologii organicznej inteligencji Konopi",
     "role": "Prelegent",
     "zone": "sacrum"
   },
   "Paweł Motyka": {
     "photo": "",
-    "bio": "",
+    "bio": "Psycholog i badacz stanów świadomości — tworzy mapy odmiennych stanów oparte na literaturze empirycznej. Od transu hipnotycznego przez medytację po doświadczenia graniczne: co je łączy, co odróżnia.",
     "lecture": "Mapowanie odmiennych stanów świadomości",
-    "role": "Prelegent",
+    "role": "Dr, psycholog",
     "zone": "sacrum"
   },
   "Bartłomiej Garbiec": {
     "photo": "",
-    "bio": "",
+    "bio": "Coach i strateg komunikacji — bada psychologiczne blokady w mówieniu o własnej wartości. Najlepsi specjaliści często milczą, bo cień sabotuje widoczność: syndrom oszusta, lęk przed oceną, fałszywa skromność.",
     "lecture": "Cień marketingu samego siebie. Dlaczego ci, którzy mają najwięcej do zaoferowania, najgorzej o tym mówią",
-    "role": "Prelegent",
+    "role": "Coach, strateg komunikacji",
     "zone": "sacrum"
   },
   "Mariusz Narel": {
     "photo": "",
-    "bio": "",
+    "bio": "Leśny Viking — sportowiec, mówca motywacyjny i człowiek, który skonfrontował marzenia z rzeczywistością. Mówi o tym, co zostaje gdy wygrasz to, o czym marzyłeś — i dlaczego to nie jest koniec historii.",
     "lecture": "Od marzeń do zwycięstwa",
-    "role": "Prelegent / Leśny Viking",
+    "role": "Sportowiec, mówca / Leśny Viking",
     "zone": "anima"
   },
   "Michał Lebiedź": {
     "photo": "",
-    "bio": "",
+    "bio": "Psycholog i terapeuta pracujący z relacjami — eksploruje mechanizmy projekcji, przeniesienia i lustrzanego efektu partnerów. Trudne relacje nie są wypadkami losowymi; są precyzyjnymi wskazówkami do pracy z cieniem.",
     "lecture": "Jak relacje wydobywają z nas to, co najgorsze, i to, co najlepsze",
-    "role": "Prelegent",
+    "role": "Psycholog, terapeuta",
     "zone": "anima"
   },
   "Dawid Świetek": {
     "photo": "",
-    "bio": "",
+    "bio": "Trener i facilitator — pracuje z autentycznością w relacjach. Maska jest adaptacją, nie tożsamością; jego warsztat daje narzędzia do rozpoznania różnicy między jednym a drugim.",
     "lecture": "RELACJE BEZ MASEK — jak przestać udawać i zacząć być sobą",
-    "role": "Prelegent",
+    "role": "Trener, facilitator",
     "zone": "anima"
   },
   "Michał Migała": {
@@ -183,30 +183,30 @@
   },
   "Kamil Mross": {
     "photo": "",
-    "bio": "",
+    "bio": "Performer i terapeutia ruchu — pracuje przez ciało z tym, czego nie da się powiedzieć słowami. Taniec Cieni to metoda integracji odrzuconych części przez ekspresję ruchową: bez oceny, bez formy, tylko improwizacja.",
     "lecture": "Integracja Tańca Cieni / ucieleśniona podróż w Nieświadomość",
-    "role": "Prelegent",
+    "role": "Performer, terapeuta ruchu",
     "zone": "anima"
   },
   "Iwona Guzowska": {
     "photo": "",
-    "bio": "",
+    "bio": "Mistrzyni boksu i wrestlingu — jedna z najbardziej utytułowanych polskich sportsmenek. Na CIEŃ przyjeżdża nie mówić o medalu, tylko o tym co rozgrywa się w środku gdy wszystko jest na krawędzi.",
     "lecture": "Punkt Zero. Droga Wojownika do tego, co po drugiej stronie strachu",
-    "role": "Prelegent",
+    "role": "Mistrzyni boksu, mówca",
     "zone": "anima"
   },
   "Anna Kozłowska": {
     "photo": "",
-    "bio": "",
+    "bio": "Ceremonialistka herbaty — prowadzi sesje parzenia jako praktykę uważności i slow contact z ciałem. Subtelność białych herbat i głębia ciemnych to nie tylko smak; to kontakt z tym, co wyciągnięte z cienia.",
     "lecture": "Cień Herbaty — O subtelności białych i głębi ciemnych herbat Indii",
-    "role": "Prelegent",
+    "role": "Ceremonialistka herbaty",
     "zone": "gnoza"
   },
   "Oliwia Witkowska": {
     "photo": "",
-    "bio": "",
+    "bio": "Podróżniczka i autorka — pojechała kamperem solo, żeby skonfrontować się ze strachem. Nie z lękiem abstrakcyjnym, ale konkretnym: ciemność, samotność, brak kontroli. O Stachu i drodze przez lęk.",
     "lecture": "O strachu Stachu, czyli podróż kamperem przez lęk",
-    "role": "Prelegent",
+    "role": "Podróżniczka, autorka",
     "zone": "gnoza"
   },
   "Everet Papa": {
@@ -218,30 +218,30 @@
   },
   "Bruno Brejt": {
     "photo": "",
-    "bio": "Reżyser filmów dokumentalnych o hipnozie i psychologii. Kino jako jaskinia Platona odwrócona: oświetlamy cień, zamiast oglądać jego projekcje.",
+    "bio": "Reżyser filmowy — autor dokumentów na pograniczu psychologii i rzeczywistości. «Dream On: Hipnoza» i «Kontrakt» to filmy które pytają, gdzie kończy się sugestia, a zaczyna prawda.",
     "lecture": "Pokaz filmu «Dream On: Hipnoza» / Pokaz filmu «Kontrakt»",
     "role": "Reżyser filmowy",
     "zone": "gnoza"
   },
   "Leszek Angulski": {
     "photo": "",
-    "bio": "",
+    "bio": "Muzyk i sound healer — prowadzi sesje mis tybetańskich i gongów w absolutnej ciemności. Dźwięk bez obrazu — zmysły przetasowują się, a to co ukryte wychodzi na powierzchnię.",
     "lecture": "Koncert mis i gongów w ciemności",
-    "role": "Muzyk",
+    "role": "Muzyk, sound healer",
     "zone": "lochy"
   },
   "Henryk Grygian": {
     "photo": "",
-    "bio": "",
+    "bio": "Prowadzący warsztaty ruchowe — pracuje przez ciało z uziemieniem i obecnością. Poranny warsztat na Scenie Głównej to wejście w dzień przez ruch, nie przez myśl.",
     "lecture": "warsztat ruchowy",
-    "role": "Prowadzący",
+    "role": "Prowadzący warsztaty ruchowe",
     "zone": "umbra"
   },
   "Pete Fish Orchestra": {
     "photo": "",
-    "bio": "",
+    "bio": "Kolektyw muzyczny — otwarta sesja orkiestrowa gdzie granica między publicznością a wykonawcą znika. Zabierz swój instrument i graj razem.",
     "lecture": "Pete Fish Orchestra — zabierz swój instrument!",
-    "role": "Artysta muzyczny",
+    "role": "Kolektyw muzyczny",
     "zone": "umbra"
   },
   "Saska Session": {
@@ -337,9 +337,9 @@
   },
   "Justyna Danielska": {
     "photo": "",
-    "bio": "",
+    "bio": "Prowadząca warsztatów Gimnastyki Słowiańskiej — starożytne praktyki ruchowe dla współczesnych ciał. Poranne przebudzenie przez formę opartą na tradycji słowiańskiej.",
     "lecture": "Gimnastyka Słowiańska",
-    "role": "Prowadzący",
+    "role": "Prowadząca",
     "zone": "umbra"
   },
   "Sunshine Racket": {
@@ -358,44 +358,44 @@
   },
   "Paula Alex": {
     "photo": "",
-    "bio": "",
+    "bio": "Psycholożka i autorka — bada fenomen true crime jako okno do zbiorowego cienia. Fascynacja zbrodnią to nie perwersja: to spotkanie z tym, co w nas wyparte, nieakceptowane, ukryte za fasadą normalności.",
     "lecture": "Dlaczego fascynuje nas zbrodnia? True crime jako czarne lustro ludzkiej psychiki",
-    "role": "Prelegent",
+    "role": "Psycholożka, autorka",
     "zone": "podswiadomosci"
   },
   "Miła Orlińska": {
     "photo": "",
-    "bio": "",
+    "bio": "Neuroscientistka i popularyzatorka nauki — pokazuje na żywo jak zmienia się aktywność elektryczna mózgu podczas zmiany stanu świadomości. EEG w czasie rzeczywistym jako most między doświadczeniem a danymi.",
     "lecture": "Neuroshow: zobacz fale mózgowe podczas zmiany stanu świadomości",
-    "role": "Prelegent",
+    "role": "Neuroscientistka",
     "zone": "podswiadomosci"
   },
   "Tomasz Kwieciński": {
     "photo": "",
-    "bio": "",
+    "bio": "Badacz roślin nauczycielskich i tradycji szamańskich — eksploruje Salvię divinorum na styku etnobotaniki, fenomenologii i wstępnych danych klinicznych. Co z niej wynika dla psychoterapii.",
     "lecture": "Szałwia wieszcza — portal do innych wymiarów czy narzędzie terapeutyczne?",
-    "role": "Prelegent",
+    "role": "Badacz etnobotaniki",
     "zone": "sacrum"
   },
   "Aleksandra Langiewicz": {
     "photo": "",
-    "bio": "",
+    "bio": "Psycholożka — bada przecięcie cyklu kobiecego z wymaganiami świata zaprojektowanego bez niego. Stres, energia i granice w kontekście biologii, a nie moralności.",
     "lecture": "Cykliczność, stres i energia — psychologia kobiecego funkcjonowania w świecie ciągłego przekraczania granic",
-    "role": "Prelegent",
+    "role": "Psycholożka",
     "zone": "anima"
   },
   "Wini": {
     "photo": "",
-    "bio": "",
+    "bio": "Raper z 25-letnim stażem w muzyce i biznesie — mówi szczerze o kryzysach których nie ogarnął, błędach których nie cofnie i lekcjach które przyszły za późno albo w sam raz.",
     "lecture": "Jak nie zarządzać kryzysem? — opowieść o 25 latach w rapie i biznesie",
-    "role": "Prelegent",
+    "role": "Raper, przedsiębiorca",
     "zone": "anima"
   },
   "Piotr Matejuk": {
     "photo": "",
-    "bio": "",
+    "bio": "Hipnoterapeuta, psychotraumatolog, doktorant PAN. Założyciel SACRUM — Centrum Terapii Psychodelicznych. Absolwent Integrative Psychiatry Institute w Boulder, w trakcie certyfikacji MAPS. Autor «Hipnozy bez czarów».",
     "lecture": "Przyszłość polskich psychodelików",
-    "role": "Prelegent",
+    "role": "Hipnoterapeuta, założyciel SACRUM",
     "zone": "sacrum"
   }
 }
