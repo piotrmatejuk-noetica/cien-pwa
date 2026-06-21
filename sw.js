@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cien-2026-v4';
+const CACHE_NAME = 'cien-2026-v8';
 const ASSETS = [
   '/',
   '/index.html',
@@ -10,6 +10,7 @@ const ASSETS = [
   '/data/pois.json',
   '/manifest.json',
   '/icons/icon.svg',
+  '/maps/zamek.html',
   'https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=EB+Garamond:ital,wght@0,400;0,500;1,400&display=swap'
 ];
 

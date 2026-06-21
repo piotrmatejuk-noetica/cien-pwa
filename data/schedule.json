@@ -18,7 +18,7 @@
         "icon": "🌀",
         "subtitle": "Woda · Księżyc",
         "koordynator": "Magdalena Gajdzińska",
-        "description": "Hipnoza, NVC, praca z wewnętrznym dzieckiem i językiem, który odsłania cień. Schodzimy pod powierzchnię — tam, gdzie pamięć nie jest narracją, tylko obrazem.",
+        "description": "Hipnoza, praca z wewnętrznym dzieckiem i językiem, który odsłania cień. Schodzimy pod powierzchnię — tam, gdzie pamięć nie jest narracją, tylko obrazem.",
         "location": "Wieża Wschodnia"
       },
       {
@@ -116,7 +116,7 @@
 
 
     { "id":"e028", "zone":"podswiadomosci", "title":"Darmowe konsultacje terapeutyczne", "artist":"Team PSH + SACRUM", "description":"Bezpłatne konsultacje terapeutyczne.", "start":"2026-07-04T09:00:00", "end":"2026-07-04T10:00:00", "tags":["konsultacje","bezpłatne"] },
-    { "id":"e029", "zone":"podswiadomosci", "title":"Sztuka samowspółczucia — hipnotyczne spotkanie z wewnętrznym dzieckiem", "artist":"Magdalena Gajdzińska", "description":"Warsztat hipnotyczny pracy z wewnętrznym dzieckiem — łagodne wejście w to, co w nas najbardziej zranione.", "start":"2026-07-04T10:00:00", "end":"2026-07-04T11:30:00", "tags":["warsztat","hipnoza","wewnętrzne-dziecko","samowspółczucie"] },
+    { "id":"e029", "zone":"podswiadomosci", "title":"Cień, który chce być przytulony. Sztuka samowspółczucia i praca z wewnętrznym dzieckiem jako brama do integracji cienia.", "artist":"Magdalena Gajdzińska", "description":"Warsztat hipnotyczny pracy z wewnętrznym dzieckiem — łagodne wejście w to, co w nas najbardziej zranione.", "start":"2026-07-04T10:00:00", "end":"2026-07-04T11:30:00", "tags":["warsztat","hipnoza","wewnętrzne-dziecko","samowspółczucie"] },
     { "id":"e030", "zone":"podswiadomosci", "title":"Sny w analityce jungowskiej", "artist":"Sandra Zabiełło", "description":"Jak czytać sny jako materiał psychoanalityczny. Metody Junga w praktyce — własne sny jako punkt wyjścia.", "start":"2026-07-04T11:30:00", "end":"2026-07-04T13:00:00", "tags":["prelekcja","jungowski","sny","analityka"] },
     { "id":"e031", "zone":"podswiadomosci", "title":"Cień w ciele — hipnotyczno-somatyczna praca z wypartymi emocjami", "artist":"Agnieszka Kochanowska", "description":"Integracja podejść hipnotycznych i somatycznych w pracy z emocjami, które zostały zepchnięte do ciała.", "start":"2026-07-04T13:00:00", "end":"2026-07-04T14:30:00", "tags":["warsztat","hipnoza","somatyka","ciało"] },
     { "id":"e032", "zone":"podswiadomosci", "title":"Jak NVC może wspierać proces ewolucji świadomości", "artist":"Łukasz Bieliński", "description":"Porozumienie Bez Przemocy (NVC) jako narzędzie wglądu w siebie i transformacji relacji.", "start":"2026-07-04T14:30:00", "end":"2026-07-04T16:00:00", "tags":["prelekcja","NVC","komunikacja","świadomość"] },
@@ -147,7 +147,7 @@
     { "id":"e053", "zone":"lochy", "title":"Transy Hipnotyczne", "artist":"Team PSH", "description":"Prowadzone sesje transu grupowego. Edycja popołudniowa.", "start":"2026-07-04T14:30:00", "end":"2026-07-04T16:00:00", "tags":["trans","hipnoza","ciemność"] },
     { "id":"e054", "zone":"lochy", "title":"Koncert mis i gongów w ciemności", "artist":"Leszek Angulski", "description":"Dźwiękowy podróż w absolutnej ciemności podziemi zamku. Mis tybetańskie i gongi.", "start":"2026-07-04T17:30:00", "end":"2026-07-04T19:00:00", "tags":["muzyka","misy","gongi","ciemność","sound-healing"] },
 
-    { "id":"e055", "zone":"umbra", "title":"Henryk Grygian — warsztat", "artist":"Henryk Grygian", "description":"Poranny warsztat ruchowy na scenie głównej.", "start":"2026-07-04T10:00:00", "end":"2026-07-04T11:30:00", "tags":["warsztat","ruch","ciało"] },
+    { "id":"e055", "zone":"umbra", "title":"Hipno Joga", "artist":"Henryk Grygian", "description":"Poranny warsztat łączący hipnozę i jogę — wejście w dzień przez ruch i oddech.", "start":"2026-07-04T10:00:00", "end":"2026-07-04T11:30:00", "tags":["warsztat","ruch","ciało"] },
     { "id":"e056", "zone":"umbra", "title":"Kamil Mross — ucieleśniona podróż w Nieświadomość", "artist":"Kamil Mross", "description":"Poruszający pokaz łączący ruch, trans i pracę z nieświadomością na scenie głównej.", "start":"2026-07-04T13:00:00", "end":"2026-07-04T15:00:00", "tags":["performance","ruch","nieświadomość"] },
     { "id":"e057", "zone":"umbra", "title":"Artur Makieła — show hipnozy scenicznej", "artist":"Artur Makieła", "description":"Spektakularny pokaz hipnozy scenicznej — edukacja przez rozrywkę.", "start":"2026-07-04T15:00:00", "end":"2026-07-04T16:30:00", "tags":["pokaz","hipnoza","show"] },
     { "id":"e058", "zone":"umbra", "title":"Pete Fish Orchestra — zabierz swój instrument!", "artist":"Pete Fish Orchestra", "description":"Otwarta sesja orkiestry — zabierz swój instrument i graj razem z Pete Fish Orchestra.", "start":"2026-07-04T18:00:00", "end":"2026-07-04T19:30:00", "tags":["muzyka","live","improwizacja","participatory"] },

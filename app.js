@@ -300,11 +300,55 @@ const WHEEL_AREAS = [
   }
 ];
 
-const WHEEL_SOLUTION_Q = [
-  'Co w tym obszarze już działa dobrze — z czego możesz być dumny/a?',
-  'Gdybyś ocenił/a ten obszar o 2 punkty wyżej — co konkretnie byłoby inaczej w Twoim życiu?',
-  'Jaki jeden konkretny krok możesz podjąć w ciągu najbliższych 7 dni?'
-];
+// PSH-based per-area solution-focused forms (5 questions each)
+const WHEEL_AREA_FORMS = {
+  finanse: [
+    'Co już działa w Twojej pracy lub finansach — choćby jedna rzecz, z której możesz być dumny/a?',
+    'Wyobraź sobie za rok: ten obszar jest na 10/10. Co konkretnie widzisz, czujesz, robisz inaczej?',
+    'Jaka wartość jest dla Ciebie najważniejsza w pracy i zarządzaniu finansami?',
+    'Co najczęściej stoi między Tobą a tym, czego chcesz — nawyk, lęk, przekonanie?',
+    'Jeden konkretny krok możliwy w tym tygodniu, niezależnie od nastroju?'
+  ],
+  relacje: [
+    'Kiedy Twoje relacje były najlepsze — co wtedy było inaczej niż dziś?',
+    'Gdybyś był/a dokładnie taką osobą w relacjach, jaką chcesz być — co robiłbyś/aś inaczej?',
+    'Co jest dla Ciebie naprawdę ważne w głębokim kontakcie z ludźmi?',
+    'Jaki wzorzec lub nawyk najczęściej psuje lub utrudnia Twoje relacje?',
+    'Jeden konkretny gest wobec bliskiej osoby — możliwy już tego tygodnia?'
+  ],
+  zdrowie: [
+    'Za co Twoje ciało zasługuje na wdzięczność — co Ci daje, mimo że może nie jest idealne?',
+    'Przypomnij moment, gdy czułeś/aś się naprawdę dobrze fizycznie. Co wtedy robiłeś/aś?',
+    'Jaką osobą chcesz być w stosunku do swojego ciała i zdrowia?',
+    'Co najczęściej zatrzymuje Cię przed dbaniem o siebie — nawyk, czas, przekonanie?',
+    'Jaka najmniejsza codzienna czynność zdrowotna jest w zasięgu nawet w gorszy dzień?'
+  ],
+  pasje: [
+    'Kiedy ostatnio naprawdę wypoczywałeś/aś albo robiłeś/aś coś wyłącznie dla siebie?',
+    'Gdybyś miał/a 3 godziny więcej w tygodniu — na co konkretnie byś je przeznaczył/a?',
+    'Co sprawia, że czas wolny jest dla Ciebie naprawdę wartościowy?',
+    'Co najczęściej kradnie Ci czas lub energię, która mogłaby iść na pasje i odpoczynek?',
+    'Jedna czynność regenerująca lub przyjemna — możliwa do zaplanowania w tym tygodniu?'
+  ],
+  rozwoj: [
+    'Czego nauczyłeś/aś się o sobie w ostatnim roku — co Cię zaskoczyło lub przetrwało próbę czasu?',
+    'Za rok, gdy naprawdę się rozwinąłeś/aś — kto to pierwszy zauważy i co powie?',
+    'Co jest dla Ciebie najważniejsze w tym, kim się stajesz?',
+    'Co najczęściej zatrzymuje Cię przed rozwojem — lęk, brak czasu, wewnętrzny krytyk?',
+    'Jedno małe działanie spójne z kierunkiem, który chcesz obrać — możliwe w tym tygodniu?'
+  ],
+  sens: [
+    'Kiedy ostatnio czułeś/aś, że Twoje życie ma głęboki sens — co się wtedy działo?',
+    'Co chcesz, żeby zostało po Tobie — w ludziach, w pracy, w świecie?',
+    'Jakie wartości są dla Ciebie święte — których nie poświęcisz niczemu?',
+    'Co odpycha Cię od głębszego kontaktu ze sobą lub z tym, co uważasz za naprawdę ważne?',
+    'Jeden rytuał lub chwila uważności — możliwa już jutro rano lub wieczorem?'
+  ]
+};
+
+// Google Calendar token (in-memory only)
+let _gcalToken = null;
+let _gcalTokenClient = null;
 
 // ============================================
 // INIT
@@ -324,6 +368,24 @@ function detectFestivalDay() {
   return now < new Date('2026-07-03T06:00:00') ? '2026-07-03' : '2026-07-05';
 }
 
+function setupModalSwipeToClose() {
+  const overlay = document.querySelector('.modal-overlay');
+  const sheet   = document.querySelector('.modal-sheet');
+  if (!sheet || !overlay) return;
+
+  let startY = 0, startScroll = 0;
+
+  sheet.addEventListener('touchstart', e => {
+    startY      = e.touches[0].clientY;
+    startScroll = sheet.scrollTop;
+  }, { passive: true });
+
+  sheet.addEventListener('touchend', e => {
+    const deltaY = e.changedTouches[0].clientY - startY;
+    if (startScroll === 0 && deltaY > 80) closeEventModal();
+  }, { passive: true });
+}
+
 async function init() {
   initFirebase();
   State.schedule.activeDay = detectFestivalDay();
@@ -331,6 +393,7 @@ async function init() {
   setupRouter();
   setupClock();
   setupInstallPrompt();
+  setupModalSwipeToClose();
   registerSW();
   navigateTo(location.hash.slice(1) || 'teraz');
   const splash = document.getElementById('splash-screen');
@@ -881,15 +944,41 @@ function renderMap() {
   ).join('');
 
   container.innerHTML = `
-    <div class="map-container">
-      <div class="map-svg-wrap">${_buildCastleSVG()}</div>
-      <div class="map-legend">${legendHTML}</div>
+    <div class="map-3d-wrap">
+      <button class="map-3d-tile" onclick="openMap3D()">
+        <div class="map-3d-tile-icon">🏰</div>
+        <div class="map-3d-tile-label">Mapa 3D Zamku Świny</div>
+        <div class="map-3d-tile-sub">Dotknij, by otworzyć · działa offline</div>
+        <div class="map-3d-tile-arrow">→</div>
+      </button>
     </div>
     <div class="divider" style="margin:0 1rem"></div>
     <div class="poi-section-title">PUNKTY NA MAPIE</div>
     <div class="poi-tabs">${poiTabsHTML}</div>
     <div class="poi-list">${poiListHTML}</div>
   `;
+}
+
+function openMap3D() {
+  let overlay = document.getElementById('map3d-overlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'map3d-overlay';
+    overlay.innerHTML = `
+      <button class="map3d-close" onclick="closeMap3D()">✕</button>
+      <iframe src="maps/zamek.html" class="map3d-frame"
+              sandbox="allow-scripts allow-same-origin"
+              allow="fullscreen"></iframe>`;
+    document.body.appendChild(overlay);
+  }
+  overlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeMap3D() {
+  const overlay = document.getElementById('map3d-overlay');
+  if (overlay) overlay.classList.remove('open');
+  document.body.style.overflow = '';
 }
 
 function _buildCastleSVG() {
@@ -918,7 +1007,7 @@ function _buildCastleSVG() {
   // Castle outer wall polygon (main complex + UMBRA left wing)
   const walls = 'M 102,62 L 228,62 L 256,82 L 274,126 L 274,182 L 266,230 L 244,262 L 198,274 L 152,274 L 108,264 L 88,242 L 68,214 L 68,155 L 40,155 L 40,100 L 68,100 L 68,80 L 84,68 Z';
 
-  return `<svg class="castle-map-svg" viewBox="0 0 340 385" width="100%" xmlns="http://www.w3.org/2000/svg">
+  return `<svg class="castle-map-svg" viewBox="0 0 340 385" width="100%" overflow="hidden" xmlns="http://www.w3.org/2000/svg">
 <defs>
   <pattern id="fp" x="0" y="0" width="9" height="9" patternUnits="userSpaceOnUse" patternTransform="rotate(38)">
     <line x1="0" y1="0" x2="0" y2="9" stroke="#182313" stroke-width="1.4"/>
@@ -1241,17 +1330,174 @@ function resetWheel() {
   renderJournal();
 }
 
-function saveWheelSolutionAnswer(areaId, qi, val) {
+function saveWheelFormAnswer(areaId, qi, val) {
   const wd = getWheelData();
-  if (!wd.solutions) wd.solutions = {};
-  if (!wd.solutions[areaId]) wd.solutions[areaId] = {};
-  wd.solutions[areaId][qi] = val;
+  if (!wd.forms) wd.forms = {};
+  if (!wd.forms[areaId]) wd.forms[areaId] = {};
+  wd.forms[areaId][qi] = val;
   saveWheelData(wd);
 }
 
-function getWheelSolution(areaId, qi) {
+function generateAndShowPlan(areaId) {
   const wd = getWheelData();
-  return (wd.solutions && wd.solutions[areaId] && wd.solutions[areaId][qi]) || '';
+  const forms = (wd.forms && wd.forms[areaId]) || {};
+  const area = WHEEL_AREAS.find(a => a.id === areaId);
+
+  const a0 = (forms[0] || '').trim();
+  const a1 = (forms[1] || '').trim();
+  const a2 = (forms[2] || '').trim();
+  const a3 = (forms[3] || '').trim();
+  const a4 = (forms[4] || '').trim();
+
+  const teraz = [];
+  if (a4) teraz.push(a4);
+  if (a3) teraz.push(`Kiedy pojawi się: „${a3.slice(0, 60)}${a3.length > 60 ? '…' : ''}" — zatrzymaj się, oddech, wróć do wartości`);
+  if (!teraz.length) teraz.push(`Jeden konkretny krok w obszarze: ${area.name}`);
+
+  const regularnie = [];
+  if (a2) regularnie.push(`Działaj zgodnie z wartością: ${a2}`);
+  if (a4) regularnie.push(`Powtarzaj co tydzień: ${a4}`);
+  if (!regularnie.length) regularnie.push(`Cotygodniowy przegląd obszaru: ${area.name}`);
+
+  const rok = a1 || (a0
+    ? `Rozwijam to, co już działa: ${a0}`
+    : `Moje życie w obszarze „${area.name}" jest pełne i satysfakcjonujące`);
+
+  const plan = { teraz, regularnie, rok, tracking: {}, createdAt: new Date().toISOString().slice(0, 10) };
+
+  if (!wd.plans) wd.plans = {};
+  wd.plans[areaId] = plan;
+  saveWheelData(wd);
+
+  const planEl = document.getElementById(`plan-${areaId}`);
+  if (planEl) {
+    planEl.innerHTML = buildPlanHTML(area, plan);
+    planEl.style.display = '';
+    setTimeout(() => planEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50);
+  }
+}
+
+function buildPlanHTML(area, plan) {
+  const makeItems = (items, horizon) => items.map((item, i) => {
+    const key = `${horizon}-${i}`;
+    const done = plan.tracking && plan.tracking[key];
+    return `<div class="plan-item${done ? ' done' : ''}">
+      <input type="checkbox" class="plan-check" id="pc-${area.id}-${key}"
+        ${done ? 'checked' : ''}
+        onchange="togglePlanItem('${area.id}','${horizon}',${i})">
+      <label for="pc-${area.id}-${key}">${item}</label>
+    </div>`;
+  }).join('') || '<div class="plan-empty">—</div>';
+
+  return `<div class="wplan-header">Plan integracji — ${area.name}</div>
+  <div class="wplan-grid">
+    <div class="wplan-col">
+      <div class="wplan-col-title" style="color:${area.color}">⚡ TERAZ</div>
+      <div class="wplan-col-sub">Ten tydzień</div>
+      ${makeItems(plan.teraz || [], 'teraz')}
+    </div>
+    <div class="wplan-col">
+      <div class="wplan-col-title" style="color:${area.color}">🔄 REGULARNIE</div>
+      <div class="wplan-col-sub">Co tydzień</div>
+      ${makeItems(plan.regularnie || [], 'regularnie')}
+    </div>
+    <div class="wplan-col">
+      <div class="wplan-col-title" style="color:${area.color}">🌟 ZA ROK</div>
+      <div class="wplan-col-sub">Moja wizja za 12 miesięcy</div>
+      <div class="plan-vision">${plan.rok || '—'}</div>
+    </div>
+  </div>
+  <div class="wplan-date">Wygenerowano: ${plan.createdAt || ''}</div>
+  <button class="btn btn-outline" style="font-size:0.78rem;padding:0.45rem 0.75rem;margin-top:0.5rem;width:100%"
+    onclick="saveAreaPlanToGCal('${area.id}')">📅 Zapisz w Google Kalendarzu</button>`;
+}
+
+function togglePlanItem(areaId, horizon, idx) {
+  const wd = getWheelData();
+  if (!wd.plans || !wd.plans[areaId]) return;
+  const key = `${horizon}-${idx}`;
+  if (!wd.plans[areaId].tracking) wd.plans[areaId].tracking = {};
+  wd.plans[areaId].tracking[key] = !wd.plans[areaId].tracking[key];
+  saveWheelData(wd);
+  const item = document.getElementById(`pc-${areaId}-${key}`)?.closest('.plan-item');
+  if (item) item.classList.toggle('done', !!wd.plans[areaId].tracking[key]);
+}
+
+function connectGCal() {
+  if (typeof google === 'undefined' || !google.accounts) {
+    showToast('Google nie załadowany — sprawdź połączenie');
+    return;
+  }
+  if (!_gcalTokenClient) {
+    _gcalTokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: GOOGLE_CLIENT_ID,
+      scope: 'https://www.googleapis.com/auth/calendar.events',
+      callback: (resp) => {
+        if (resp.error) { showToast('Błąd autoryzacji Google'); return; }
+        _gcalToken = resp.access_token;
+        showToast('Google Kalendarz połączony ✓');
+        // refresh gcal banner
+        const banner = document.querySelector('.gcal-banner');
+        if (banner) {
+          banner.querySelector('.gcal-text span').textContent = 'Połączony — możesz zapisywać plany';
+          const btn = banner.querySelector('button');
+          if (btn) { btn.textContent = '✓ Połączono'; btn.className = 'btn btn-outline'; }
+        }
+      }
+    });
+  }
+  _gcalTokenClient.requestAccessToken();
+}
+
+async function saveAreaPlanToGCal(areaId) {
+  if (!_gcalToken) { connectGCal(); showToast('Najpierw połącz Google Kalendarz'); return; }
+  const wd = getWheelData();
+  const plan = wd.plans && wd.plans[areaId];
+  if (!plan) { showToast('Brak planu — najpierw go wygeneruj'); return; }
+  const area = WHEEL_AREAS.find(a => a.id === areaId);
+
+  const today = new Date();
+  const fmtDate = (d) => d.toISOString().slice(0, 10);
+  const nextWeek = new Date(today); nextWeek.setDate(today.getDate() + 7);
+  const nextYear = new Date(today); nextYear.setFullYear(today.getFullYear() + 1);
+
+  const events = [
+    ...(plan.teraz || []).map((item, i) => ({
+      summary: `CIEŃ · ${area.name} [TERAZ] ${item.slice(0, 60)}`,
+      start: { date: fmtDate(today) },
+      end: { date: fmtDate(nextWeek) },
+      description: `Plan integracji CIEŃ Festiwal 2026 — obszar: ${area.name}\n\nKrok TERAZ:\n${item}`,
+      colorId: '5'
+    })),
+    ...(plan.regularnie || []).map((item) => ({
+      summary: `CIEŃ · ${area.name} [REGULARNIE] ${item.slice(0, 50)}`,
+      recurrence: ['RRULE:FREQ=WEEKLY;COUNT=12'],
+      start: { date: fmtDate(nextWeek) },
+      end: { date: fmtDate(new Date(nextWeek.getTime() + 86400000)) },
+      description: `Plan integracji CIEŃ Festiwal 2026 — obszar: ${area.name}\n\nNawyk regularny:\n${item}`,
+      colorId: '2'
+    })),
+    {
+      summary: `CIEŃ · ${area.name} [ROK] ${plan.rok.slice(0, 60)}`,
+      start: { date: fmtDate(nextYear) },
+      end: { date: fmtDate(new Date(nextYear.getTime() + 86400000)) },
+      description: `Plan integracji CIEŃ Festiwal 2026 — obszar: ${area.name}\n\nMoja wizja za rok:\n${plan.rok}`,
+      colorId: '11'
+    }
+  ];
+
+  let saved = 0;
+  for (const ev of events) {
+    try {
+      const r = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${_gcalToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(ev)
+      });
+      if (r.ok) saved++;
+    } catch { /* ignore individual failures */ }
+  }
+  showToast(saved > 0 ? `Zapisano ${saved} wydarzeń w kalendarzu ✓` : 'Błąd zapisu — spróbuj ponownie');
 }
 
 function buildWheelQuestionnaireHTML(answers) {
@@ -1304,15 +1550,20 @@ function buildWheelResultsHTML(answers) {
     return { area, score: Math.round(avg * 2 * 10) / 10 };
   });
   const avg = (scores.reduce((s,x)=>s+x.score,0)/scores.length).toFixed(1);
+  const wd = getWheelData();
 
   const areasHTML = scores.map(({area, score}) => {
-    const solHTML = WHEEL_SOLUTION_Q.map((q, qi) =>
-      `<div class="wheel-sol-q">
-        <div class="wheel-sol-label">${q}</div>
-        <textarea class="wheel-sol-textarea" rows="2"
-          placeholder="Twoja odpowiedź..."
-          onchange="saveWheelSolutionAnswer('${area.id}',${qi},this.value)">${getWheelSolution(area.id, qi)}</textarea>
+    const forms = (wd.forms && wd.forms[area.id]) || {};
+    const plan = (wd.plans && wd.plans[area.id]) || null;
+    const formQs = WHEEL_AREA_FORMS[area.id] || [];
+
+    const formHTML = formQs.map((q, qi) => `
+      <div class="wf-question">
+        <div class="wf-q-label">${q}</div>
+        <textarea class="wf-textarea" rows="2" placeholder="Twoja odpowiedź..."
+          oninput="saveWheelFormAnswer('${area.id}',${qi},this.value)">${forms[qi] || ''}</textarea>
       </div>`).join('');
+
     return `<div class="wheel-result-area">
       <div class="wheel-result-row">
         <span class="wheel-result-name" style="color:${area.color}">${area.name}</span>
@@ -1321,18 +1572,35 @@ function buildWheelResultsHTML(answers) {
       <div class="wheel-result-bar">
         <div class="wheel-result-fill" style="width:${score*10}%;background:${area.color}"></div>
       </div>
-      <div class="wheel-sol-section">
-        <div class="wheel-sol-title">Pytania rozwiązaniowe</div>
-        ${solHTML}
+      <div class="wf-section">
+        <div class="wf-section-title" style="border-left-color:${area.color}">Pytania rozwiązaniowe</div>
+        ${formHTML}
+        <button class="btn btn-gold" style="width:100%;margin-top:0.75rem"
+          onclick="generateAndShowPlan('${area.id}')">Generuj plan integracji →</button>
+      </div>
+      <div id="plan-${area.id}" class="wplan-section"${plan ? '' : ' style="display:none"'}>
+        ${plan ? buildPlanHTML(area, plan) : ''}
       </div>
     </div>`;
   }).join('');
+
+  const gcalHTML = `<div class="gcal-banner">
+    <div class="gcal-text">
+      <strong>Google Kalendarz</strong>
+      <span>${_gcalToken ? 'Połączony — zapisuj plany jako wydarzenia' : 'Połącz i zapisuj plany do swojego kalendarza'}</span>
+    </div>
+    <button class="btn ${_gcalToken ? 'btn-outline' : 'btn-gold'}"
+      onclick="connectGCal()" style="flex-shrink:0;font-size:0.78rem;padding:0.45rem 0.75rem">
+      ${_gcalToken ? '✓ Połączono' : 'Połącz'}
+    </button>
+  </div>`;
 
   return `<div class="wheel-results-header">
     <div class="wheel-results-title">Twoje koło życia</div>
     <div class="wheel-results-avg">Średnia: <strong>${avg}/10</strong></div>
   </div>
   <div class="wheel-chart-wrap"><canvas id="wheel-chart"></canvas></div>
+  ${gcalHTML}
   ${areasHTML}
   <button class="btn btn-outline" style="width:100%;margin:0.5rem 0" onclick="emailWheelResults()">✉ Wyślij sobie wyniki</button>
   <button class="btn btn-outline" style="width:100%;margin-bottom:1.5rem" onclick="resetWheel()">Wypełnij ponownie</button>`;

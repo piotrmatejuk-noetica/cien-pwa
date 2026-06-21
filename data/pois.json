@@ -8,7 +8,7 @@
     { "id": "toilet2", "type": "toilet", "label": "Toalety — Toi Toi, zewnętrzne", "description": "4 kabiny przy wejściu.", "location": "Parking, przy bramie", "icon": "🚻", "hours": "24h" },
     { "id": "help1", "type": "help", "label": "Punkt Pomocy — Trip Sitter", "description": "Bezpieczna przestrzeń i dyżurujący trip sitter 24h. Wsparcie emocjonalne i integracyjne.", "location": "Cicha sala, I piętro skrzydło wschodnie", "icon": "🛡", "hours": "24h", "contact": "kontakt@cienfestiwal.com" },
     { "id": "help2", "type": "help", "label": "Medyk — pierwsza pomoc", "description": "Ratownik medyczny obecny przez cały festiwal.", "location": "Namioty przy wejściu", "icon": "⚕️", "hours": "24h" },
-    { "id": "info1", "type": "info", "label": "Infopunkt festiwalu", "description": "Pytania, zagubieni ludzie, harmonogram papierowy.", "location": "Brama główna, prawa strona", "icon": "ℹ", "hours": "10:00–02:00" }
+    { "id": "info1", "type": "info", "label": "Infopunkt festiwalu", "description": "Pytania, zagubieni ludzie, informacje o programie i strefach.", "location": "Brama główna, prawa strona", "icon": "ℹ", "hours": "10:00–02:00" }
   ],
   "zones_map": {
     "description": "Schemat zamku Świny — rozmieszczenie stref",
