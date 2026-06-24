@@ -598,10 +598,12 @@ async function _loadMeetingsUI() {
 // ============================================
 
 const LOC_DESTINATIONS = [
-  { id: 'camping', label: 'Camping pod lasem', emoji: '🏕️', lat: 50.9195, lng: 15.9682 },
-  { id: 'toalety', label: 'Toalety',           emoji: '🚽', lat: 50.9200, lng: 15.9698 },
-  { id: 'bar',     label: 'Bar',               emoji: '🍺', lat: 50.9205, lng: 15.9694 },
-  { id: 'sacrum',  label: 'Strefa SACRUM',     emoji: '✨', lat: 50.9210, lng: 15.9705 },
+  { id: 'camping', label: 'Camping pod lasem',    emoji: '🏕️', lat: 50.932831, lng: 16.116392 },
+  { id: 'sacrum',  label: 'Strefa SACRUM / PsyCare', emoji: '✨', lat: 50.938909, lng: 16.112543 },
+  { id: 'gastro',  label: 'GastroPhase (jedzenie)', emoji: '🍲', lat: 50.939216, lng: 16.112998 },
+  { id: 'bar',     label: 'Bar u Alchemików',     emoji: '☕', lat: 50.938717, lng: 16.112743 },
+  { id: 'umbra',   label: 'Scena UMBRA',          emoji: '⚡', lat: 50.938610, lng: 16.112732 },
+  { id: 'toalety', label: 'Toalety',              emoji: '🚻', lat: 50.938865, lng: 16.113559 },
 ];
 
 let _navTarget = null;  // { label, lat, lng, isTeammate?, uid? }
