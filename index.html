@@ -8,6 +8,15 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="CIEŃ">
   <meta name="description" content="Przewodnik uczestnika CIEŃ Festiwal 2026 — Zamek Świny, 3–5 lipca">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://app.cienfestiwal.com/">
+  <meta property="og:title" content="CIEŃ Festiwal 2026 — Aplikacja uczestnika">
+  <meta property="og:description" content="Plan wykładów, mapa zamku, baza wiedzy i Slow Dating. Zamek Świny, 3–5 lipca 2026.">
+  <meta property="og:image" content="https://app.cienfestiwal.com/icons/cien-logo.png">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="CIEŃ Festiwal 2026">
+  <meta name="twitter:description" content="Plan wykładów, mapa zamku, baza wiedzy i Slow Dating. Zamek Świny, 3–5 lipca 2026.">
+  <meta name="twitter:image" content="https://app.cienfestiwal.com/icons/cien-logo.png">
   <meta name="mobile-web-app-capable" content="yes">
 
   <title>CIEŃ Festiwal 2026</title>
@@ -36,6 +45,12 @@
     <div class="auth-title">CIEŃ FESTIWAL 2026</div>
     <div class="auth-sub">Zaloguj się, aby zapisywać swoje notatki i postępy między urządzeniami</div>
 
+    <!-- RETURNING USER: instant re-login, hidden by default -->
+    <div id="auth-returning" style="display:none">
+      <button class="auth-btn auth-btn-cta" onclick="authContinue()">Kontynuuj jako <span id="auth-return-name"></span> →</button>
+      <button class="auth-back" onclick="authSwitchUser()">Zaloguj się na inne konto</button>
+    </div>
+
     <div id="auth-panel-main">
       <!-- PRIMARY: Email (zawsze działa) -->
       <div class="auth-email-primary">
@@ -43,6 +58,14 @@
         <button class="auth-btn auth-btn-cta" onclick="authEmailQuick()">Wejdź →</button>
       </div>
       <div id="auth-error" class="auth-error"></div>
+
+      <!-- TERMS: widoczne tylko dla nowych użytkowników -->
+      <div class="auth-terms" id="auth-terms-block">
+        <label class="auth-terms-label">
+          <input type="checkbox" id="auth-terms-check">
+          <span>Akceptuję <a href="/regulamin" target="_blank" rel="noopener">Regulamin</a> i <a href="/polityka-prywatnosci" target="_blank" rel="noopener">Politykę Prywatności</a>. Operatorem danych osobowych jest Sacrum sp.&nbsp;z&nbsp;o.o., ul.&nbsp;Klaudyny&nbsp;34c, 01-684&nbsp;Warszawa.</span>
+        </label>
+      </div>
 
       <!-- SECONDARY: Logowanie społecznościowe -->
       <div class="auth-divider"><span>lub szybciej przez</span></div>
@@ -184,10 +207,6 @@
       <span class="nav-icon">🛡</span>
       <span class="nav-label">Drużyna</span>
     </button>
-    <button class="nav-btn" data-view="info">
-      <span class="nav-icon">ℹ</span>
-      <span class="nav-label">Info</span>
-    </button>
     <button class="nav-btn" data-view="wiedza">
       <span class="nav-icon">📚</span>
       <span class="nav-label">Wiedza</span>
@@ -247,11 +266,6 @@
 <!-- Google Identity Services -->
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 
-<!-- Firebase SDK (opcjonalny — dla Firestore sync w slow dating) -->
-<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
 <script src="firebase-config.js"></script>
 
 <script src="app.js"></script>

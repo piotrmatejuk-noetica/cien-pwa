@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Polityka Prywatności — CIEŃ Festiwal 2026</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=EB+Garamond:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html {
+      background: #0A0A0A;
+      color: #F5E6C8;
+      font-family: 'EB Garamond', Georgia, serif;
+      font-size: 17px;
+      line-height: 1.7;
+      -webkit-text-size-adjust: 100%;
+    }
+
+    body {
+      min-height: 100vh;
+      background: #0A0A0A;
+      padding: 0;
+    }
+
+    .page-header {
+      background: #0f0e0b;
+      border-bottom: 1px solid rgba(201,168,76,0.15);
+      padding: 1.25rem 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .back-btn {
+      color: #C9A84C;
+      text-decoration: none;
+      font-size: 0.88rem;
+      letter-spacing: 0.05em;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      opacity: 0.85;
+      transition: opacity 0.15s;
+      white-space: nowrap;
+    }
+    .back-btn:hover { opacity: 1; }
+
+    .page-header-title {
+      font-family: 'Cinzel', serif;
+      font-size: 0.78rem;
+      letter-spacing: 0.22em;
+      color: rgba(201,168,76,0.6);
+      text-transform: uppercase;
+    }
+
+    .container {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 2.5rem 1.5rem 4rem;
+    }
+
+    h1 {
+      font-family: 'Cinzel', serif;
+      font-size: 1.5rem;
+      letter-spacing: 0.12em;
+      color: #C9A84C;
+      margin-bottom: 0.4rem;
+      line-height: 1.25;
+    }
+
+    .doc-subtitle {
+      font-size: 0.82rem;
+      color: rgba(245,230,200,0.4);
+      letter-spacing: 0.08em;
+      margin-bottom: 2.5rem;
+      display: block;
+    }
+
+    h2 {
+      font-family: 'Cinzel', serif;
+      font-size: 1rem;
+      letter-spacing: 0.1em;
+      color: #C9A84C;
+      margin: 2.2rem 0 0.75rem;
+      padding-bottom: 0.4rem;
+      border-bottom: 1px solid rgba(201,168,76,0.18);
+      text-transform: uppercase;
+    }
+
+    h3 {
+      font-family: 'Cinzel', serif;
+      font-size: 0.88rem;
+      letter-spacing: 0.08em;
+      color: rgba(201,168,76,0.8);
+      margin: 1.4rem 0 0.5rem;
+    }
+
+    p {
+      margin-bottom: 0.85rem;
+      color: #E8D4A8;
+    }
+
+    ul, ol {
+      margin: 0.5rem 0 0.85rem 1.4rem;
+      color: #E8D4A8;
+    }
+
+    li {
+      margin-bottom: 0.35rem;
+    }
+
+    strong {
+      color: #F5E6C8;
+      font-weight: 500;
+    }
+
+    a {
+      color: #C9A84C;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+      text-decoration-color: rgba(201,168,76,0.4);
+    }
+    a:hover { text-decoration-color: #C9A84C; }
+
+    .highlight-box {
+      background: rgba(201,168,76,0.07);
+      border: 1px solid rgba(201,168,76,0.2);
+      border-radius: 8px;
+      padding: 1.1rem 1.3rem;
+      margin: 1.2rem 0;
+    }
+
+    .highlight-box p:last-child { margin-bottom: 0; }
+
+    .contact-block {
+      background: rgba(245,230,200,0.04);
+      border-left: 3px solid rgba(201,168,76,0.5);
+      padding: 1rem 1.25rem;
+      border-radius: 0 6px 6px 0;
+      margin: 1rem 0;
+    }
+
+    .contact-block p { margin-bottom: 0.2rem; }
+    .contact-block p:last-child { margin-bottom: 0; }
+
+    .version-note {
+      margin-top: 3rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid rgba(245,230,200,0.08);
+      font-size: 0.8rem;
+      color: rgba(245,230,200,0.3);
+      text-align: center;
+    }
+
+    .rights-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0.5rem;
+      margin: 0.75rem 0;
+    }
+
+    .right-item {
+      display: flex;
+      gap: 0.75rem;
+      align-items: flex-start;
+    }
+
+    .right-icon {
+      color: #C9A84C;
+      font-size: 0.9rem;
+      margin-top: 0.15rem;
+      flex-shrink: 0;
+    }
+
+    .right-text strong {
+      display: block;
+      font-size: 0.92rem;
+    }
+
+    .right-text span {
+      font-size: 0.85rem;
+      color: rgba(245,230,200,0.6);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1rem 0;
+      font-size: 0.88rem;
+    }
+
+    th {
+      font-family: 'Cinzel', serif;
+      font-size: 0.72rem;
+      letter-spacing: 0.08em;
+      color: rgba(201,168,76,0.7);
+      text-transform: uppercase;
+      padding: 0.6rem 0.75rem;
+      border-bottom: 1px solid rgba(201,168,76,0.2);
+      text-align: left;
+    }
+
+    td {
+      padding: 0.6rem 0.75rem;
+      border-bottom: 1px solid rgba(245,230,200,0.06);
+      color: #E8D4A8;
+      vertical-align: top;
+    }
+
+    tr:last-child td { border-bottom: none; }
+  </style>
+</head>
+<body>
+
+  <div class="page-header">
+    <a href="/" class="back-btn">← Powrót do aplikacji</a>
+    <span class="page-header-title">CIEŃ Festiwal 2026</span>
+  </div>
+
+  <div class="container">
+
+    <h1>Polityka Prywatności</h1>
+    <span class="doc-subtitle">Wersja 1.0 — obowiązuje od 1 lipca 2026 r.</span>
+
+    <div class="highlight-box">
+      <p>Niniejsza Polityka Prywatności określa zasady przetwarzania danych osobowych przez Sacrum sp. z o.o. w związku z korzystaniem z aplikacji mobilnej CIEŃ Festiwal 2026 (dalej: „Aplikacja"). Przeczytaj ją uważnie przed skorzystaniem z Aplikacji.</p>
+    </div>
+
+    <!-- 1. ADMINISTRATOR -->
+    <h2>1. Administrator danych osobowych</h2>
+
+    <p>Administratorem Twoich danych osobowych jest:</p>
+
+    <div class="contact-block">
+      <p><strong>Sacrum sp. z o.o.</strong></p>
+      <p>ul. Klaudyny 34c, 01-684 Warszawa</p>
+      <p>E-mail: <a href="mailto:contact@sacrum.life">contact@sacrum.life</a></p>
+    </div>
+
+    <p>W sprawach związanych z ochroną danych osobowych możesz skontaktować się z Administratorem pod adresem e-mail: <a href="mailto:contact@sacrum.life">contact@sacrum.life</a> lub pisemnie na adres siedziby spółki.</p>
+
+    <!-- 2. ZBIERANE DANE -->
+    <h2>2. Jakie dane zbieramy</h2>
+
+    <p>W zależności od sposobu korzystania z Aplikacji możemy przetwarzać następujące kategorie danych:</p>
+
+    <h3>a) Dane podawane dobrowolnie przez użytkownika</h3>
+    <ul>
+      <li><strong>Adres e-mail</strong> — podawany przy rejestracji lub logowaniu metodą e-mail. Służy jako unikalny identyfikator konta.</li>
+      <li><strong>Imię/pseudonim</strong> — wyświetlane w Aplikacji. Pobierane automatycznie z profilu Google przy logowaniu przez Google lub generowane z części lokalnej adresu e-mail.</li>
+    </ul>
+
+    <h3>b) Dane pozyskiwane automatycznie przy logowaniu przez Google</h3>
+    <ul>
+      <li>Unikalny identyfikator konta Google (sub), adres e-mail powiązany z kontem Google, imię i nazwisko z profilu Google.</li>
+      <li>Dane te są przetwarzane wyłącznie lokalnie w Aplikacji (localStorage urządzenia) i nie są przesyłane na serwery Sacrum sp. z o.o.</li>
+    </ul>
+
+    <h3>c) Dane aktywności w Aplikacji (lokalne)</h3>
+    <ul>
+      <li>Notatki, plany, postępy i preferencje zapisywane przez użytkownika w Aplikacji — przechowywane wyłącznie lokalnie na urządzeniu użytkownika (localStorage/IndexedDB) i nie są przekazywane na żadne serwery.</li>
+    </ul>
+
+    <h3>d) Dane techniczne pozyskiwane przez infrastrukturę hostingową</h3>
+    <ul>
+      <li>Adres IP, typ i wersja przeglądarki, system operacyjny, czas i data dostępu do Aplikacji — przetwarzane przez dostawcę hostingu (Netlify Inc.) w celu zapewnienia bezpieczeństwa i stabilności usługi.</li>
+    </ul>
+
+    <!-- 3. CEL I PODSTAWA PRAWNA -->
+    <h2>3. Cel i podstawa prawna przetwarzania</h2>
+
+    <table>
+      <tr>
+        <th>Cel przetwarzania</th>
+        <th>Podstawa prawna (RODO)</th>
+      </tr>
+      <tr>
+        <td>Świadczenie usługi — umożliwienie logowania i korzystania z funkcji Aplikacji wymagających konta</td>
+        <td>Art. 6 ust. 1 lit. b — wykonanie umowy</td>
+      </tr>
+      <tr>
+        <td>Zapewnienie bezpieczeństwa i integralności Aplikacji, zapobieganie nadużyciom</td>
+        <td>Art. 6 ust. 1 lit. f — prawnie uzasadniony interes administratora</td>
+      </tr>
+      <tr>
+        <td>Prowadzenie statystyk technicznych przez dostawcę hostingu (logi dostępu)</td>
+        <td>Art. 6 ust. 1 lit. f — prawnie uzasadniony interes (bezpieczeństwo systemu)</td>
+      </tr>
+      <tr>
+        <td>Marketing bezpośredni i informacje o przyszłych edycjach festiwalu — wyłącznie za zgodą</td>
+        <td>Art. 6 ust. 1 lit. a — zgoda</td>
+      </tr>
+    </table>
+
+    <!-- 4. ODBIORCY DANYCH -->
+    <h2>4. Odbiorcy danych osobowych</h2>
+
+    <p>Twoje dane mogą być przekazywane następującym kategoriom odbiorców:</p>
+
+    <ul>
+      <li>
+        <strong>Google LLC</strong> (1600 Amphitheatre Parkway, Mountain View, CA 94043, USA) — wyłącznie gdy korzystasz z logowania przez Google. Dane są przetwarzane przez Google zgodnie z jej polityką prywatności (<a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">policies.google.com/privacy</a>). Transfer do USA odbywa się na podstawie Standardowych Klauzul Umownych (SCC) zatwierdzone przez Komisję Europejską.
+      </li>
+      <li>
+        <strong>Netlify, Inc.</strong> (2325 3rd Street, Suite 296, San Francisco, CA 94107, USA) — dostawca hostingu Aplikacji. Przetwarza dane techniczne (logi dostępu, adresy IP) w celu świadczenia usług hostingowych. Transfer do USA na podstawie SCC i zgodności z ramami EU-U.S. Data Privacy Framework.
+      </li>
+    </ul>
+
+    <p>Sacrum sp. z o.o. <strong>nie sprzedaje, nie udostępnia ani nie przekazuje</strong> Twoich danych osobowych podmiotom trzecim w celach marketingowych bez Twojej uprzedniej zgody.</p>
+
+    <!-- 5. PRZEKAZYWANIE DO PAŃSTW TRZECICH -->
+    <h2>5. Przekazywanie danych do państw trzecich</h2>
+
+    <p>Część Twoich danych (dane techniczne przez hosting Netlify, dane logowania przez Google) może być przekazywana do Stanów Zjednoczonych Ameryki (USA). Transfer ten odbywa się na podstawie:</p>
+
+    <ul>
+      <li>Standardowych Klauzul Umownych (SCC) przyjętych przez Komisję Europejską decyzją z dnia 4 czerwca 2021 r. (dla transferów z UE do krajów trzecich);</li>
+      <li>Uczestnictwa odbiorców danych w EU-U.S. Data Privacy Framework (DPF) — gdzie dotyczy.</li>
+    </ul>
+
+    <p>Możesz uzyskać kopię stosownych zabezpieczeń, kontaktując się z Administratorem na adres: <a href="mailto:contact@sacrum.life">contact@sacrum.life</a>.</p>
+
+    <!-- 6. CZAS PRZECHOWYWANIA -->
+    <h2>6. Okres przechowywania danych</h2>
+
+    <ul>
+      <li><strong>Dane konta (e-mail, identyfikator)</strong> — przez czas korzystania z Aplikacji, a po jego zakończeniu przez okres 1 roku, chyba że wcześniej zażądasz usunięcia danych lub wycofasz zgodę.</li>
+      <li><strong>Dane aktywności w Aplikacji (localStorage)</strong> — przechowywane wyłącznie lokalnie na Twoim urządzeniu. Możesz je usunąć w dowolnym momencie przez wyczyszczenie danych Aplikacji w ustawieniach przeglądarki/systemu.</li>
+      <li><strong>Logi techniczne hostingu</strong> — przez okres 12 miesięcy, zgodnie z polityką Netlify.</li>
+      <li><strong>Dane przetwarzane na podstawie zgody</strong> — do momentu cofnięcia zgody. Cofnięcie zgody nie wpływa na zgodność z prawem przetwarzania przed jej cofnięciem.</li>
+    </ul>
+
+    <!-- 7. PRAWA UŻYTKOWNIKA -->
+    <h2>7. Twoje prawa</h2>
+
+    <p>Na podstawie RODO przysługują Ci następujące prawa w odniesieniu do Twoich danych osobowych:</p>
+
+    <div class="rights-grid">
+      <div class="right-item">
+        <span class="right-icon">§</span>
+        <div class="right-text">
+          <strong>Prawo dostępu (Art. 15 RODO)</strong>
+          <span>Możesz zażądać informacji o tym, jakie dane przetwarzamy, w jakim celu i przez jaki okres.</span>
+        </div>
+      </div>
+      <div class="right-item">
+        <span class="right-icon">§</span>
+        <div class="right-text">
+          <strong>Prawo do sprostowania (Art. 16 RODO)</strong>
+          <span>Możesz żądać poprawienia nieprawidłowych lub uzupełnienia niekompletnych danych.</span>
+        </div>
+      </div>
+      <div class="right-item">
+        <span class="right-icon">§</span>
+        <div class="right-text">
+          <strong>Prawo do usunięcia — „prawo do bycia zapomnianym" (Art. 17 RODO)</strong>
+          <span>Możesz żądać usunięcia danych, jeśli nie są już niezbędne do celu, w którym zostały zebrane, lub gdy cofniesz zgodę.</span>
+        </div>
+      </div>
+      <div class="right-item">
+        <span class="right-icon">§</span>
+        <div class="right-text">
+          <strong>Prawo do ograniczenia przetwarzania (Art. 18 RODO)</strong>
+          <span>Możesz żądać wstrzymania przetwarzania danych w określonych przypadkach (np. gdy kwestionujesz prawidłowość danych).</span>
+        </div>
+      </div>
+      <div class="right-item">
+        <span class="right-icon">§</span>
+        <div class="right-text">
+          <strong>Prawo do przenoszalności danych (Art. 20 RODO)</strong>
+          <span>Możesz otrzymać swoje dane w ustrukturyzowanym, powszechnie używanym formacie (jeśli przetwarzanie opiera się na zgodzie lub umowie i jest zautomatyzowane).</span>
+        </div>
+      </div>
+      <div class="right-item">
+        <span class="right-icon">§</span>
+        <div class="right-text">
+          <strong>Prawo do sprzeciwu (Art. 21 RODO)</strong>
+          <span>Możesz wyrazić sprzeciw wobec przetwarzania opartego na prawnie uzasadnionym interesie Administratora.</span>
+        </div>
+      </div>
+      <div class="right-item">
+        <span class="right-icon">§</span>
+        <div class="right-text">
+          <strong>Prawo do cofnięcia zgody</strong>
+          <span>Jeśli przetwarzanie opiera się na Twojej zgodzie, możesz ją cofnąć w dowolnym momencie bez wpływu na zgodność z prawem przetwarzania dokonanego przed cofnięciem.</span>
+        </div>
+      </div>
+      <div class="right-item">
+        <span class="right-icon">§</span>
+        <div class="right-text">
+          <strong>Prawo do skargi do organu nadzorczego</strong>
+          <span>Możesz wnieść skargę do Prezesa Urzędu Ochrony Danych Osobowych (UODO), ul. Stawki 2, 00-193 Warszawa, <a href="https://uodo.gov.pl" target="_blank" rel="noopener noreferrer">uodo.gov.pl</a>.</span>
+        </div>
+      </div>
+    </div>
+
+    <p>Aby skorzystać z powyższych praw, skontaktuj się z nami: <a href="mailto:contact@sacrum.life">contact@sacrum.life</a>. Odpowiemy w terminie 30 dni od otrzymania wniosku (z możliwością przedłużenia o 60 dni w sprawach złożonych).</p>
+
+    <!-- 8. LOCALSTORAGE I PLIKI COOKIE -->
+    <h2>8. localStorage, pliki cookie i dane lokalne</h2>
+
+    <p>Aplikacja CIEŃ Festiwal 2026 jest aplikacją webową (PWA) i korzysta z mechanizmu <strong>localStorage</strong> przeglądarki internetowej w celu:</p>
+
+    <ul>
+      <li>przechowywania sesji użytkownika (identyfikator, adres e-mail, imię),</li>
+      <li>zapamiętywania preferencji wyświetlania i ustawień Aplikacji,</li>
+      <li>lokalnego zapisywania treści tworzonych przez użytkownika (notatki, plany).</li>
+    </ul>
+
+    <p><strong>Dane przechowywane w localStorage pozostają wyłącznie na Twoim urządzeniu</strong> i nie są automatycznie synchronizowane z żadnymi serwerami Administratora. Usunięcie danych Aplikacji z poziomu ustawień przeglądarki lub systemu operacyjnego trwale usuwa wszystkie lokalnie przechowywane dane.</p>
+
+    <p>Aplikacja może korzystać z następujących typów danych lokalnych:</p>
+
+    <ul>
+      <li><strong>localStorage</strong> — dane sesji użytkownika, preferencje, zawartość notatek;</li>
+      <li><strong>Cache API (Service Worker)</strong> — pliki Aplikacji buforowane w celu działania offline; nie zawierają danych osobowych użytkownika;</li>
+      <li><strong>Pliki cookie sesyjne</strong> — mogą być ustawiane przez zewnętrzne usługi (Google Sign-In) zgodnie z ich własnymi politykami.</li>
+    </ul>
+
+    <p>Nie korzystamy z reklamowych ani śledzących plików cookie stron trzecich ponad te wynikające z integracji z Google Identity Services (logowanie przez Google), którym możesz zarządzać w ustawieniach swojego konta Google.</p>
+
+    <!-- 9. AUTOMATYCZNE DECYZJE -->
+    <h2>9. Profilowanie i automatyczne podejmowanie decyzji</h2>
+
+    <p>Administrator nie dokonuje profilowania użytkowników ani nie stosuje zautomatyzowanego podejmowania decyzji wywołującego skutki prawne w rozumieniu Art. 22 RODO.</p>
+
+    <!-- 10. BEZPIECZEŃSTWO -->
+    <h2>10. Bezpieczeństwo danych</h2>
+
+    <p>Stosujemy odpowiednie środki techniczne i organizacyjne w celu ochrony Twoich danych osobowych przed nieuprawnionym dostępem, utratą lub zniszczeniem, w tym:</p>
+
+    <ul>
+      <li>szyfrowanie transmisji danych przy użyciu protokołu TLS/HTTPS,</li>
+      <li>ograniczenie dostępu do danych wyłącznie do upoważnionych pracowników,</li>
+      <li>wybór partnerów technologicznych (hosting, uwierzytelnianie) zapewniających wysoki standard bezpieczeństwa.</li>
+    </ul>
+
+    <p>Mimo stosowania powyższych środków, żaden system nie jest w 100% bezpieczny. Administrator nie ponosi odpowiedzialności za naruszenia bezpieczeństwa danych wynikające z działań lub zaniechań podmiotów trzecich pozostających poza jego kontrolą, w szczególności z naruszeń bezpieczeństwa urządzenia użytkownika.</p>
+
+    <!-- 11. WIEK -->
+    <h2>11. Osoby niepełnoletnie</h2>
+
+    <p>Aplikacja oraz festiwal CIEŃ 2026 są przeznaczone wyłącznie dla osób, które ukończyły <strong>18 lat</strong>. Administrator nie przetwarza świadomie danych osobowych osób niepełnoletnich. Jeśli dowiesz się, że osoba niepełnoletnia przekazała nam swoje dane bez zgody opiekuna prawnego, prosimy o niezwłoczny kontakt na adres: <a href="mailto:contact@sacrum.life">contact@sacrum.life</a>. Usuniemy takie dane bez zbędnej zwłoki.</p>
+
+    <!-- 12. LINKI DO ZEWNĘTRZNYCH STRON -->
+    <h2>12. Linki do zewnętrznych serwisów</h2>
+
+    <p>Aplikacja może zawierać odnośniki do zewnętrznych serwisów internetowych (np. stron partnerów festiwalu). Niniejsza Polityka Prywatności nie obejmuje tych serwisów. Zachęcamy do zapoznania się z politykami prywatności każdego odwiedzanego serwisu zewnętrznego.</p>
+
+    <!-- 13. ZMIANY POLITYKI -->
+    <h2>13. Zmiany Polityki Prywatności</h2>
+
+    <p>Administrator zastrzega sobie prawo do zmiany niniejszej Polityki Prywatności. O wszelkich istotnych zmianach użytkownicy zostaną poinformowani z <strong>co najmniej 14-dniowym wyprzedzeniem</strong> poprzez:</p>
+
+    <ul>
+      <li>komunikat w Aplikacji przy kolejnym uruchomieniu,</li>
+      <li>aktualizację daty obowiązywania na początku niniejszego dokumentu.</li>
+    </ul>
+
+    <p>Dalsze korzystanie z Aplikacji po wejściu w życie zmienionej Polityki Prywatności oznacza akceptację nowej wersji dokumentu.</p>
+
+    <!-- 14. KONTAKT -->
+    <h2>14. Kontakt w sprawach danych osobowych</h2>
+
+    <p>We wszystkich sprawach dotyczących ochrony danych osobowych prosimy o kontakt:</p>
+
+    <div class="contact-block">
+      <p><strong>Sacrum sp. z o.o.</strong></p>
+      <p>ul. Klaudyny 34c, 01-684 Warszawa</p>
+      <p>E-mail: <a href="mailto:contact@sacrum.life">contact@sacrum.life</a></p>
+      <p style="margin-top:0.5rem; font-size:0.88rem; color:rgba(245,230,200,0.55)">Odpowiadamy w terminie do 30 dni od daty otrzymania wiadomości.</p>
+    </div>
+
+    <div class="version-note">
+      <p>Polityka Prywatności CIEŃ Festiwal 2026 — Sacrum sp. z o.o.</p>
+      <p>Wersja 1.0 | Data wejścia w życie: 1 lipca 2026 r.</p>
+    </div>
+
+  </div>
+</body>
+</html>

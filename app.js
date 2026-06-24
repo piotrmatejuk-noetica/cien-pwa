@@ -27,6 +27,11 @@ function _setUser(uid, email, name) {
   localStorage.setItem('cien_user_id', uid);
   if (email) localStorage.setItem('cien_user_email', email);
   if (name)  localStorage.setItem('cien_user_name', name);
+  // Persist ghost record so returning users get instant re-login
+  if (email) localStorage.setItem('cien_prev_email', email);
+  if (name)  localStorage.setItem('cien_prev_name', name);
+  if (uid)   localStorage.setItem('cien_prev_uid', uid);
+  localStorage.setItem('cien_terms_accepted', '1');
   hideAuthScreen();
   if (typeof initTeam === 'function') initTeam();
 }
@@ -47,8 +52,32 @@ function skipAuth() {
   hideAuthScreen();
 }
 
+// Returning user — instant re-login using stored ghost record
+function authContinue() {
+  const uid   = localStorage.getItem('cien_prev_uid');
+  const email = localStorage.getItem('cien_prev_email');
+  const name  = localStorage.getItem('cien_prev_name');
+  if (!uid) { _authSwitchToFull(); return; }
+  _setUser(uid, email, name);
+}
+
+function authSwitchUser() {
+  localStorage.removeItem('cien_prev_uid');
+  localStorage.removeItem('cien_prev_email');
+  localStorage.removeItem('cien_prev_name');
+  _authSwitchToFull();
+}
+
+function _authSwitchToFull() {
+  const ret = document.getElementById('auth-returning');
+  const main = document.getElementById('auth-panel-main');
+  if (ret) ret.style.display = 'none';
+  if (main) main.style.display = '';
+}
+
 // Email quick login — email jako identyfikator, hasło opcjonalne
 function authEmailQuick() {
+  if (!_authTermsOk()) return;
   const input = document.getElementById('auth-email');
   if (!input || !input.value.trim()) { _authError('Wpisz adres email'); return; }
   if (!input.validity.valid) { _authError('Wpisz poprawny adres email'); return; }
@@ -58,9 +87,50 @@ function authEmailQuick() {
   _setUser(uid, email, name);
 }
 
+function _authTermsOk() {
+  if (localStorage.getItem('cien_terms_accepted')) return true;
+  const cb = document.getElementById('auth-terms-check');
+  if (!cb || cb.closest('#auth-terms-block').style.display === 'none') return true;
+  if (!cb.checked) {
+    _authError('Zaakceptuj Regulamin i Politykę Prywatności');
+    const label = document.querySelector('.auth-terms-label');
+    if (label) { label.style.color = '#ff6b6b'; setTimeout(() => label.style.color = '', 1800); }
+    return false;
+  }
+  return true;
+}
+
 function _authError(msg) {
   const el = document.getElementById('auth-error');
   if (el) el.textContent = msg;
+}
+
+function _prepareAuthScreen() {
+  const prevUid  = localStorage.getItem('cien_prev_uid');
+  const prevName = localStorage.getItem('cien_prev_name');
+  const prevEmail= localStorage.getItem('cien_prev_email');
+  const termsOk  = localStorage.getItem('cien_terms_accepted');
+
+  const returningBlock = document.getElementById('auth-returning');
+  const mainPanel      = document.getElementById('auth-panel-main');
+  const termsBlock     = document.getElementById('auth-terms-block');
+  const returnName     = document.getElementById('auth-return-name');
+
+  if (prevUid) {
+    // Returning user — show quick button, hide main form
+    if (returningBlock) returningBlock.style.display = '';
+    if (mainPanel)      mainPanel.style.display = 'none';
+    if (returnName)     returnName.textContent = prevName || prevEmail || 'poprzednie konto';
+  } else {
+    // New user — show form, hide returning block, show terms if not accepted
+    if (returningBlock) returningBlock.style.display = 'none';
+    if (mainPanel)      mainPanel.style.display = '';
+    if (termsBlock)     termsBlock.style.display = termsOk ? 'none' : '';
+  }
+
+  // Pre-fill email if available
+  const emailInput = document.getElementById('auth-email');
+  if (emailInput && prevEmail && !prevUid) emailInput.value = prevEmail;
 }
 
 // --- GOOGLE (Google Identity Services — FedCM flow, nie wymaga konfiguracji originu) ---
@@ -102,6 +172,7 @@ function _initGoogleAuth() {
 }
 
 function authGoogle() {
+  if (!_authTermsOk()) return;
   if (typeof google === 'undefined' || !google.accounts) {
     _authError('Google Sign-In się ładuje — spróbuj za chwilę');
     setTimeout(() => {
@@ -586,7 +657,10 @@ async function init() {
 
   const loggedIn = localStorage.getItem('cien_user_id');
   if (!loggedIn) {
-    setTimeout(() => showAuthScreen(), 450);
+    setTimeout(() => {
+      _prepareAuthScreen();
+      showAuthScreen();
+    }, 450);
   }
   // Init team feature after auth check
   if (loggedIn && typeof initTeam === 'function') initTeam();
@@ -981,14 +1055,14 @@ function renderEventsList(events) {
   }
 
   const now = new Date();
-  let lastHour = null;
+  let lastSlot = null;
   const parts = [];
 
   events.forEach(ev => {
-    const hour = ev.start.slice(11, 13);
-    if (hour !== lastHour) {
-      parts.push(`<div class="time-separator"><span>${hour}:00</span></div>`);
-      lastHour = hour;
+    const slot = ev.start.slice(11, 16); // HH:MM
+    if (slot !== lastSlot) {
+      parts.push(`<div class="time-separator"><span>${slot}</span></div>`);
+      lastSlot = slot;
     }
 
     const isNow = now >= new Date(ev.start) && now <= new Date(ev.end);
@@ -1103,7 +1177,7 @@ function renderMap() {
   const pois  = State.data.pois || [];
 
   const poiTypes  = ['all', 'food', 'water', 'toilet', 'help', 'info'];
-  const poiLabels = { all:'Wszystko', food:'🍲 Jadło', water:'💧 Woda', toilet:'🚻 Toalety', help:'🛡 Pomoc', info:'ℹ Info' };
+  const poiLabels = { all:'Wszystko', food:'🍲 GastroPhase', water:'💧 Woda', toilet:'🚻 Toalety', help:'🛡 Pomoc', info:'ℹ Info' };
 
   const poiTabsHTML = poiTypes.map(t =>
     `<button class="poi-tab ${State.map.activePOIType===t?'active':''}" onclick="setPoiType('${t}')">${poiLabels[t]}</button>`
@@ -1886,13 +1960,17 @@ function _drawWheelFrame(canvas, size, dpr, scores) {
   }
 
   // Labels at midpoint of each sector
-  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.textBaseline = 'middle';
   for (let i = 0; i < n; i++) {
     const midA = startOff + i * sectorAngle + sectorAngle / 2;
-    const lr = radius + 24;
+    const lr = radius + 16;
+    const lx = cx + lr * Math.cos(midA);
+    const ly = cy + lr * Math.sin(midA);
+    const cosA = Math.cos(midA);
+    ctx.textAlign = cosA > 0.4 ? 'right' : cosA < -0.4 ? 'left' : 'center';
     ctx.fillStyle = WHEEL_AREAS[i].color;
     ctx.font = `bold 10px 'Helvetica Neue', Arial, sans-serif`;
-    ctx.fillText(WHEEL_AREAS[i].shortName, cx + lr * Math.cos(midA), cy + lr * Math.sin(midA));
+    ctx.fillText(WHEEL_AREAS[i].shortName, lx, ly);
 
     const score = scores[i];
     if (score >= 1) {

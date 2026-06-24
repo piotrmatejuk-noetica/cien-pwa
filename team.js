@@ -11,7 +11,7 @@ const PB = 'https://sacrum.life/cien-pb';
 let _team       = null;
 let _chatTab    = 'chat';   // 'chat' | 'notes' | 'meetings' | 'lokalizacja'
 let _pollTimer  = null;
-let _lastMsgTs  = null;
+let _seenMsgIds = new Set();
 let _messages   = [];
 let _notes      = [];
 let _meetings   = [];
@@ -24,10 +24,11 @@ let _myPos           = null;   // {lat, lng}
 let _compassHeading  = null;   // degrees from north (null = unavailable)
 let _watchId         = null;   // geolocation watch ID
 let _locSharing      = false;
-let _locUnsub        = null;   // Firestore listener unsub
+let _locUnsub        = null;
 let _teamLocs        = {};     // uid → {name, lat, lng}
 let _compassStarted  = false;
 let _locWriteThrottle = null;
+let _locPollTimer    = null;   // PocketBase location poll
 
 // ============================================
 // PocketBase helpers
@@ -72,7 +73,7 @@ async function teamCreate(name) {
 async function teamJoin(code) {
   const uid   = localStorage.getItem('cien_user_id') || 'guest';
   const uname = localStorage.getItem('cien_user_name') || 'Uczestnik';
-  const list  = await _pb(`/api/collections/cien_teams/records?filter=${encodeURIComponent(`(code='${code.toUpperCase()}')`)}&perPage=1`);
+  const list  = await _pb(`/api/collections/cien_teams/records?filter=${encodeURIComponent(`code='${code.toUpperCase()}'`)}&perPage=1`);
   if (!list.items || !list.items.length) throw new Error('Nie znaleziono drużyny o tym kodzie');
   const team    = list.items[0];
   const members = _parseTeamMembers(team);
@@ -112,8 +113,9 @@ function teamLeave() {
   localStorage.removeItem('cien_team_code');
   localStorage.removeItem('cien_team_name');
   _team = null;
-  _teamInitialized       = false;
+  _teamInitialized        = false;
   _chatInputListenerAdded = false;
+  _seenMsgIds             = new Set();
   _stopPoll();
   _stopLocSharing();
   _messages = []; _notes = []; _meetings = [];
@@ -140,11 +142,10 @@ async function sendMessage(text) {
 }
 
 async function _fetchMessages() {
-  const filter = _lastMsgTs
-    ? `(team_id='${_team.id}'%26%26created>'${_lastMsgTs}')`
-    : `(team_id='${_team.id}')`;
-  const data = await _pb(`/api/collections/cien_messages/records?filter=${filter}&sort=created&perPage=100`);
-  return data.items || [];
+  // Note: cien_messages has no 'created' system field exposed — sort by id
+  const filterExpr = `team_id='${_team.id}'`;
+  const data = await _pb(`/api/collections/cien_messages/records?filter=${encodeURIComponent(filterExpr)}&sort=id&perPage=100`);
+  return (data.items || []).filter(m => !_seenMsgIds.has(m.id));
 }
 
 function _startPoll() {
@@ -162,8 +163,8 @@ async function _pollMessages() {
   try {
     const newMsgs = await _fetchMessages();
     if (newMsgs.length) {
+      newMsgs.forEach(m => _seenMsgIds.add(m.id));
       _messages.push(...newMsgs);
-      _lastMsgTs = newMsgs[newMsgs.length - 1].created;
       _appendMessages(newMsgs);
     }
   } catch (_e) {}
@@ -189,7 +190,8 @@ async function saveNote(title, content, lecture) {
 }
 
 async function _fetchNotes() {
-  const data = await _pb(`/api/collections/cien_notes/records?filter=(team_id%3D'${_team.id}')&sort=-created&perPage=50`);
+  const filterExpr = `team_id='${_team.id}'`;
+  const data = await _pb(`/api/collections/cien_notes/records?filter=${encodeURIComponent(filterExpr)}&perPage=50`);
   return data.items || [];
 }
 
@@ -220,7 +222,8 @@ async function createMeeting(title, zone, day, time) {
 }
 
 async function _fetchMeetings() {
-  const data = await _pb(`/api/collections/cien_meetings/records?filter=(team_id%3D'${_team.id}')&sort=day,time&perPage=50`);
+  const filterExpr = `team_id='${_team.id}'`;
+  const data = await _pb(`/api/collections/cien_meetings/records?filter=${encodeURIComponent(filterExpr)}&sort=day,time&perPage=50`);
   return data.items || [];
 }
 
@@ -310,12 +313,28 @@ function _tmplNoTeam() {
 
 function _tmplTeam() {
   const members = _parseMembersList();
+  const myUid = localStorage.getItem('cien_user_id') || '';
   const at = t => _chatTab === t ? 'active' : '';
+  const membersHtml = members.map(m => {
+    const isMe = m.uid === myUid;
+    const initials = (m.name || 'U').trim().split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2);
+    return `<div class="team-member-row">
+      <div class="team-member-avatar">${_esc(initials)}</div>
+      <div class="team-member-info">
+        <div class="team-member-name">${_esc(m.name || 'Uczestnik')}${isMe ? ' <span class="team-member-you">(Ty)</span>' : ''}</div>
+      </div>
+    </div>`;
+  }).join('');
   return `
 <div class="team-header">
   <div class="team-header-name">${_esc(_team.name)}</div>
-  <div class="team-header-meta">Kod: <strong class="team-code">${_esc(_team.code)}</strong> · ${members.length} os.</div>
+  <div class="team-header-meta">Kod: <strong class="team-code">${_esc(_team.code)}</strong></div>
   <button class="team-leave-btn" onclick="if(confirm('Opuścić drużynę?')) teamLeave()">Opuść</button>
+</div>
+
+<div class="team-members-section">
+  <div class="team-members-label">${members.length} ${members.length === 1 ? 'osoba' : members.length < 5 ? 'osoby' : 'osób'}</div>
+  <div class="team-members-list">${membersHtml || '<div class="team-empty">Brak członków</div>'}</div>
 </div>
 
 <div class="team-tabs">
@@ -366,9 +385,12 @@ function _renderChatTab() {
 // ============================================
 
 function _tmplChat() {
+  const msgsHtml = _messages.length
+    ? _messages.map(_msgHtml).join('')
+    : '<div class="team-chat-empty">Brak wiadomości — zacznijcie rozmowę!</div>';
   return `
 <div id="team-messages" class="team-messages">
-  ${_messages.map(_msgHtml).join('')}
+  ${msgsHtml}
   <div id="team-msgs-end"></div>
 </div>
 <div class="team-chat-input-wrap">
@@ -383,13 +405,15 @@ function _msgHtml(m) {
   return `<div class="team-msg ${mine ? 'mine' : ''}">
     ${!mine ? `<div class="team-msg-name">${_esc(m.sender_name || 'Uczestnik')}</div>` : ''}
     <div class="team-msg-bubble">${_esc(m.text)}</div>
-    <div class="team-msg-ts">${ts}</div>
+    ${ts ? `<div class="team-msg-ts">${ts}</div>` : ''}
   </div>`;
 }
 
 function _appendMessages(newMsgs) {
   const end = document.getElementById('team-msgs-end');
   if (!end) return;
+  const empty = document.querySelector('#team-messages .team-chat-empty');
+  if (empty) empty.remove();
   newMsgs.forEach(m => end.insertAdjacentHTML('beforebegin', _msgHtml(m)));
   _scrollChat();
 }
@@ -419,8 +443,8 @@ async function sendMessageUI() {
   inp.style.height = 'auto';
   try {
     const m = await sendMessage(text);
+    _seenMsgIds.add(m.id);
     _messages.push(m);
-    _lastMsgTs = m.created;
     _appendMessages([m]);
   } catch (e) {
     _showTeamError('Błąd wysyłania: ' + e.message);
@@ -485,7 +509,7 @@ async function _loadNotesUI() {
 <div class="team-note-card">
   <div class="team-note-title">${_esc(n.title || 'Notatka')}</div>
   ${n.lecture ? `<div class="team-note-lecture">📍 ${_esc(n.lecture)}</div>` : ''}
-  <div class="team-note-author">${_esc(n.author_name || '')} · ${(n.created||'').slice(0,10)}</div>
+  <div class="team-note-author">${_esc(n.author_name || '')}</div>
   <div class="team-note-content">${_esc(n.content).replace(/\n/g,'<br>')}</div>
 </div>`).join('');
   } catch (e) {
@@ -644,16 +668,41 @@ function _startCompass() {
   }
 }
 
-function _writeMyLoc() {
+async function _writeMyLoc() {
   if (!_myPos || !_team) return;
   const uid   = localStorage.getItem('cien_user_id') || 'guest';
   const uname = localStorage.getItem('cien_user_name') || 'Uczestnik';
   try {
-    firebase.firestore().collection('cien_locs').doc(`${_team.id}_${uid}`).set({
-      teamId: _team.id, uid, name: uname,
-      lat: _myPos.lat, lng: _myPos.lng,
-      at: firebase.firestore.FieldValue.serverTimestamp(),
+    const current = await _pb(`/api/collections/cien_teams/records/${_team.id}`);
+    const members = _parseTeamMembers(current);
+    const me = members.find(m => m.uid === uid);
+    if (me) {
+      me.lat = _myPos.lat; me.lng = _myPos.lng; me.at = Date.now();
+    } else {
+      members.push({ uid, name: uname, lat: _myPos.lat, lng: _myPos.lng, at: Date.now() });
+    }
+    await _pb(`/api/collections/cien_teams/records/${_team.id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ members: JSON.stringify(members) }),
     });
+  } catch (_e) {}
+}
+
+async function _fetchTeamLocsPB() {
+  if (!_team) return;
+  const uid = localStorage.getItem('cien_user_id') || 'guest';
+  try {
+    const data = await _pb(`/api/collections/cien_teams/records/${_team.id}`);
+    const members = _parseTeamMembers(data);
+    const cutoff = Date.now() - 90000; // stale po 90s
+    _teamLocs = {};
+    members.forEach(m => {
+      if (m.uid !== uid && m.lat && m.lng && (!m.at || m.at > cutoff)) {
+        _teamLocs[m.uid] = m;
+      }
+    });
+    _updateLocationUI();
+    _updateLocationArrows();
   } catch (_e) {}
 }
 
@@ -680,10 +729,6 @@ function _stopLocSharing() {
   if (_watchId != null) { navigator.geolocation.clearWatch(_watchId); _watchId = null; }
   if (_locUnsub)         { _locUnsub(); _locUnsub = null; }
   if (_locWriteThrottle) { clearTimeout(_locWriteThrottle); _locWriteThrottle = null; }
-  if (_team) {
-    const uid = localStorage.getItem('cien_user_id') || 'guest';
-    try { firebase.firestore().collection('cien_locs').doc(`${_team.id}_${uid}`).delete(); } catch (_e) {}
-  }
   _myPos = null;
   _teamLocs = {};
   if (_chatTab === 'lokalizacja') _renderLocTab();
@@ -691,17 +736,10 @@ function _stopLocSharing() {
 
 function _listenTeamLocations() {
   if (!_team) return;
-  try {
-    const uid = localStorage.getItem('cien_user_id') || 'guest';
-    _locUnsub = firebase.firestore().collection('cien_locs')
-      .where('teamId', '==', _team.id)
-      .onSnapshot(snap => {
-        _teamLocs = {};
-        snap.forEach(doc => { const d = doc.data(); if (d.uid !== uid) _teamLocs[d.uid] = d; });
-        _updateLocationUI();
-        _updateLocationArrows();
-      });
-  } catch (_e) {}
+  if (_locPollTimer) clearInterval(_locPollTimer);
+  _fetchTeamLocsPB();
+  _locPollTimer = setInterval(_fetchTeamLocsPB, 5000);
+  _locUnsub = () => { clearInterval(_locPollTimer); _locPollTimer = null; };
 }
 
 function _updateLocationUI() {
@@ -719,7 +757,7 @@ function _updateLocationUI() {
     const rel  = (bear != null && _compassHeading != null) ? (bear - _compassHeading + 360) % 360 : null;
     const isSelected = _navTarget?.isTeammate && _navTarget.uid === m.uid;
     return `<div class="loc-member-card ${dist != null ? _heatClass(dist) : ''} ${isSelected ? 'loc-selected' : ''}"
-                 onclick="setNavTarget('teammate','${m.uid}',${JSON.stringify(m.name || 'Uczestnik')},${m.lat},${m.lng})">
+                 onclick="setNavTarget('teammate','${m.uid}',decodeURIComponent('${encodeURIComponent(m.name || 'Uczestnik')}'),${m.lat},${m.lng})">
       <div class="loc-member-name">${_esc(m.name || 'Uczestnik')}</div>
       ${dist != null ? `<div class="loc-dist-value">${_distLabel(dist)}</div><div class="loc-heat-label">${_heatLabel(dist)}</div>` : '<div class="loc-heat-label">Pozycja znana</div>'}
       ${rel != null ? `<div class="loc-arrow" style="transform:rotate(${rel}deg)">▲</div>` : ''}
@@ -816,7 +854,7 @@ ${_navTarget ? `
   <div class="loc-dest-grid">
     ${LOC_DESTINATIONS.map(d => `
       <button class="loc-dest-btn ${_navTarget && !_navTarget.isTeammate && _navTarget.label === d.label ? 'loc-dest-active' : ''}"
-              onclick="setNavTarget('destination','',${JSON.stringify(d.label)},${d.lat},${d.lng})">
+              onclick="setNavTarget('destination','',decodeURIComponent('${encodeURIComponent(d.label)}'),${d.lat},${d.lng})">
         <span class="loc-dest-emoji">${d.emoji}</span>
         <span class="loc-dest-label">${_esc(d.label)}</span>
       </button>`).join('')}
@@ -924,5 +962,9 @@ async function initTeam() {
   const team = await teamLoad();
   if (team) {
     await _scheduleAllNotifs();
+    // Re-render if user already navigated to druzyna before fetch completed
+    if (document.getElementById('view-druzyna')?.classList.contains('active')) {
+      renderTeamView();
+    }
   }
 }

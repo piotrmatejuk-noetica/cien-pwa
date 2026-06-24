@@ -81,7 +81,7 @@
   "events": [
 
 
-    { "id":"e001", "zone":"podswiadomosci", "title":"Darmowe konsultacje terapeutyczne", "artist":"Team PSH", "description":"Bezpłatne konsultacje terapeutyczne dla uczestników festiwalu.", "start":"2026-07-03T12:01:00", "end":"2026-07-03T13:30:00", "tags":["konsultacje","bezpłatne"] },
+    { "id":"e001", "zone":"podswiadomosci", "title":"Darmowe konsultacje terapeutyczne", "artist":"Team PSH", "description":"Bezpłatne konsultacje terapeutyczne dla uczestników festiwalu.", "start":"2026-07-03T12:00:00", "end":"2026-07-03T13:30:00", "tags":["konsultacje","bezpłatne"] },
     { "id":"e002", "zone":"podswiadomosci", "title":"Otwarcie Strefy Podświadomości", "artist":"Artur Makieła, Magdalena Gajdzińska", "description":"Uroczyste otwarcie Strefy Podświadomości przez koordynatorów.", "start":"2026-07-03T13:30:00", "end":"2026-07-03T15:00:00", "tags":["otwarcie","ceremonia"] },
     { "id":"e003", "zone":"podswiadomosci", "title":"Przestań ćpać cierpienie — o roli i granicach wybaczania", "artist":"Anna Dąbrowska", "description":"Prelekcja o psychologicznych mechanizmach wybaczania, jego granicach i roli w procesie zdrowienia.", "start":"2026-07-03T15:00:00", "end":"2026-07-03T16:30:00", "tags":["prelekcja","psychologia","wybaczanie"] },
     { "id":"e004", "zone":"podswiadomosci", "title":"Nerw błędny — cud czy scam?", "artist":"Michał Roczek", "description":"Krytyczne spojrzenie na modę na stymulację nerwu błędnego. Co nauka mówi, a co to mit?", "start":"2026-07-03T16:30:00", "end":"2026-07-03T18:00:00", "tags":["prelekcja","neurologia","nauka"] },

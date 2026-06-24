@@ -3402,6 +3402,34 @@ img { display: block; max-width: 100%; }
   filter: grayscale(100%) brightness(1.5);
   object-fit: contain;
 }
+/* Terms / RODO block */
+.auth-terms {
+  width: 100%;
+  margin: 0.75rem 0 0.25rem;
+}
+.auth-terms-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  font-size: 0.72rem;
+  color: rgba(245,240,232,0.45);
+  line-height: 1.45;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+.auth-terms-label input[type="checkbox"] {
+  width: 16px; height: 16px;
+  flex-shrink: 0;
+  margin-top: 0.12em;
+  accent-color: var(--zloto);
+  cursor: pointer;
+}
+.auth-terms-label a {
+  color: rgba(201,168,76,0.75);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.auth-terms-label a:hover { color: var(--zloto); }
 
 /* Speaker in modal */
 .modal-speaker {
@@ -3513,6 +3541,36 @@ img { display: block; max-width: 100%; }
   border-radius: 6px; cursor: pointer; white-space: nowrap;
 }
 
+/* Members strip */
+.team-members-section {
+  padding: 0.6rem 1rem 0.5rem;
+  background: var(--noir-2);
+  border-bottom: 1px solid rgba(245,240,232,0.08);
+}
+.team-members-label {
+  font-size: 0.7rem; color: var(--szary); text-transform: uppercase;
+  letter-spacing: 0.08em; margin-bottom: 0.4rem;
+}
+.team-members-list {
+  display: flex; flex-direction: column; gap: 0.3rem;
+}
+.team-member-row {
+  display: flex; align-items: center; gap: 0.6rem;
+}
+.team-member-avatar {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: rgba(201,168,76,0.18); border: 1px solid rgba(201,168,76,0.3);
+  color: var(--zloto); font-size: 0.65rem; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; letter-spacing: 0;
+}
+.team-member-name {
+  font-size: 0.85rem; color: var(--pergamin); line-height: 1.2;
+}
+.team-member-you {
+  font-size: 0.72rem; color: var(--szary); font-style: italic;
+}
+
 /* Tabs */
 .team-tabs {
   display: flex; border-bottom: 1px solid rgba(245,240,232,0.08);
@@ -3529,8 +3587,14 @@ img { display: block; max-width: 100%; }
 /* Chat */
 .team-messages {
   padding: 1rem; overflow-y: auto; flex: 1;
-  min-height: calc(100vh - 300px);
+  min-height: calc(100vh - 320px);
   display: flex; flex-direction: column; gap: 0.5rem;
+  background: var(--noir);
+}
+.team-chat-empty {
+  flex: 1; display: flex; align-items: center; justify-content: center;
+  color: var(--szary); font-size: 0.88rem; text-align: center;
+  padding: 2rem 0;
 }
 .team-msg { display: flex; flex-direction: column; max-width: 78%; }
 .team-msg.mine { align-self: flex-end; align-items: flex-end; }
