@@ -189,12 +189,19 @@ img { display: block; max-width: 100%; }
 }
 
 .nav-btn .nav-icon { font-size: 1.2rem; line-height: 1; }
-.nav-btn .nav-label { font-family: var(--font-display); font-size: 0.45rem; letter-spacing: 0.06em; text-transform: uppercase; }
+.nav-btn .nav-label { font-family: var(--font-display); font-size: 0.6rem; letter-spacing: 0.06em; text-transform: uppercase; }
 .nav-sacrum-img { width: 1.4rem; height: 1.4rem; border-radius: 50%; object-fit: cover; opacity: 0.75; transition: opacity 0.2s, filter 0.2s; }
 .nav-btn.active .nav-sacrum-img { opacity: 1; filter: drop-shadow(0 0 4px rgba(201,168,76,0.7)); }
 
+.nav-btn:active {
+  transform: scale(0.9);
+  transition: transform 100ms ease;
+}
+
 .nav-btn.active {
   color: var(--zloto);
+  background: rgba(201,168,76,0.07);
+  border-radius: 8px;
 }
 
 .nav-btn.active .nav-icon {
@@ -281,6 +288,7 @@ img { display: block; max-width: 100%; }
 .day-tab.active {
   color: var(--zloto);
   border-bottom-color: var(--zloto);
+  font-size: 0.7rem;
 }
 
 .day-tab.nigredo.active { border-bottom-color: #6B6BFF; color: #9999FF; }
@@ -309,11 +317,18 @@ img { display: block; max-width: 100%; }
 }
 
 .now-dot {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
   background: var(--zloto);
   animation: pulse 1.5s ease-in-out infinite;
+  box-shadow: 0 0 0 0 rgba(201,168,76,0.4);
+}
+
+@keyframes nowDotRing {
+  0%   { box-shadow: 0 0 0 0 rgba(201,168,76,0.4); }
+  70%  { box-shadow: 0 0 0 8px rgba(201,168,76,0); }
+  100% { box-shadow: 0 0 0 0 rgba(201,168,76,0); }
 }
 
 @keyframes pulse {
@@ -350,8 +365,8 @@ img { display: block; max-width: 100%; }
   padding: 0.3rem 0.75rem;
   border-radius: 20px;
   font-family: var(--font-display);
-  font-size: 0.6rem;
-  letter-spacing: 0.08em;
+  font-size: 0.65rem;
+  letter-spacing: 0.07em;
   text-transform: uppercase;
   border: 1px solid transparent;
   transition: all var(--transition);
@@ -422,19 +437,23 @@ img { display: block; max-width: 100%; }
   background: linear-gradient(to right, rgba(201,168,76,0.1) 0%, var(--noir-2) 100%);
 }
 
+.event-card.is-now {
+  border-left-color: rgba(201,168,76,0.7);
+}
+
 .event-card.is-now::after {
   content: 'TERAZ';
   position: absolute;
   top: 0.5rem;
   right: 0.75rem;
   font-family: var(--font-display);
-  font-size: 0.5rem;
-  letter-spacing: 0.15em;
+  font-size: 0.6rem;
+  letter-spacing: 0.14em;
   color: var(--zloto);
-  opacity: 0.8;
+  opacity: 0.9;
 }
 
-.event-card.is-past { opacity: 0.4; }
+.event-card.is-past { opacity: 0.5; }
 
 .event-time {
   font-family: var(--font-display);
@@ -568,13 +587,18 @@ img { display: block; max-width: 100%; }
   width: 100%;
   padding: 0.75rem;
   background: var(--noir-3);
-  border: 1px solid var(--noir-4);
+  border: 1px solid rgba(201,168,76,0.2);
   border-radius: var(--radius);
-  color: var(--szary);
+  color: var(--pergamin-2);
   font-family: var(--font-display);
   font-size: 0.7rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
+  transition: border-color var(--transition), color var(--transition);
+}
+.modal-close:active {
+  border-color: rgba(201,168,76,0.5);
+  color: var(--zloto);
 }
 
 /* ============================================
@@ -1219,7 +1243,7 @@ img { display: block; max-width: 100%; }
 .skeleton {
   background: linear-gradient(90deg, var(--noir-3) 25%, var(--noir-4) 50%, var(--noir-3) 75%);
   background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
+  animation: shimmer 1.2s infinite;
   border-radius: var(--radius);
 }
 
@@ -2843,7 +2867,7 @@ img { display: block; max-width: 100%; }
   border-radius: 50%;
   background: var(--zloto);
   flex-shrink: 0;
-  animation: pulse 1.5s ease-in-out infinite;
+  animation: nowDotRing 2s ease-out infinite;
 }
 
 .tu-i-teraz-label {
@@ -3380,18 +3404,27 @@ img { display: block; max-width: 100%; }
 }
 
 /* Speaker in modal */
-.modal-speaker { padding: 0.75rem 0 0.25rem; }
+.modal-speaker {
+  padding: 0.75rem 0 0.25rem;
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+}
 .modal-speaker-photo {
-  width: 72px; height: 72px;
+  width: 64px; height: 64px;
   border-radius: 50%; object-fit: cover;
   border: 2px solid rgba(201,168,76,0.3);
-  float: left; margin: 0 1rem 0.5rem 0;
+  flex-shrink: 0;
+}
+.modal-speaker-photo[src=""],
+.modal-speaker-photo:not([src]) {
+  display: none;
 }
 .modal-speaker-bio {
   font-size: 0.82rem; color: var(--szary);
   line-height: 1.55;
+  flex: 1;
 }
-.modal-speaker::after { content: ''; display: table; clear: both; }
 
 /* ============================================
    MOJA DRUŻYNA — Team Feature
@@ -3996,15 +4029,15 @@ img { display: block; max-width: 100%; }
 
 .kb-card-cat {
   font-family: var(--font-display);
-  font-size: 0.52rem;
-  letter-spacing: 0.13em;
+  font-size: 0.58rem;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   margin-bottom: 0.3rem;
 }
 
 .kb-card-title {
   font-family: var(--font-display);
-  font-size: 0.75rem;
+  font-size: 0.82rem;
   letter-spacing: 0.02em;
   color: var(--pergamin);
   line-height: 1.3;
@@ -4060,7 +4093,7 @@ img { display: block; max-width: 100%; }
 .art-back-btn {
   color: var(--zloto);
   font-family: var(--font-display);
-  font-size: 0.68rem;
+  font-size: 0.7rem;
   letter-spacing: 0.08em;
   display: flex;
   align-items: center;
@@ -4069,6 +4102,8 @@ img { display: block; max-width: 100%; }
   border: none;
   cursor: pointer;
   padding: 0;
+  min-height: 44px;
+  padding: 0 0.5rem 0 0;
 }
 
 .art-body {
@@ -4162,10 +4197,10 @@ img { display: block; max-width: 100%; }
   word-break: break-all;
 }
 
-/* 8-item nav — slightly tighter */
+/* 8-item nav */
 #bottom-nav .nav-label {
-  font-size: 0.52rem;
+  font-size: 0.58rem;
 }
 @media (min-width: 400px) {
-  #bottom-nav .nav-label { font-size: 0.56rem; }
+  #bottom-nav .nav-label { font-size: 0.62rem; }
 }
