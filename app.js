@@ -2009,7 +2009,7 @@ function renderSacrum() {
         <img src="icons/ksiezyc-slonce.jpg" class="sacrum-mandala-img" alt="SACRUM">
         <img src="icons/sacrum-logo.png" class="sacrum-svg-logo" alt="SACRUM">
       </div>
-      <div class="sacrum-hero-sub">Punkt Pomocy · Zawsze dostępny · Bez oceniania</div>
+      <div class="sacrum-hero-sub">PsyCare · Pt–Sb 19:00–04:00 · Strefa SACRUM</div>
     </div>
 
     <button class="emergency-btn" onclick="callHelp()">
@@ -2022,9 +2022,9 @@ function renderSacrum() {
       <div class="sacrum-card">
         <div class="sacrum-card-title">🗺 Lokalizacja</div>
         <div class="sacrum-card-body">
-          Cicha sala — I piętro, skrzydło wschodnie zamku.<br>
-          <strong>Otwarty 24 godziny przez cały festiwal.</strong><br>
-          Dyżuruje trip sitter + psycholog w godz. 18:00–08:00.
+          Strefa SACRUM — Kaplica.<br>
+          <strong>Piątek i sobota, godz. 19:00–04:00.</strong><br>
+          Dyżuruje team PsyCare — wsparcie emocjonalne, harm reduction, pierwsza pomoc psychologiczna.
         </div>
       </div>
       <div class="sacrum-card">

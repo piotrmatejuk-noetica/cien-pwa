@@ -1,12 +1,12 @@
 {
   "pois": [
-    { "id": "food1", "type": "food", "label": "Jadło — Kuchnia główna", "description": "Wegetariańskie i wegańskie dania. Otwarte 12:00–22:00.", "location": "Skrzydło zachodnie, parter", "icon": "🍲", "hours": "12:00–22:00" },
-    { "id": "food2", "type": "food", "label": "Bar nocny", "description": "Przekąski, herbata, napoje. Otwarte przez całą noc.", "location": "Przy bramie głównej", "icon": "☕", "hours": "22:00–08:00" },
+    { "id": "food1", "type": "food", "label": "GastroPhase — Kuchnia główna", "description": "Wegetariańskie i wegańskie dania. Otwarte 12:00–22:00.", "location": "Skrzydło zachodnie, parter", "icon": "🍲", "hours": "12:00–22:00" },
+    { "id": "food2", "type": "food", "label": "Bar u Alchemików", "description": "Przekąski, herbata, napoje. Otwarte przez całą noc.", "location": "Przy bramie głównej", "icon": "☕", "hours": "22:00–08:00" },
     { "id": "water1", "type": "water", "label": "Punkt wody pitnej — Dziedziniec", "description": "Bezpłatna woda pitna z beczki filtrowanej. Uzupełniaj bidon.", "location": "Centrum dziedzińca", "icon": "💧", "hours": "24h" },
     { "id": "water2", "type": "water", "label": "Punkt wody pitnej — Strefa Sacrum", "description": "Woda z infuzją ziół.", "location": "Wejście do Kaplicy", "icon": "💧", "hours": "24h" },
     { "id": "toilet1", "type": "toilet", "label": "Toalety — blok główny", "description": "Toalety wewnętrzne + prysznice.", "location": "Parter, skrzydło północne", "icon": "🚻", "hours": "24h" },
     { "id": "toilet2", "type": "toilet", "label": "Toalety — Toi Toi, zewnętrzne", "description": "4 kabiny przy wejściu.", "location": "Parking, przy bramie", "icon": "🚻", "hours": "24h" },
-    { "id": "help1", "type": "help", "label": "Punkt Pomocy — Trip Sitter", "description": "Bezpieczna przestrzeń i dyżurujący trip sitter 24h. Wsparcie emocjonalne i integracyjne.", "location": "Cicha sala, I piętro skrzydło wschodnie", "icon": "🛡", "hours": "24h", "contact": "kontakt@cienfestiwal.com" },
+    { "id": "help1", "type": "help", "label": "PsyCare — Punkt Pomocy", "description": "Bezpieczna przestrzeń i dyżurujący team PsyCare. Wsparcie emocjonalne, harm reduction, pierwsza pomoc psychologiczna.", "location": "Strefa SACRUM (Kaplica)", "icon": "🛡", "hours": "Pt–Sb 19:00–04:00", "contact": "kontakt@cienfestiwal.com" },
     { "id": "help2", "type": "help", "label": "Medyk — pierwsza pomoc", "description": "Ratownik medyczny obecny przez cały festiwal.", "location": "Namioty przy wejściu", "icon": "⚕️", "hours": "24h" },
     { "id": "info1", "type": "info", "label": "Infopunkt festiwalu", "description": "Pytania, zagubieni ludzie, informacje o programie i strefach.", "location": "Brama główna, prawa strona", "icon": "ℹ", "hours": "10:00–02:00" }
   ],
