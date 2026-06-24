@@ -42,14 +42,14 @@
     "zone": "sacrum"
   },
   "Weronika Wąsiakowska": {
-    "photo": "",
+    "photo": "https://cienfestiwal.com/images/prelegenci/Weronika%20W%C4%85siakowska.webp",
     "bio": "Neuropsycholożka z zainteresowaniem biochemią — stawia hipotezę, że wiele stanów psychicznych zaczyna się od stanu ciała. Zanim wrócisz do terapii, sprawdź wyniki badań.",
     "lecture": "Darmowe konsultacje neuropsychologiczne / Mniej psychoanalizy, więcej biochemii — zanim znów «wybaczysz matce, zbadaj stan organizmu»",
     "role": "Neuropsycholożka",
     "zone": "sacrum"
   },
   "Rafał Robaszkiewicz": {
-    "photo": "",
+    "photo": "https://cienfestiwal.com/images/prelegenci/Rafal%20Robaszkiewicz.webp",
     "bio": "Psychodeliki, ISTDP, biochemia cienia, redukcja szkód. Twarda, uczciwa praca z tym, czego ciało i psyche jeszcze nie zintegrowały.",
     "lecture": "Uzależnienia bez tabu. Nowoczesne podejście do redukcji szkód.",
     "role": "Koordynator Strefy SACRUM",
@@ -105,7 +105,7 @@
     "zone": "gnoza"
   },
   "Bartosz Babiak": {
-    "photo": "",
+    "photo": "https://cienfestiwal.com/images/prelegenci/BartoszBabiak.webp",
     "bio": "Badacz dobrostanu na styku nauki i duchowości — przegląda literatury empiryczne z zakresu psychologii pozytywnej, mindfulness i neurobiologii medytacji. Pyta, gdzie kończą się dane, a zaczyna wiara.",
     "lecture": "Dobrostan na styku wiary i nauki. Czy duchowość da się badać empirycznie?",
     "role": "Researcher",
@@ -126,7 +126,7 @@
     "zone": "podswiadomosci"
   },
   "Mateusz Marzoch": {
-    "photo": "",
+    "photo": "https://cienfestiwal.com/images/prelegenci/Mateusz_Marzoch.webp",
     "bio": "Analityk danych i psycholog — eksploruje zaskakujące punkty styku między myśleniem systemowym w IT a psychologią głębi Junga. Algorytm jako metafora kompleksu; baza danych jako mapa nieświadomości.",
     "lecture": "Algorytmy Duszy — łącząc analitykę jungowską z IT",
     "role": "Analityk danych, psycholog",
@@ -357,7 +357,7 @@
     "zone": "umbra"
   },
   "Paula Alex": {
-    "photo": "",
+    "photo": "https://cienfestiwal.com/images/prelegenci/Paulina_Aleksandra_Hernandez_Alex_Next.webp",
     "bio": "Psycholożka i autorka — bada fenomen true crime jako okno do zbiorowego cienia. Fascynacja zbrodnią to nie perwersja: to spotkanie z tym, co w nas wyparte, nieakceptowane, ukryte za fasadą normalności.",
     "lecture": "Dlaczego fascynuje nas zbrodnia? True crime jako czarne lustro ludzkiej psychiki",
     "role": "Psycholożka, autorka",
