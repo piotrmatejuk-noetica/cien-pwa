@@ -9,7 +9,7 @@ const PB = 'https://sacrum.life/cien-pb';
 
 // ---- state ----
 let _team       = null;
-let _chatTab    = 'chat';   // 'chat' | 'notes' | 'meetings'
+let _chatTab    = 'chat';   // 'chat' | 'notes' | 'meetings' | 'lokalizacja'
 let _pollTimer  = null;
 let _lastMsgTs  = null;
 let _messages   = [];
@@ -18,6 +18,16 @@ let _meetings   = [];
 let _notifTimers = [];
 let _teamInitialized      = false;
 let _chatInputListenerAdded = false;
+
+// ---- radar state ----
+let _myPos           = null;   // {lat, lng}
+let _compassHeading  = null;   // degrees from north (null = unavailable)
+let _watchId         = null;   // geolocation watch ID
+let _locSharing      = false;
+let _locUnsub        = null;   // Firestore listener unsub
+let _teamLocs        = {};     // uid → {name, lat, lng}
+let _compassStarted  = false;
+let _locWriteThrottle = null;
 
 // ============================================
 // PocketBase helpers
@@ -105,6 +115,7 @@ function teamLeave() {
   _teamInitialized       = false;
   _chatInputListenerAdded = false;
   _stopPoll();
+  _stopLocSharing();
   _messages = []; _notes = []; _meetings = [];
   renderTeamView();
 }
@@ -308,9 +319,10 @@ function _tmplTeam() {
 </div>
 
 <div class="team-tabs">
-  <button class="team-tab ${at('chat')}"     data-tab="chat"     onclick="switchTeamTab('chat')">💬 Chat</button>
-  <button class="team-tab ${at('notes')}"    data-tab="notes"    onclick="switchTeamTab('notes')">📝 Notatki</button>
-  <button class="team-tab ${at('meetings')}" data-tab="meetings" onclick="switchTeamTab('meetings')">📅 Spotkania</button>
+  <button class="team-tab ${at('chat')}"        data-tab="chat"        onclick="switchTeamTab('chat')">💬 Chat</button>
+  <button class="team-tab ${at('notes')}"        data-tab="notes"       onclick="switchTeamTab('notes')">📝 Notatki</button>
+  <button class="team-tab ${at('meetings')}"     data-tab="meetings"    onclick="switchTeamTab('meetings')">📅 Spotkania</button>
+  <button class="team-tab ${at('lokalizacja')}"  data-tab="lokalizacja" onclick="switchTeamTab('lokalizacja')">📡 Radar</button>
 </div>
 
 <div id="team-tab-body"></div>`;
@@ -343,9 +355,10 @@ function switchTeamTab(tab) {
 function _renderChatTab() {
   const body = document.getElementById('team-tab-body');
   if (!body) return;
-  if (_chatTab === 'chat')     { body.innerHTML = _tmplChat();     _scrollChat(); }
-  if (_chatTab === 'notes')    { body.innerHTML = _tmplNotesList(); _loadNotesUI(); }
-  if (_chatTab === 'meetings') { body.innerHTML = _tmplMeetingsList(); _loadMeetingsUI(); }
+  if (_chatTab === 'chat')        { body.innerHTML = _tmplChat();          _scrollChat(); }
+  if (_chatTab === 'notes')       { body.innerHTML = _tmplNotesList();     _loadNotesUI(); }
+  if (_chatTab === 'meetings')    { body.innerHTML = _tmplMeetingsList();  _loadMeetingsUI(); }
+  if (_chatTab === 'lokalizacja') { _renderLocTab(); }
 }
 
 // ============================================
@@ -553,6 +566,297 @@ async function _loadMeetingsUI() {
 </div>`).join('');
   } catch (e) {
     el.innerHTML = '<div class="team-empty">Błąd ładowania spotkań.</div>';
+  }
+}
+
+// ============================================
+// Radar / Location
+// ============================================
+
+const LOC_DESTINATIONS = [
+  { id: 'camping', label: 'Camping pod lasem', emoji: '🏕️', lat: 50.9195, lng: 15.9682 },
+  { id: 'toalety', label: 'Toalety',           emoji: '🚽', lat: 50.9200, lng: 15.9698 },
+  { id: 'bar',     label: 'Bar',               emoji: '🍺', lat: 50.9205, lng: 15.9694 },
+  { id: 'sacrum',  label: 'Strefa SACRUM',     emoji: '✨', lat: 50.9210, lng: 15.9705 },
+];
+
+let _navTarget = null;  // { label, lat, lng, isTeammate?, uid? }
+
+function _haversine(lat1, lon1, lat2, lon2) {
+  const R = 6371000;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function _bearing(lat1, lon1, lat2, lon2) {
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const y = Math.sin(dLon) * Math.cos(lat2 * Math.PI / 180);
+  const x = Math.cos(lat1 * Math.PI / 180) * Math.sin(lat2 * Math.PI / 180) -
+    Math.sin(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.cos(dLon);
+  return ((Math.atan2(y, x) * 180 / Math.PI) + 360) % 360;
+}
+
+function _distLabel(m) {
+  return m < 1000 ? Math.round(m) + ' m' : (m / 1000).toFixed(1) + ' km';
+}
+
+function _heatClass(m) {
+  if (m < 20)  return 'loc-hot';
+  if (m < 50)  return 'loc-warm';
+  if (m < 150) return 'loc-mild';
+  return 'loc-cold';
+}
+
+function _heatLabel(m) {
+  if (m < 20)  return '🔥 Gorąco!';
+  if (m < 50)  return '♨️ Ciepło';
+  if (m < 150) return '😐 Letnio';
+  return '❄️ Zimno';
+}
+
+function _startCompass() {
+  if (_compassStarted) return;
+  const handler = e => {
+    const h = e.webkitCompassHeading != null
+      ? e.webkitCompassHeading
+      : (e.alpha != null ? (360 - e.alpha) : null);
+    if (h != null) {
+      _compassHeading = h;
+      _updateLocationArrows();
+    }
+  };
+  if (typeof DeviceOrientationEvent !== 'undefined' &&
+      typeof DeviceOrientationEvent.requestPermission === 'function') {
+    DeviceOrientationEvent.requestPermission()
+      .then(s => {
+        if (s === 'granted') {
+          window.addEventListener('deviceorientation', handler, true);
+          _compassStarted = true;
+        }
+      }).catch(() => {});
+  } else if (typeof DeviceOrientationEvent !== 'undefined') {
+    window.addEventListener('deviceorientation', handler, true);
+    _compassStarted = true;
+  }
+}
+
+function _writeMyLoc() {
+  if (!_myPos || !_team) return;
+  const uid   = localStorage.getItem('cien_user_id') || 'guest';
+  const uname = localStorage.getItem('cien_user_name') || 'Uczestnik';
+  try {
+    firebase.firestore().collection('cien_locs').doc(`${_team.id}_${uid}`).set({
+      teamId: _team.id, uid, name: uname,
+      lat: _myPos.lat, lng: _myPos.lng,
+      at: firebase.firestore.FieldValue.serverTimestamp(),
+    });
+  } catch (_e) {}
+}
+
+function _startLocSharing() {
+  if (_locSharing) return;
+  _locSharing = true;
+  _watchId = navigator.geolocation.watchPosition(
+    pos => {
+      _myPos = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      if (_locWriteThrottle) clearTimeout(_locWriteThrottle);
+      _locWriteThrottle = setTimeout(_writeMyLoc, 3000);
+      _updateLocationArrows();
+    },
+    () => {},
+    { enableHighAccuracy: true, maximumAge: 5000 }
+  );
+  _listenTeamLocations();
+  _renderLocTab();
+}
+
+function _stopLocSharing() {
+  if (!_locSharing && _watchId == null) return;
+  _locSharing = false;
+  if (_watchId != null) { navigator.geolocation.clearWatch(_watchId); _watchId = null; }
+  if (_locUnsub)         { _locUnsub(); _locUnsub = null; }
+  if (_locWriteThrottle) { clearTimeout(_locWriteThrottle); _locWriteThrottle = null; }
+  if (_team) {
+    const uid = localStorage.getItem('cien_user_id') || 'guest';
+    try { firebase.firestore().collection('cien_locs').doc(`${_team.id}_${uid}`).delete(); } catch (_e) {}
+  }
+  _myPos = null;
+  _teamLocs = {};
+  if (_chatTab === 'lokalizacja') _renderLocTab();
+}
+
+function _listenTeamLocations() {
+  if (!_team) return;
+  try {
+    const uid = localStorage.getItem('cien_user_id') || 'guest';
+    _locUnsub = firebase.firestore().collection('cien_locs')
+      .where('teamId', '==', _team.id)
+      .onSnapshot(snap => {
+        _teamLocs = {};
+        snap.forEach(doc => { const d = doc.data(); if (d.uid !== uid) _teamLocs[d.uid] = d; });
+        _updateLocationUI();
+        _updateLocationArrows();
+      });
+  } catch (_e) {}
+}
+
+function _updateLocationUI() {
+  if (_chatTab !== 'lokalizacja') return;
+  const el = document.getElementById('loc-teammates');
+  if (!el) return;
+  const active = Object.values(_teamLocs);
+  if (!active.length) {
+    el.innerHTML = '<div class="loc-empty">Nikt z drużyny nie udostępnia lokalizacji</div>';
+    return;
+  }
+  el.innerHTML = active.map(m => {
+    const dist = _myPos ? _haversine(_myPos.lat, _myPos.lng, m.lat, m.lng) : null;
+    const bear = _myPos ? _bearing(_myPos.lat, _myPos.lng, m.lat, m.lng) : null;
+    const rel  = (bear != null && _compassHeading != null) ? (bear - _compassHeading + 360) % 360 : null;
+    const isSelected = _navTarget?.isTeammate && _navTarget.uid === m.uid;
+    return `<div class="loc-member-card ${dist != null ? _heatClass(dist) : ''} ${isSelected ? 'loc-selected' : ''}"
+                 onclick="setNavTarget('teammate','${m.uid}',${JSON.stringify(m.name || 'Uczestnik')},${m.lat},${m.lng})">
+      <div class="loc-member-name">${_esc(m.name || 'Uczestnik')}</div>
+      ${dist != null ? `<div class="loc-dist-value">${_distLabel(dist)}</div><div class="loc-heat-label">${_heatLabel(dist)}</div>` : '<div class="loc-heat-label">Pozycja znana</div>'}
+      ${rel != null ? `<div class="loc-arrow" style="transform:rotate(${rel}deg)">▲</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function _updateLocationArrows() {
+  if (_chatTab !== 'lokalizacja') return;
+  _updateLocationUI();
+  const arrowEl = document.getElementById('loc-nav-arrow');
+  const distEl  = document.getElementById('loc-nav-dist');
+  const heatEl  = document.getElementById('loc-nav-heat');
+  if (!arrowEl || !_navTarget || !_myPos) return;
+
+  let tLat = _navTarget.lat;
+  let tLng = _navTarget.lng;
+  if (_navTarget.isTeammate && _teamLocs[_navTarget.uid]) {
+    tLat = _teamLocs[_navTarget.uid].lat;
+    tLng = _teamLocs[_navTarget.uid].lng;
+  }
+
+  const dist = _haversine(_myPos.lat, _myPos.lng, tLat, tLng);
+  const bear = _bearing(_myPos.lat, _myPos.lng, tLat, tLng);
+  const rel  = _compassHeading != null ? (bear - _compassHeading + 360) % 360 : bear;
+
+  if (distEl) distEl.textContent = _distLabel(dist);
+  if (heatEl) { heatEl.textContent = _heatLabel(dist); heatEl.className = 'loc-nav-heat ' + _heatClass(dist); }
+  arrowEl.style.transform = `rotate(${rel}deg)`;
+}
+
+function setNavTarget(type, uid, name, lat, lng) {
+  if (type === 'teammate') {
+    _navTarget = { isTeammate: true, uid, label: name, lat: parseFloat(lat), lng: parseFloat(lng) };
+  } else {
+    _navTarget = { isTeammate: false, label: name, lat: parseFloat(lat), lng: parseFloat(lng) };
+  }
+  _renderLocTab();
+}
+
+function clearNavTarget() {
+  _navTarget = null;
+  _renderLocTab();
+}
+
+async function setCustomAddress() {
+  const inp = document.getElementById('loc-custom-addr');
+  if (!inp || !inp.value.trim()) return;
+  const query = encodeURIComponent(inp.value.trim() + ', Dolny Śląsk, Poland');
+  try {
+    const res  = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${query}&limit=1`);
+    const data = await res.json();
+    if (data && data[0]) {
+      _navTarget = { isTeammate: false, label: inp.value.trim(), lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+      _renderLocTab();
+    } else {
+      alert('Nie znaleziono adresu. Spróbuj pełniejszego adresu.');
+    }
+  } catch (_e) {
+    alert('Błąd wyszukiwania — sprawdź połączenie.');
+  }
+}
+
+function _tmplLocTab() {
+  return `
+<div class="loc-section">
+  <div class="loc-share-wrap">
+    <div class="loc-share-info">
+      <div class="loc-share-title">Moja lokalizacja</div>
+      <div class="loc-share-sub">${_locSharing ? '📡 Udostępniasz lokalizację drużynie' : 'Ukryta — drużyna Cię nie widzi'}</div>
+    </div>
+    ${navigator.geolocation
+      ? `<button class="loc-share-btn ${_locSharing ? 'loc-share-active' : ''}" onclick="toggleLocSharing()">
+           ${_locSharing ? 'Wyłącz' : 'Włącz'}
+         </button>`
+      : `<span class="loc-no-gps">GPS niedostępny</span>`
+    }
+  </div>
+</div>
+
+${_navTarget ? `
+<div class="loc-section loc-nav-display">
+  <div class="loc-nav-label">${_esc(_navTarget.label)}</div>
+  <div class="loc-nav-arrow-wrap">
+    <div id="loc-nav-arrow" class="loc-nav-big-arrow" style="transform:rotate(0deg)">▲</div>
+  </div>
+  <div id="loc-nav-dist" class="loc-nav-dist-val">${_myPos ? '…' : 'Włącz lokalizację'}</div>
+  <div id="loc-nav-heat" class="loc-nav-heat">${!_myPos ? '' : _compassHeading == null ? 'Skieruj telefon w górę dla strzałki' : ''}</div>
+  <button class="loc-back-btn" onclick="clearNavTarget()">← Zmień cel</button>
+</div>` : ''}
+
+<div class="loc-section">
+  <div class="loc-section-title">Dokąd iść?</div>
+  <div class="loc-dest-grid">
+    ${LOC_DESTINATIONS.map(d => `
+      <button class="loc-dest-btn ${_navTarget && !_navTarget.isTeammate && _navTarget.label === d.label ? 'loc-dest-active' : ''}"
+              onclick="setNavTarget('destination','',${JSON.stringify(d.label)},${d.lat},${d.lng})">
+        <span class="loc-dest-emoji">${d.emoji}</span>
+        <span class="loc-dest-label">${_esc(d.label)}</span>
+      </button>`).join('')}
+    <button class="loc-dest-btn" onclick="document.getElementById('loc-custom-wrap').style.display='block';this.style.display='none'">
+      <span class="loc-dest-emoji">🏠</span>
+      <span class="loc-dest-label">Własny adres</span>
+    </button>
+  </div>
+  <div id="loc-custom-wrap" style="display:none;margin-top:0.75rem">
+    <input id="loc-custom-addr" class="team-input" placeholder="np. ul. Zamkowa 1, Bolków">
+    <button class="team-btn team-btn-primary" style="margin-top:0.5rem;width:100%" onclick="setCustomAddress()">Nawiguj</button>
+  </div>
+</div>
+
+<div class="loc-section">
+  <div class="loc-section-title">Drużyna</div>
+  <div id="loc-teammates">
+    ${!_locSharing
+      ? '<div class="loc-empty">Włącz lokalizację, żeby zobaczyć gdzie są ziomkowie</div>'
+      : '<div class="loc-empty">Ładowanie…</div>'
+    }
+  </div>
+</div>`;
+}
+
+function _renderLocTab() {
+  if (_chatTab !== 'lokalizacja') return;
+  const body = document.getElementById('team-tab-body');
+  if (!body) return;
+  body.innerHTML = _tmplLocTab();
+  if (_myPos) setTimeout(_updateLocationArrows, 50);
+}
+
+function toggleLocSharing() {
+  if (_locSharing) {
+    _stopLocSharing();
+  } else {
+    if (!navigator.geolocation) { alert('GPS niedostępny w tej przeglądarce.'); return; }
+    _startCompass();
+    _startLocSharing();
   }
 }
 

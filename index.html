@@ -147,6 +147,15 @@
       <div id="info-content"></div>
     </div>
 
+    <!-- VIEW: BAZA WIEDZY -->
+    <div class="view" id="view-wiedza">
+      <div class="view-header">
+        <div class="view-title">Baza Wiedzy</div>
+        <div class="view-subtitle">Historia, psychologia, nauka — z przypisami</div>
+      </div>
+      <div id="wiedza-content"></div>
+    </div>
+
   </main>
 
   <!-- BOTTOM NAV -->
@@ -179,6 +188,10 @@
       <span class="nav-icon">ℹ</span>
       <span class="nav-label">Info</span>
     </button>
+    <button class="nav-btn" data-view="wiedza">
+      <span class="nav-icon">📚</span>
+      <span class="nav-label">Wiedza</span>
+    </button>
   </nav>
 
 </div><!-- #app -->
@@ -201,6 +214,14 @@
       Może później
     </button>
   </div>
+</div>
+
+<!-- ARTICLE OVERLAY -->
+<div id="article-overlay">
+  <div class="art-back">
+    <button class="art-back-btn" onclick="closeArticle()">← Baza Wiedzy</button>
+  </div>
+  <div class="art-body" id="article-body"></div>
 </div>
 
 <!-- EVENT / POI MODAL -->

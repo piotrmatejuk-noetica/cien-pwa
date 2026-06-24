@@ -146,7 +146,8 @@ const State = {
     activeStage: 'nigredo',
     activeTab: 'journal'
   },
-  modalEvent: null
+  modalEvent: null,
+  kb: { activeCategory: 'all' }
 };
 
 const ZONES_MAP = {
@@ -346,6 +347,190 @@ const WHEEL_AREA_FORMS = {
   ]
 };
 
+// ============================================
+// BAZA WIEDZY — DANE ARTYKUŁÓW
+// ============================================
+
+const KB_CATEGORIES = [
+  { id: 'all',        label: 'Wszystko', color: '#C9A84C' },
+  { id: 'historia',   label: 'Historia',  color: '#C9A84C' },
+  { id: 'psychologia',label: 'Psychologia', color: '#7B3F82' },
+  { id: 'nauka',      label: 'Nauka',     color: '#4A6FA5' },
+];
+
+const KB_CAT_COLORS = { historia:'#C9A84C', psychologia:'#7B3F82', nauka:'#4A6FA5' };
+
+const ARTICLES_DATA = [
+  {
+    id: 'zamek-historia',
+    title: 'Zamek Świny — 900 lat historii',
+    category: 'historia', emoji: '🏰', readTime: '4 min',
+    teaser: 'Pierwsza wzmianka pochodzi z 1108 roku. W XVII wieku liczył ponad 300 komnat — największy zamek Śląska.',
+    content: `<p>Zamek Świny to jeden z najstarszych zamków prywatnych w Polsce. Pierwsza wzmianka pochodzi z <em>Chronica Bohemorum</em> Kosmasa z Pragi z 1108 roku, gdzie wymieniony jest jako <em>Zvini in Polonia</em><sup>[1]</sup>. Przez ponad pół tysiąclecia był siedzibą rodu von Schweinichen — jednej z najpotężniejszych śląskich rodzin rycerskich.</p><p>W połowie XIV wieku wzniesiono rycerską wieżę mieszkalną. Około 1371 roku Günzel von Schweinichen znacząco rozbudował kompleks. Szczyt potęgi przypadł na wiek XVII — Świny liczyć miały ponad 300 komnat, co czyniło je największą warownią Śląska<sup>[2]</sup>. Najsilniejszy z rodu, Heinrich von Schweinichen, uczestniczył w krucjacie i władał 24 wsiami.</p><p>Upadek był gwałtowny. Podczas wojny siedmioletniej zamek splądrowany został przez wojska rosyjskie. W 1769 roku sprzedany na licytacji pruskiemu ministrowi stanu Janowi Henrykowi hrabiemu von Churschwandt. Do 1941 roku właścicielami byli austriaccy hrabiowie Hoyos von Sprinzenstein, którzy w 1905 roku zlecili pierwsze prace restauracyjne<sup>[3]</sup>.</p><p>Dziś zamek stoi jako malownicza ruina — i właśnie ta ruinowość jest częścią jego siły. Miejsce między historią a rozpadem, między tym co było i tym, co mogłoby być znów.</p>`,
+    sources: [
+      {n:1, text:'Kosmas z Pragi, Chronica Bohemorum (1108); Wikipedia PL — Zamek Świny', url:'https://pl.wikipedia.org/wiki/Zamek_%C5%9Awiny'},
+      {n:2, text:'Gorytajemnic.pl — Fascynująca historia Zamku Świny', url:'https://www.gorytajemnic.pl/ciekawe-miejsca/od-murow-obronnych-do-ksiegozbioru-mistykow-fascynujaca-historia-zamku-swiny.html'},
+      {n:3, text:'Wikipedia DE — Burg Świny', url:'https://de.wikipedia.org/wiki/Burg_%C5%9Awiny'},
+    ]
+  },
+  {
+    id: 'bohme-mistyczny-krag',
+    title: 'Jakob Böhme i mistyczny krąg Zamku Świny',
+    category: 'historia', emoji: '🔮', readTime: '5 min',
+    teaser: 'W 1624 roku na zamku schronił się Jakob Böhme — pierwszy filozof piszący po niemiecku. Jego mecenas Jan Zygmunt von Schweinichen zamienił warownię w centrum europejskiej myśli mistycznej.',
+    content: `<p>W XVII wieku Zamek Świny stał się centrum myśli teozoficzno-mistycznej. Jan Zygmunt von Schweinichen założył tu bogatą bibliotekę i utrzymywał kontakty z mistykami, alchemikami i różokrzyżowcami z całej Europy<sup>[1]</sup>.</p><p><strong>Jakob Böhme</strong> (1575–1624) — szewski czeladnik z Görlitz, który stał się pierwszym filozofem piszącym w języku niemieckim — przebywał na zamku w ostatnim roku swojego życia. W marcu 1624 roku napisał tu <em>„Przesłanie do spragnionej i głodnej duszy"</em>. Na zlecenie von Schweinichena rozpoczął <em>„177 Pytań teozoficznych"</em> — dzieło pozostało nieukończone po jego śmierci w tym samym roku<sup>[2]</sup>.</p><p>Böhme głosił, że Bóg poznaje siebie przez człowieka, a ciemność i światło są równie niezbędnymi aspektami rzeczywistości. Nie ma bytu bez jego przeciwieństwa. Trzy stulecia później Carl Jung powie to samo — choć innymi słowami — opisując relację ego i Cienia.</p><p>Zamek Świny był dla tej idei żywym laboratorium. Ruiny, które chodzisz teraz po zmierzchu, pamiętają rozmowy, które zmieniły historię filozofii.</p>`,
+    sources: [
+      {n:1, text:'Gorytajemnic.pl — Fascynująca historia Zamku Świny', url:'https://www.gorytajemnic.pl/ciekawe-miejsca/od-murow-obronnych-do-ksiegozbioru-mistykow-fascynujaca-historia-zamku-swiny.html'},
+      {n:2, text:'Wikipedia EN — Jakob Böhme', url:'https://en.wikipedia.org/wiki/Jakob_B%C3%B6hme'},
+    ]
+  },
+  {
+    id: 'franckenberg-alchemik',
+    title: 'Abraham von Franckenberg — alchemik i mistyk Śląska',
+    category: 'historia', emoji: '⚗️', readTime: '4 min',
+    teaser: 'Śląski szlachcic, matematyk i alchemik, który spotkał Böhmego właśnie na Zamku Świny. Jego krąg uczniów rozszerzył się w europejski Zakon Złotego Krzyża.',
+    content: `<p>Mało kto wie, że nici między mistyką Zamku Świny a europejskim ruchem różokrzyżowym prowadzą przez jedną postać: <strong>Abrahama von Franckenberga</strong> (1593–1652). Śląski szlachcic, matematyk, mistyk i alchemik spotkał Jakoba Böhmego właśnie na Zamku Świny w 1623 roku<sup>[1]</sup>.</p><p>Franckenberg łączył kabałę, alchemię paracelsyjską i myśl gnostycką w spójną „alchemię duchową" — rozumianą nie jako transformację metali, ale jako wewnętrzną przemianę człowieka. Jego krąg uczniów rozszerzył się w znany <em>Orden des Gold- und Rosenkreuz</em> (Zakon Złotego i Różanego Krzyża)<sup>[2]</sup>.</p><p>Franckenberg sformułował ideę, że starożytna mądrość — niezależnie od tradycji, czy to chrześcijańskiej, gnostyckiej czy pogańskiej — wskazuje na ten sam proces wewnętrznej przemiany. Nigredo jako oczyszczenie. Albedo jako rozpoznanie. Rubedo jako integracja.</p><p>Zamek Świny nie był przypadkowym tłem dla tych rozmów. Był miejscem, które je umożliwiało.</p>`,
+    sources: [
+      {n:1, text:'Wikipedia EN — Abraham von Franckenberg', url:'https://en.wikipedia.org/wiki/Abraham_von_Franckenberg'},
+      {n:2, text:'ResearchGate — Franckenberg and the Ancient Wisdom of Rebirth', url:'https://www.researchgate.net/publication/357206212_Abraham_von_Franckenberg_and_the_Ancient_Wisdom_of_Rebirth'},
+    ]
+  },
+  {
+    id: 'sedziwoj-tlen',
+    title: 'Michał Sędziwój — Polak, który odkrył tlen',
+    category: 'historia', emoji: '🔬', readTime: '4 min',
+    teaser: 'W 1604 roku w Pradze polak opisał substancję życiodajną w powietrzu — 170 lat przed Scheelem. Na dworze Rudolfa II przez 42 lata. Potem na Śląsku.',
+    content: `<p>W 1604 roku ukazało się dzieło, które przez 150 lat kształtowało europejską chemię. <em>Novum Lumen Chymicum</em> (Nowe Światło Alchemii) napisał Polak — <strong>Michał Sędziwój</strong> (1566–1636). Opisał w nim powietrze zawierające tajemniczą „substancję życiodajną" — pierwiastek, który dziś nazywamy tlenem. Scheele i Priestley „odkryli" go 170 lat później<sup>[1]</sup>.</p><p>Sędziwój był ulubieńcem cesarza Rudolfa II w Pradze — centrum europejskiego okultyzmu i alchemii przełomu XVI/XVII wieku. Przez 42 lata służył na dworze habsburskim — rekordowy czas dla kogokolwiek w tej roli<sup>[2]</sup>. Około 1619 roku przeszedł na służbę Ferdynanda II i zakładał huty ołowiu i żelaza na Śląsku.</p><p>Jego śląski okres oznacza, że działał w tej samej geografii co mistyczny krąg Zamku Świny — choć bezpośredniego kontaktu z von Schweinichenem nie potwierdzono. Sędziwój jest dowodem, że granica między alchemią a nowoczesną nauką była w XVII wieku cienka jak błona. I że Śląsk był miejscem, gdzie tę granicę przekraczano.</p>`,
+    sources: [
+      {n:1, text:'Wikipedia EN — Michael Sendivogius', url:'https://en.wikipedia.org/wiki/Michael_Sendivogius'},
+      {n:2, text:'Krakow.wiki — Michał Sędziwój', url:'https://krakow.wiki/sedziwoj-michal/'},
+    ]
+  },
+  {
+    id: 'nigredo-albedo-rubedo',
+    title: 'Nigredo, Albedo, Rubedo — Jung i mapa przemiany',
+    category: 'psychologia', emoji: '☽', readTime: '5 min',
+    teaser: 'W 1944 roku Jung opublikował „Psychologię i Alchemię" — tezę, że alchemicy projektowali procesy nieświadome na materię. Trzy etapy Magnum Opus to mapa psyche, nie przepis na złoto.',
+    content: `<p>W 1944 roku Carl Gustav Jung opublikował <em>Psychologie und Alchemie</em> — książkę, która zmieniła sposób patrzenia na starożytne teksty alchemiczne. Teza Junga była prosta i rewolucyjna: alchemicy nie próbowali zamienić ołowiu w złoto. Projektowali swoje nieświadome procesy na materię<sup>[1]</sup>.</p><p>Magnum Opus przebiega przez cztery etapy. <strong>Nigredo</strong> (czernienie): rozpad, konfrontacja z tym co ciemne — analogia do spotkania z Cieniem. <strong>Albedo</strong> (bielenie): oczyszczenie, rozpoznanie dwóch odrębnych zasad dążących do zjednoczenia. <strong>Citrinitas</strong> (żółknienie): przebudzenie słoneczne, często pomijany etap. <strong>Rubedo</strong> (czerwienienie): integracja, osiągnięcie Jaźni<sup>[2]</sup>. Dlatego dni Cień Festiwalu noszą te właśnie nazwy.</p><p>Jung pisał: „Alchemia opisuje to, co dzieje się w człowieku, gdy w pełni przeżywa siebie." Dla niego Nigredo to nie porażka — to konieczny punkt wyjścia każdej prawdziwej przemiany. Nie ma Rubedo bez przejścia przez czerń. Jesteś teraz na festiwalu. Gdzieś w tym procesie.</p>`,
+    sources: [
+      {n:1, text:'Jung C.G., Psychologie und Alchemie (1944); scottjeffrey.com — Jung and Alchemy', url:'https://scottjeffrey.com/jung-and-alchemy-magnum-opus/'},
+      {n:2, text:'Wikipedia EN — Nigredo', url:'https://en.wikipedia.org/wiki/Nigredo'},
+    ]
+  },
+  {
+    id: 'cien-archetyp',
+    title: 'Archetyp Cienia — czym jest to, czym nie chcemy być',
+    category: 'psychologia', emoji: '🌑', readTime: '4 min',
+    teaser: '„Cień jest tym, czym człowiek nie chce być" — Jung. To suma odrzuconych treści psychicznych: agresja, seksualność, ale też talenty i siła, których się wstydzimy.',
+    content: `<p>„Cień jest tym, czym człowiek nie chce być" — to definicja, którą Jung zawarł w <em>Zebranych Dziełach</em><sup>[1]</sup>. Cień to suma treści psychicznych odrzuconych jako „nie-ja": cechy, impulsy, emocje, których ego odmawia uznania za własne. Stają się niewidzialne dla nas — ale bardzo widoczne dla innych.</p><p>Cień nie jest zły z natury. Zawiera zarówno to, co kulturowo odrzucone (agresja, seksualność, chciwość), jak i to, co zostało stłumione bez powodu — talenty, spontaniczność, siłę. Jung mówił o „złotym Cieniu": projekcji własnych wartości na innych, która wywołuje idealizację lub zazdrość<sup>[2]</sup>.</p><p>Konfrontacja z Cieniem to pierwszy i najtrudniejszy etap indywiduacji. Nie chodzi o to, by Cień „wyleczyć" lub usunąć — ale by go uznać. Powiedzieć: „Tak, to też jest mną." Dopiero wtedy przestaje kierować nami zza zasłony nieświadomości. Festiwal Cień bierze swoją nazwę właśnie od tego etapu.</p>`,
+    sources: [
+      {n:1, text:'Jung C.G., Collected Works, Vol. 16; The Jungian Shadow — thesap.org.uk', url:'https://www.thesap.org.uk/articles-on-jungian-psychology-2/about-analysis-and-therapy/the-shadow/'},
+      {n:2, text:'Wikipedia EN — Shadow (psychology)', url:'https://en.wikipedia.org/wiki/Shadow_(psychology)'},
+    ]
+  },
+  {
+    id: 'anima-animus',
+    title: 'Anima i Animus — spotkanie z drugą połową siebie',
+    category: 'psychologia', emoji: '☯', readTime: '4 min',
+    teaser: 'W psychice mężczyzny żyje kobiecy aspekt (Anima), w psychice kobiety — męski (Animus). Niezintegrowane, projektujemy je na partnerów. Zintegrowane — stają się źródłem kreatywności.',
+    content: `<p>Jung zauważył, że psyche człowieka nie jest jednorodna płciowo. W psychice mężczyzny żyje kobiecy aspekt — <strong>Anima</strong>. W psychice kobiety — męski <strong>Animus</strong>. Etymologia prosta: łacińskie <em>anima</em> i <em>animus</em> oznaczają po prostu duszę<sup>[1]</sup>.</p><p>Anima i Animus to archetypy — wzorce ponadosobowe zakorzenione w nieświadomości zbiorowej. Działają jako mosty między ego a głębszymi warstwami psyche. Kiedy nie są zintegrowane, projektujemy je na partnerów: zakochujemy się w projekcji, nie w człowieku. Kiedy są uświadomione — stają się źródłem kreatywności, empatii i pełni<sup>[2]</sup>.</p><p>Strefa Anima/Animus na festiwalu to przestrzeń tego spotkania — z contra-sexualem, z tym co w sobie tłumimy ze względu na płeć kulturową. Slow Dating to nie aplikacja randkowa. To ćwiczenie w byciu widzianym przez drugiego człowieka bez maski roli.</p>`,
+    sources: [
+      {n:1, text:'Wikipedia EN — Anima and animus', url:'https://en.wikipedia.org/wiki/Anima_and_animus'},
+      {n:2, text:'Jung C.G., Collected Works Vol. 9ii (Aion); thesap.org.uk', url:'https://www.thesap.org.uk/articles-on-jungian-psychology-2/about-analysis-and-therapy/the-anima-and-animus/'},
+    ]
+  },
+  {
+    id: 'indywiduacja',
+    title: 'Indywiduacja — po co nam festiwal przemiany',
+    category: 'psychologia', emoji: '🌀', readTime: '3 min',
+    teaser: 'Indywiduacja to Jungowski proces integracji świadomości i nieświadomości. Trwa całe życie. Festiwale przemiany, rytuały przejścia, odosobnienia — to starożytne formy stwarzania na nią przestrzeni.',
+    content: `<p>Indywiduacja — jedno z centralnych pojęć psychologii Junga — to proces integracji świadomych i nieświadomych elementów psyche<sup>[1]</sup>. Nie chodzi o stanie się kimś innym. Chodzi o stanie się w pełni tym, kim się jest. Jung widział w tym zadanie życia — trwające całe życie, nigdy nie ukończone.</p><p>Festiwal przemiany, rytuał przejścia, odosobnienie z intencją — to starożytne formy stwarzania przestrzeni dla indywiduacji. Wychodzimy z codzienności, zawieszamy zwykłe role i odpowiedzi, i stajemy przed pytaniem: kim jestem poza tym, czym muszę być?</p><p>Cień Festiwal jest zaprojektowany jako taki kontener. Trzy dni odpowiadają trzem etapom alchemicznym — Nigredo, Albedo, Rubedo. Zamek Świny jest tłem nieprzypadkowym: miejsce stare, z historią mistyczną (Böhme, Franckenberg), poza zasięgiem codzienności. Kontener działa, kiedy wiesz, że jesteś w kontenerze.</p>`,
+    sources: [
+      {n:1, text:'Wikipedia EN — Individuation', url:'https://en.wikipedia.org/wiki/Individuation'},
+      {n:2, text:'Pacifica Graduate Institute — Jung\'s Collected Works', url:'https://pacifica.libguides.com/Jung/shadow'},
+    ]
+  },
+  {
+    id: 'zamek-bolkow',
+    title: 'Zamek Bolków — piastowski strażnik gór',
+    category: 'historia', emoji: '🗡', readTime: '3 min',
+    teaser: '8 km od Zamku Świny stoi jeden z najlepiej zachowanych zamków Dolnego Śląska. Unikalną cechą jest wieża-dziób — jedyna taka w Polsce. Legenda mówi o ukrytej tu Bursztynowej Komnacie.',
+    content: `<p>Osiem kilometrów od Zamku Świny stoi jeden z najlepiej zachowanych zamków Dolnego Śląska. Zamek Bolków (niem. Bolkenstein) pojawia się w dokumentach po raz pierwszy w 1277 roku<sup>[1]</sup>. Jego rozbudowę przypisuje się Bolkowi I Surowemu — temu samemu piastowskiemu władcy, którego imię nosi miasto.</p><p>Wyróżnik Bolkowa to unikalna <strong>wieża-dziób</strong> — wysoka na 25 metrów, ostrym narożnikiem skierowana w stronę potencjalnego ataku. W całej Polsce istnieją tylko dwie takie wieże: w Bolkowie i w Niesytnie<sup>[2]</sup>. Lochy służyły jako więzienie, a legendy mówią o ukrytym tu skarbie — i o Bursztynowej Komnacie, która nigdy nie trafiła do Berlina.</p><p>Bolków leży na <strong>Szlaku Zamków Piastowskich</strong> — trasie liczącej 152 km łączącej 15 warowni Dolnego Śląska. Zamek Świny to najstarszy punkt szlaku (wzmianka z 1108 r.). Zamek Książ — największy na Dolnym Śląsku, trzeci w Polsce — to jego zachodnia kotwica.</p>`,
+    sources: [
+      {n:1, text:'Wikipedia PL — Zamek Bolków', url:'https://pl.wikipedia.org/wiki/Zamek_Bo%C5%82k%C3%B3w'},
+      {n:2, text:'Zamkiobronne.pl — Bolków', url:'https://zamkiobronne.pl/zamek/bolkow/'},
+    ]
+  },
+  {
+    id: 'zamek-grodno',
+    title: 'Zamek Grodno — rycerze-rozbójnicy i Biała Dama',
+    category: 'historia', emoji: '👻', readTime: '3 min',
+    teaser: 'W XV wieku był siedzibą bandy rabusiów łupiących kupców na sudeckich traktach. Zamurowana kasztelanka, studnia tureckiego jeńca i krwawy bunt chłopski z 1680 roku.',
+    content: `<p>Zamek Grodno w Zagórzu Śląskim to jeden z najlepiej zachowanych zamków Dolnego Śląska. Pierwsza wzmianka pochodzi z 1315 roku (burgrabia Kilian von Haugwitz), a budowę przypisuje się Bolkowi I Surowemu<sup>[1]</sup>. W 1392 roku włączony do Korony Czeskiej.</p><p>XV wiek to epoka rycerzy-rozbójników. W latach 1443–1450 zamek był siedzibą Jerzego Mühlheima i jego bandy łupiących kupców na sudeckich traktach<sup>[2]</sup>. W wojnie trzydziestoletniej zajęty przez Szwedów. W 1680 roku na zamku krwawo stłumiony bunt chłopski.</p><p>Legendy nie brakuje: Biała Dama — kasztelanka zamurowana żywcem za zdradę. Studnia wykopana przez tureckiego jeńca. I ta najsłynniejsza: ukryty skarb, którego nie znalazł jeszcze nikt. Grodno warte jest wizyty nie ze względu na legendy — ale dlatego, że mury XIII-wieczne stoją wciąż tam, gdzie je postawiono.</p>`,
+    sources: [
+      {n:1, text:'zamekgrodno.pl — Historia', url:'https://zamekgrodno.pl/historia/'},
+      {n:2, text:'Wikipedia PL — Zamek Grodno', url:'https://pl.wikipedia.org/wiki/Zamek_Grodno_(zamek)'},
+    ]
+  },
+  {
+    id: 'zamek-czocha',
+    title: 'Zamek Czocha — SS, Abwehra i łóżko z zapadnią',
+    category: 'historia', emoji: '🕵', readTime: '4 min',
+    teaser: 'Zbudowany w XIII wieku przez czeskiego króla. W 1941 roku przejęty przez SS jako ośrodek szkolenia oficerów. Według źródeł mieściła się tu szkoła szpiegowska Abwehry.',
+    content: `<p>Zamek Czocha (niem. Tzschocha) w Leśnej to jeden z najlepiej zachowanych zamków w Polsce. Zbudowany w XIII wieku przez króla czeskiego Wacława I jako strażnica pogranicza nad rzeką Kwisą<sup>[1]</sup>. Przez wieki zmieniał właścicieli; w XIX wieku przekształcony w romantyczną rezydencję.</p><p>Historia najciemniejsza: w 1941 roku zamek przejęty przez SS jako ośrodek szkoleniowy oficerów. Według różnych źródeł mieściła się tu szkoła szpiegowska Abwehry — wojskowego wywiadu III Rzeszy<sup>[2]</sup>. Werner von Braun, twórca rakiet V-2, miał wizytować zamek w tym okresie. Tajne pomieszczenia i tunele do dziś nie są w pełni zbadane.</p><p>Legendy są wbudowane w kamień: łóżko z zapadnią, przez które zazdrosny mąż strącił żonę do lochu. Biała Dama Gertruda — kasztelanka ścięta za zdanie zamku husytom w XV wieku. Dziś Czocha jest hotelem i najczęściej odwiedzaną atrakcją turystyczną Dolnego Śląska.</p>`,
+    sources: [
+      {n:1, text:'Wikipedia PL — Zamek Czocha', url:'https://pl.wikipedia.org/wiki/Zamek_Czocha'},
+      {n:2, text:'Zwiedzajacswiat.com — Zamek Czocha: historia, legendy i tajemnice', url:'https://zwiedzajacswiat.com/2016/09/01/zamek-czocha-historia-legendy-i-tajemnice/'},
+    ]
+  },
+  {
+    id: 'historia-hipnozy',
+    title: 'Historia hipnozy — od Mesmera do fMRI',
+    category: 'nauka', emoji: '🧠', readTime: '5 min',
+    teaser: 'Franz Anton Mesmer był w połowie szarlatanem, w połowie geniuszem. To, co po nim zostało, otworzyło naukę hipnozy. Dziś fMRI pokazuje: to nie magia — to mierzalny stan mózgu.',
+    content: `<p><strong>Franz Anton Mesmer</strong> (1734–1815) był w połowie szarlatanem, w połowie geniuszem. Jego „magnetyzm zwierzęcy" — idea kosmicznego przepływu manipulowanego przez ciało — odrzuciła komisja Akademii Francuskiej w 1784 roku<sup>[1]</sup>. Ale coś nieoczekiwanego zostało: pacjenci reagowali. Pytanie „co właściwie się tu dzieje" otworzyło naukę hipnozy.</p><p><strong>James Braid</strong> wprowadził słowo „hipnotyzm" i wykazał, że mechanizm jest neurologiczny, nie magnetyczny. <strong>Jean-Martin Charcot</strong> używał hipnozy do badań nad „histerią" w paryskim Salpêtrière. <strong>Milton Erickson</strong> (1901–1980) zrewolucjonizował podejście: zamiast autorytatywnych komend — pośrednie, permisywne indukcje dostosowane do konkretnego człowieka<sup>[2]</sup>.</p><p>Dziś hipnoza ma swoje miejsce w neuronauce. Badania fMRI pokazują: podczas hipnozy spada aktywność sieci domyślnej (default mode network) i wzrasta łączność między siecią kontroli wykonawczej a obszarami przetwarzania doznań cielesnych<sup>[3]</sup>. To nie magia — to odmieniony stan mózgu, mierzalny i replikowalny.</p>`,
+    sources: [
+      {n:1, text:'Wikipedia EN — History of hypnosis', url:'https://en.wikipedia.org/wiki/History_of_hypnosis'},
+      {n:2, text:'PMC — Neuro-Hypnotism (Robson & Woollams)', url:'https://pmc.ncbi.nlm.nih.gov/articles/PMC3528837/'},
+      {n:3, text:'PMC 2025 — Hypnosis Neural Correlates (fMRI)', url:'https://pmc.ncbi.nlm.nih.gov/articles/PMC13024316/'},
+    ]
+  },
+  {
+    id: 'psylocybina-badania',
+    title: 'Psylocybina w klinice — co mówią badania',
+    category: 'nauka', emoji: '🍄', readTime: '5 min',
+    teaser: 'Johns Hopkins 2020: dwie dawki psylocybiny zredukowały depresję z 22,8 do 7,7 w skali HAMD po 12 miesiącach. FDA przyznała status Breakthrough Therapy. Co to oznacza dla terapii?',
+    content: `<p>W 2020 roku <em>JAMA Psychiatry</em> opublikowała wyniki przełomowego badania Johns Hopkins University. Dwie dawki psylocybiny w połączeniu z terapią wspomagającą: wynik depresji (GRID-HAMD) spadł z 22,8 do 7,7 po 12 miesiącach<sup>[1]</sup>. FDA przyznała psylocybinie status <em>Breakthrough Therapy</em> dla dużej depresji i depresji opornej na leczenie.</p><p>Bezpieczeństwo: Hopkins śledził 250 wolontariuszy w 380 sesjach przez 16 lat. Brak poważnych incydentów psychologicznych. Jedynie 0,9% uczestników zgłosiło przejściowe trudności<sup>[2]</sup>. W badaniach MAPS Phase 3 nad MDMA w leczeniu PTSD: 71% uczestników po zakończeniu nie spełniało już kryteriów PTSD (wobec 47,6% w grupie placebo)<sup>[3]</sup>.</p><p>FDA odrzuciło wniosek o rejestrację MDMA w sierpniu 2024 roku (głosowanie 2:9), wymagając dodatkowego badania Phase 3. Kierunek jest jednak wyraźny. Psylocybina i MDMA przechodzą z marginesu do mainstreamu klinicznego. Pytanie nie brzmi już „czy działają" — ale „jak i dla kogo".</p>`,
+    sources: [
+      {n:1, text:'JAMA Psychiatry — Psilocybin-Assisted Treatment for MDD (2020)', url:'https://pubmed.ncbi.nlm.nih.gov/33146667/'},
+      {n:2, text:'Hopkins Psychedelic Research Center', url:'https://www.hopkinspsychedelic.org/'},
+      {n:3, text:'MAPS.org — MDMA-Assisted Therapy for PTSD', url:'https://maps.org/mdma/ptsd/'},
+    ]
+  },
+  {
+    id: 'harm-reduction-historia',
+    title: 'Harm reduction — Liverpool, Amsterdam i narodziny ruchu',
+    category: 'nauka', emoji: '🛡', readTime: '4 min',
+    teaser: 'Ruch harm reduction narodził się nie z ideologii, ale z pragmatyzmu wobec epidemii HIV. Amsterdam 1984, Liverpool Mersey Model. W 1990 roku — pierwsza globalna konferencja.',
+    content: `<p>Ruch harm reduction (ograniczania szkód) narodził się nie z ideologii, ale z pragmatyzmu wobec epidemii. W <strong>Amsterdamie w 1984 roku</strong> organizacja użytkowników narkotyków <em>Junkiebond</em> uruchomiła pierwsze na świecie formalne programy wymiany igieł — początkowo jako odpowiedź na wirusowe zapalenie wątroby B, szybko przekształcone w ochronę przed HIV<sup>[1]</sup>.</p><p>Równolegle w <strong>Liverpoolu</strong> rozwinął się „Model Mersey": outreach workers wychodzący na ulicę, czyste igły, edukacja bez moralizowania<sup>[2]</sup>. Merseyside jako jeden z niewielu regionów Anglii nie doświadczyło epidemii HIV wśród osób używających narkotyków. W 1990 roku odbyła się w Liverpoolu I Międzynarodowa Konferencja na temat Skutków Używania Narkotyków — narodziny globalnego ruchu.</p><p>Harm reduction nie mówi „nie używaj". Mówi: jeśli używasz, rób to bezpieczniej. To zmiana paradygmatu — od kary do zdrowia publicznego. Punkt SACRUM na festiwalu Cień jest dokładnie tym: przestrzenią bez osądzania, gdzie można zapytać o to, co trudno zapytać gdzie indziej.</p>`,
+    sources: [
+      {n:1, text:'NCBI — History of Amsterdam Needle Exchange', url:'https://www.ncbi.nlm.nih.gov/books/NBK236662/'},
+      {n:2, text:'ResearchGate — Merseyside: the first harm reduction conferences', url:'https://www.researchgate.net/publication/6150957_Merseyside_the_first_harm_reduction_conferences_and_the_early_history_of_harm_reduction'},
+    ]
+  },
+  {
+    id: 'integracja-psychodeliczna',
+    title: 'Integracja psychodeliczna — co robić po doświadczeniu',
+    category: 'nauka', emoji: '🌱', readTime: '4 min',
+    teaser: 'Integracja to faza postdoświadczeniowa kluczowa dla trwałej zmiany. Badania są zgodne: nie samo doświadczenie tworzy zmianę — to co z nim robimy po.',
+    content: `<p>Integracja psychodeliczna — według definicji opublikowanej w <em>Frontiers in Psychology</em> (2022) — to „proces powracania i aktywnego nadawania sensu, przepracowywania, tłumaczenia i przetwarzania treści doświadczenia psychodelicznego... dążenie ku większej równowadze i pełni"<sup>[1]</sup>. To faza postdoświadczeniowa, kluczowa dla trwałej zmiany terapeutycznej.</p><p>Badania są zgodne: nie samo doświadczenie tworzy zmianę — to co z nim robimy po. Sesja bez integracji to sen bez interpretacji: coś się wydarzyło, ale znaczenie zostaje nieprzepracowane. Narzędzia integracji: pisanie (dziennik), rozmowa z terapeutą lub zaufaną osobą, medytacja, zmiana konkretnych nawyków<sup>[2]</sup>.</p><p>Dziennik Przemiany w tej aplikacji jest zaprojektowany właśnie jako narzędzie integracyjne. Pytania Nigredo, Albedo i Rubedo odpowiadają etapom procesu — od konfrontacji, przez rozpoznanie, po zobowiązanie do zmiany. Możesz go wypełnić podczas festiwalu i wrócić do niego po tygodniu. Integracja nie kończy się w niedzielę wieczorem.</p>`,
+    sources: [
+      {n:1, text:'Frontiers in Psychology — What is psychedelic integration? (2022)', url:'https://www.frontiersin.org/journals/psychology/articles/10.3389/fpsyg.2022.824077/full'},
+      {n:2, text:'MAPS.org — Integration Resources', url:'https://maps.org/resources/'},
+    ]
+  },
+];
+
 // Google Calendar token (in-memory only)
 let _gcalToken = null;
 let _gcalTokenClient = null;
@@ -441,7 +626,7 @@ async function loadData() {
 // ROUTER
 // ============================================
 
-const VIEWS = ['teraz', 'mapa', 'slowdating', 'dziennik', 'sacrum', 'druzyna', 'info'];
+const VIEWS = ['teraz', 'mapa', 'slowdating', 'dziennik', 'sacrum', 'druzyna', 'info', 'wiedza'];
 
 function setupRouter() {
   window.addEventListener('hashchange', () => {
@@ -486,6 +671,7 @@ function renderView(view) {
     case 'sacrum':      renderSacrum(); break;
     case 'druzyna':     renderTeamView(); break;
     case 'info':        renderInfo(); break;
+    case 'wiedza':      renderKnowledge(); break;
   }
 }
 
@@ -2013,6 +2199,91 @@ function renderInfo() {
 }
 
 // ============================================
+// VIEW: BAZA WIEDZY
+// ============================================
+
+function renderKnowledge() {
+  const container = document.getElementById('wiedza-content');
+  if (!container) return;
+
+  const activeCategory = State.kb.activeCategory;
+
+  const chipsHTML = KB_CATEGORIES.map(cat => `
+    <button class="kb-chip ${activeCategory === cat.id ? 'active' : ''}"
+            style="${activeCategory === cat.id ? `background:${cat.color};border-color:${cat.color};color:#0A0A0A` : ''}"
+            onclick="setKBCategory('${cat.id}')">
+      ${cat.label}
+    </button>`).join('');
+
+  const filtered = activeCategory === 'all'
+    ? ARTICLES_DATA
+    : ARTICLES_DATA.filter(a => a.category === activeCategory);
+
+  const gridHTML = filtered.map(art => {
+    const catColor = KB_CAT_COLORS[art.category] || '#C9A84C';
+    const catLabel = KB_CATEGORIES.find(c => c.id === art.category)?.label || '';
+    return `
+      <div class="kb-card" onclick="openArticle('${art.id}')">
+        <span class="kb-card-emoji">${art.emoji}</span>
+        <div class="kb-card-cat" style="color:${catColor}">${catLabel}</div>
+        <div class="kb-card-title">${art.title}</div>
+        <div class="kb-card-teaser">${art.teaser}</div>
+        <div class="kb-card-meta">${art.readTime} czytania</div>
+      </div>`;
+  }).join('');
+
+  container.innerHTML = `
+    <div class="kb-filter">${chipsHTML}</div>
+    <div class="kb-grid">${gridHTML}</div>
+  `;
+}
+
+function setKBCategory(cat) {
+  State.kb.activeCategory = cat;
+  renderKnowledge();
+}
+
+function openArticle(id) {
+  const art = ARTICLES_DATA.find(a => a.id === id);
+  if (!art) return;
+
+  const catColor = KB_CAT_COLORS[art.category] || '#C9A84C';
+  const catLabel = KB_CATEGORIES.find(c => c.id === art.category)?.label || '';
+
+  const sourcesHTML = art.sources.map(s =>
+    `<div class="art-source">
+      <span class="art-source-n">[${s.n}]</span>
+      <span>${s.url
+        ? `<a href="${s.url}" target="_blank" rel="noopener">${s.text}</a>`
+        : s.text
+      }</span>
+    </div>`
+  ).join('');
+
+  document.getElementById('article-body').innerHTML = `
+    <div class="art-cat" style="color:${catColor}">${catLabel}</div>
+    <span class="art-emoji">${art.emoji}</span>
+    <h1 class="art-title">${art.title}</h1>
+    <div class="art-meta">${art.readTime} czytania · źródła: ${art.sources.length}</div>
+    <div class="art-content">${art.content}</div>
+    <div class="art-sources">
+      <div class="art-sources-title">Źródła</div>
+      ${sourcesHTML}
+    </div>
+  `;
+
+  const overlay = document.getElementById('article-overlay');
+  overlay.classList.add('open');
+  overlay.scrollTop = 0;
+  document.body.style.overflow = 'hidden';
+}
+
+function closeArticle() {
+  document.getElementById('article-overlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+// ============================================
 // INSTALL PROMPT
 // ============================================
 
@@ -2366,7 +2637,9 @@ Object.assign(window, {
   setJournalStage, autoSaveJournal, saveJournalEntry, emailJournalEntry, toggleEntry,
   callHelp, triggerInstall, dismissInstall,
   sdToggleTag, sdSaveProfile, sdUpdatePreview, sdOpenAddMeeting, sdConfirmAddMeeting, sdDeleteMeeting, sdContact,
-  toggleFavorite
+  toggleFavorite,
+  setKBCategory, openArticle, closeArticle,
+  dismissOnboarding
 });
 
 // ============================================
