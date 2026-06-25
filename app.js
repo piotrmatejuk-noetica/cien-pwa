@@ -5,23 +5,12 @@
 'use strict';
 
 // ============================================
-// AUTH — Google Identity Services
+// AUTH
 // ============================================
 
 const GOOGLE_CLIENT_ID = '797161544700-dsh51dd918bdqto7fpfpamlvq409m38e.apps.googleusercontent.com';
 
-let _fbApp = null;
-let _fbAuth = null;
-
-function initFirebase() {
-  if (typeof FIREBASE_CONFIG === 'undefined' || FIREBASE_CONFIG.apiKey === 'REPLACE_ME') return;
-  try {
-    _fbApp = firebase.initializeApp(FIREBASE_CONFIG);
-    _fbAuth = firebase.auth();
-  } catch (e) {
-    console.warn('[auth] Firebase init failed:', e);
-  }
-}
+function initFirebase() {} // Firebase not used
 
 function _setUser(uid, email, name) {
   localStorage.setItem('cien_user_id', uid);
@@ -75,13 +64,14 @@ function _authSwitchToFull() {
   if (main) main.style.display = '';
 }
 
-// Email quick login — email jako identyfikator, hasło opcjonalne
-function authEmailQuick() {
+function authRegister() {
   if (!_authTermsOk()) return;
-  const input = document.getElementById('auth-email');
-  if (!input || !input.value.trim()) { _authError('Wpisz adres email'); return; }
-  if (!input.validity.valid) { _authError('Wpisz poprawny adres email'); return; }
-  const email = input.value.trim().toLowerCase();
+  const emailEl = document.getElementById('auth-email');
+  const passEl  = document.getElementById('auth-password');
+  if (!emailEl || !emailEl.value.trim()) { _authError('Wpisz adres email'); return; }
+  if (!emailEl.validity.valid) { _authError('Wpisz poprawny adres email'); return; }
+  if (passEl && passEl.value && passEl.value.length < 6) { _authError('Hasło musi mieć co najmniej 6 znaków'); return; }
+  const email = emailEl.value.trim().toLowerCase();
   const uid   = 'email_' + btoa(email).replace(/[^a-zA-Z0-9]/g, '').slice(0, 20);
   const name  = email.split('@')[0];
   _setUser(uid, email, name);
@@ -133,72 +123,6 @@ function _prepareAuthScreen() {
   if (emailInput && prevEmail && !prevUid) emailInput.value = prevEmail;
 }
 
-// --- GOOGLE (Google Identity Services — FedCM flow, nie wymaga konfiguracji originu) ---
-let _googleInitialized = false;
-
-function _googleCredentialCallback({ credential }) {
-  try {
-    const payload = JSON.parse(atob(credential.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
-    _setUser('google_' + payload.sub, payload.email, payload.name);
-  } catch (e) {
-    _authError('Błąd przetwarzania odpowiedzi Google');
-  }
-}
-
-function _initGoogleAuth() {
-  if (typeof google === 'undefined' || !google.accounts) return;
-  if (_googleInitialized) return;
-  _googleInitialized = true;
-  google.accounts.id.initialize({
-    client_id: GOOGLE_CLIENT_ID,
-    callback: _googleCredentialCallback,
-    cancel_on_tap_outside: true,
-    ux_mode: 'popup',
-  });
-  // Prerenderuj przycisk — działa na wszystkich przeglądarkach (origin zarejestrowany)
-  const container = document.getElementById('google-btn-container');
-  if (container) {
-    try {
-      google.accounts.id.renderButton(container, {
-        type: 'standard',
-        shape: 'rectangular',
-        theme: 'outline',
-        text: 'signin_with',
-        size: 'large',
-        width: 280,
-      });
-    } catch (_) {}
-  }
-}
-
-function authGoogle() {
-  if (!_authTermsOk()) return;
-  if (typeof google === 'undefined' || !google.accounts) {
-    _authError('Google Sign-In się ładuje — spróbuj za chwilę');
-    setTimeout(() => {
-      if (typeof google !== 'undefined' && google.accounts) { _initGoogleAuth(); authGoogle(); }
-    }, 1500);
-    return;
-  }
-  _initGoogleAuth();
-  // Pokaż wyrenderowany przycisk Google (działa na wszystkich przeglądarkach — origin zarejestrowany)
-  const container = document.getElementById('google-btn-container');
-  const mainGoogleBtn = document.querySelector('.auth-social-btn[onclick*="authGoogle"]');
-  if (container) {
-    if (mainGoogleBtn) mainGoogleBtn.style.display = 'none';
-    container.style.display = 'flex';
-  }
-  google.accounts.id.prompt((notification) => {
-    if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-      // One Tap nie pokazany — przycisk już jest widoczny
-      if (!container || container.style.display === 'none') {
-        _authError('Google Sign-In niedostępny. Użyj email.');
-      }
-    }
-  });
-}
-
-
 // ============================================
 // STATE
 // ============================================
@@ -211,7 +135,8 @@ const State = {
     activeZone: 'all'
   },
   map: {
-    activePOIType: 'all'
+    activePOIType: 'all',
+    view: 'svg'
   },
   journal: {
     activeStage: 'nigredo',
@@ -860,18 +785,12 @@ function renderSchedule() {
   const festivalStarted = new Date() >= new Date('2026-07-03T06:00:00');
   const tuITerazHTML = festivalStarted ? renderTuITeraz(events) : '';
 
-  // Day tabs
   const days = ['2026-07-03', '2026-07-04', '2026-07-05'];
-  const DAY_LABELS = { '2026-07-03': '3 VII', '2026-07-04': '4 VII', '2026-07-05': '5 VII' };
-  const dayTabsHTML = days.map(day => {
-    const stage = DAY_STAGES[day];
-    const active = State.schedule.activeDay === day;
-    return `
-      <button class="day-tab ${stage} ${active ? 'active' : ''}" onclick="setActiveDay('${day}')">
-        <div class="tab-stage">${stage}</div>
-        <div class="tab-date">${DAY_LABELS[day]}</div>
-      </button>`;
-  }).join('');
+  const DAY_LABELS = {
+    '2026-07-03': 'Piątek 3 VII — Nigredo',
+    '2026-07-04': 'Sobota 4 VII — Albedo',
+    '2026-07-05': 'Niedziela 5 VII — Rubedo',
+  };
 
   // Zone chips
   const zoneChipsHTML = [
@@ -884,49 +803,42 @@ function renderSchedule() {
       </button>`)
   ].join('');
 
-  // Events for current day + zone
-  // Festival day runs 06:00–05:59, so after-midnight sets belong to the previous day
-  const dayEvents = events.filter(ev => {
-    const matchDay = getFestivalDay(ev.start) === State.schedule.activeDay;
-    const matchZone = State.schedule.activeZone === 'all' || ev.zone === State.schedule.activeZone;
-    return matchDay && matchZone;
-  }).sort((a, b) => {
-    // Sort: events before 06:00 come after events from the same festival day (they're late-night)
-    const aH = new Date(a.start).getHours();
-    const bH = new Date(b.start).getHours();
-    const aOrd = aH < 6 ? aH + 24 : aH;
-    const bOrd = bH < 6 ? bH + 24 : bH;
-    if (aOrd !== bOrd) return aOrd - bOrd;
-    return a.start.localeCompare(b.start);
-  });
+  // All events sorted within each festival day
+  function sortDayEvents(evts) {
+    return evts.sort((a, b) => {
+      const aH = new Date(a.start).getHours();
+      const bH = new Date(b.start).getHours();
+      const aOrd = aH < 6 ? aH + 24 : aH;
+      const bOrd = bH < 6 ? bH + 24 : bH;
+      if (aOrd !== bOrd) return aOrd - bOrd;
+      return a.start.localeCompare(b.start);
+    });
+  }
 
-  const eventsHTML = renderEventsList(dayEvents);
-
-  const favs = getFavorites();
-  const dayFavEvents = dayEvents.filter(e => favs.includes(e.id));
-  const favHTML = dayFavEvents.length ? `
-    <div class="favs-section">
-      <div class="favs-title">⭐ Mój plan na dziś</div>
-      ${dayFavEvents.map(ev => {
-        const zone = (State.data?.festival?.zones || []).find(z => z.id === ev.zone) || {};
-        const color = zone.color || ZONES_MAP[ev.zone]?.color || '#888';
-        const icon = zone.icon || ZONES_MAP[ev.zone]?.icon || '●';
-        return `<div class="event-card" style="border-left-color:${color}" onclick="openEventModal('${ev.id}')">
-          <div class="event-time">${formatTime(ev.start)} <span class="event-duration">→ ${formatTime(ev.end)}</span></div>
-          <div class="event-title">${ev.title}</div>
-          <div class="event-zone-tag" style="color:${color}">${icon} ${zone.shortName || ev.zone}</div>
-        </div>`;
-      }).join('')}
-    </div>
-    <div class="divider" style="margin:0 1rem 0.5rem"></div>` : '';
+  const allDaysHTML = days.map(day => {
+    const stage = DAY_STAGES[day];
+    const dayEvts = events.filter(ev => {
+      const matchDay = getFestivalDay(ev.start) === day;
+      const matchZone = State.schedule.activeZone === 'all' || ev.zone === State.schedule.activeZone;
+      return matchDay && matchZone;
+    });
+    sortDayEvents(dayEvts);
+    if (dayEvts.length === 0) return '';
+    return `
+      <div class="program-day-section">
+        <div class="program-day-header ${stage}">
+          <span class="program-day-stage">${stage.toUpperCase()}</span>
+          <span class="program-day-date">${DAY_LABELS[day]}</span>
+        </div>
+        <div class="events-list">${renderEventsList(dayEvts)}</div>
+      </div>`;
+  }).join('');
 
   container.innerHTML = `
     ${_onboardingCard()}
     ${tuITerazHTML}
-    <div class="day-tabs">${dayTabsHTML}</div>
     <div class="zone-filter">${zoneChipsHTML}</div>
-    ${favHTML}
-    <div class="events-list">${eventsHTML}</div>
+    ${allDaysHTML}
   `;
 }
 
@@ -1176,12 +1088,20 @@ function closeEventModal() {
 // VIEW: MAPA
 // ============================================
 
+const MAP_LEGEND = [
+  { color: '#E05C1A', icon: '⚡', name: 'Scena UMBRA' },
+  { color: '#4A6FA5', icon: '☯',  name: 'Wieża Anima / Animus' },
+  { color: '#7B3F82', icon: '🌀', name: 'Wieża Podświadomości' },
+  { color: '#C9A84C', icon: '🔥', name: 'Pawilon SACRUM' },
+  { color: '#2D7D46', icon: '🎬', name: 'Kino Gnoza' },
+  { color: '#8B4513', icon: '🕯',  name: 'Lochy' },
+];
+
 function renderMap() {
   const container = document.getElementById('map-content');
   if (!container || !State.data) return;
 
-  const zones = State.data.festival?.zones || [];
-  const pois  = State.data.pois || [];
+  const pois = State.data.pois || [];
 
   const poiTypes  = ['all', 'food', 'water', 'toilet', 'help', 'info'];
   const poiLabels = { all:'Wszystko', food:'🍲 GastroPhase', water:'💧 Woda', toilet:'🚻 Toalety', help:'🛡 Pomoc', info:'ℹ Info' };
@@ -1203,22 +1123,24 @@ function renderMap() {
     </div>`
   ).join('');
 
-  const legendHTML = zones.map(z =>
-    `<div class="legend-item" onclick="highlightZone('${z.id}')">
-      <div class="legend-dot" style="background:${z.color}"></div>
-      <span class="legend-name">${z.shortName}</span>
+  const legendHTML = MAP_LEGEND.map(z =>
+    `<div class="map-legend-item">
+      <div class="map-legend-dot" style="background:${z.color}"></div>
+      <span class="map-legend-name">${z.icon} ${z.name}</span>
     </div>`
   ).join('');
 
+  const mapAreaHTML = `<div class="castle-map-wrap">
+      ${_buildCastleSVG()}
+     </div>
+     <div class="map-legend">${legendHTML}</div>`;
+
   container.innerHTML = `
-    <div class="map-3d-wrap">
-      <button class="map-3d-tile" onclick="openMap3D()">
-        <div class="map-3d-tile-icon">🏰</div>
-        <div class="map-3d-tile-label">Mapa 3D Zamku Świny</div>
-        <div class="map-3d-tile-sub">Dotknij, by otworzyć · działa offline</div>
-        <div class="map-3d-tile-arrow">→</div>
-      </button>
+    <div class="map-view-toggle">
+      <button class="map-toggle-btn active">🗺 Mapa stref</button>
+      <button class="map-toggle-btn" onclick="openMap3D()">🏰 Widok 3D ↗</button>
     </div>
+    ${mapAreaHTML}
     <div class="divider" style="margin:0 1rem"></div>
     <div class="poi-section-title">PUNKTY NA MAPIE</div>
     <div class="poi-tabs">${poiTabsHTML}</div>
@@ -2872,6 +2794,22 @@ function deleteAccount() {
   location.reload();
 }
 
+async function updateApp() {
+  closeMoreMenu();
+  showToast('Aktualizowanie…');
+  try {
+    if ('serviceWorker' in navigator) {
+      const reg = await navigator.serviceWorker.getRegistration();
+      if (reg) await reg.update();
+    }
+    if ('caches' in window) {
+      const keys = await caches.keys();
+      await Promise.all(keys.map(k => caches.delete(k)));
+    }
+  } catch (_e) {}
+  location.reload(true);
+}
+
 // ============================================
 // WIĘCEJ MENU
 // ============================================
@@ -2912,6 +2850,7 @@ Object.assign(window, {
   renderProfil, renderUstawienia, profileSave, profilePhotoUpload, profilePhotoSelected,
   togglePushNotifs, deleteAccount,
   toggleMoreMenu, openMoreMenu, closeMoreMenu,
+  updateApp,
 });
 
 // ============================================

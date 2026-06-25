@@ -44,7 +44,7 @@
         "color": "#C9A84C",
         "icon": "🔥",
         "subtitle": "Ogień · Kościotrup · Grzyby",
-        "koordynator": "Rafał Robaszkiewicz",
+        "koordynator": "Adam Ligęza & Rafał Robaszkiewicz",
         "description": "Psychodeliki, ISTDP, biochemia cienia, redukcja szkód. Twarda, uczciwa praca z tym, czego ciało i psyche jeszcze nie zintegrowały.",
         "location": "Kaplica"
       },
@@ -55,7 +55,7 @@
         "color": "#4A6FA5",
         "icon": "☯",
         "subtitle": "Księżyc · Słońce",
-        "koordynator": "Adam Ligęza",
+        "koordynator": "Owidiusz 'Vigo' Okłota",
         "description": "Relacje bez masek, taniec cieni, slow dating, spotkanie przeciwieństw. Jung pisał, że coniunctio oppositorum jest sednem indywiduacji — tutaj je ćwiczymy.",
         "location": "Dziedziniec"
       },
@@ -225,7 +225,7 @@
       "artist": "Owidiusz Okłota",
       "description": "Redukcja szkód i wzajemna troska w festiwalowej rzeczywistości. Jak rozpoznać kryzys psychodeliczny, reagować spokojnie i kiedy wezwać pomoc medyczną. Przygotowanie psychonautyczne. Praktycznie i empatycznie — dla uczestników i wolontariuszy.",
       "start": "2026-07-03T18:00:00",
-      "end": "2026-07-03T19:00:00",
+      "end": "2026-07-03T19:30:00",
       "tags": [
         "harm-reduction",
         "psycare",
@@ -348,7 +348,7 @@
       "id": "e019",
       "zone": "lochy",
       "title": "Transy Hipnotyczne",
-      "artist": "Michał Migała, Team PSH",
+      "artist": "Team PSH",
       "description": "Prowadzone sesje transu grupowego w ciemności podziemi zamku.",
       "start": "2026-07-03T16:30:00",
       "end": "2026-07-03T18:00:00",
@@ -362,7 +362,7 @@
       "id": "e020",
       "zone": "lochy",
       "title": "Transy Hipnotyczne",
-      "artist": "Michał Migała, Team PSH",
+      "artist": "Team PSH",
       "description": "Prowadzone sesje transu grupowego w ciemności podziemi zamku. Edycja wieczorna.",
       "start": "2026-07-03T18:30:00",
       "end": "2026-07-03T20:00:00",
@@ -373,17 +373,33 @@
       ]
     },
     {
+      "id": "e079",
+      "zone": "umbra",
+      "title": "PiotrekMate & Team CIEŃ",
+      "artist": "PiotrekMate & Team CIEŃ",
+      "description": "minimal, deep, organic",
+      "start": "2026-07-03T17:00:00",
+      "end": "2026-07-03T18:00:00",
+      "tags": [
+        "muzyka",
+        "dj",
+        "minimal",
+        "deep",
+        "organic"
+      ]
+    },
+    {
       "id": "e021",
       "zone": "umbra",
-      "title": "Saska Session",
-      "artist": "Saska Session",
-      "description": "trip hop",
+      "title": "Anna Sulejewicz",
+      "artist": "Anna Sulejewicz",
+      "description": "show",
       "start": "2026-07-03T18:00:00",
       "end": "2026-07-03T19:00:00",
       "tags": [
         "muzyka",
         "live",
-        "trip-hop"
+        "show"
       ]
     },
     {
@@ -824,7 +840,7 @@
       "id": "e052",
       "zone": "lochy",
       "title": "Transy Hipnotyczne",
-      "artist": "Michał Migała, Team PSH",
+      "artist": "Team PSH",
       "description": "Prowadzone sesje transu grupowego w ciemności podziemi zamku.",
       "start": "2026-07-04T13:00:00",
       "end": "2026-07-04T14:30:00",
@@ -838,7 +854,7 @@
       "id": "e053",
       "zone": "lochy",
       "title": "Transy Hipnotyczne",
-      "artist": "Michał Migała, Team PSH",
+      "artist": "Team PSH",
       "description": "Prowadzone sesje transu grupowego. Edycja popołudniowa.",
       "start": "2026-07-04T14:30:00",
       "end": "2026-07-04T16:00:00",
@@ -904,6 +920,20 @@
         "pokaz",
         "hipnoza",
         "show"
+      ]
+    },
+    {
+      "id": "e080",
+      "zone": "umbra",
+      "title": "Saska Session",
+      "artist": "Saska Session",
+      "description": "trip hop",
+      "start": "2026-07-04T16:30:00",
+      "end": "2026-07-04T18:00:00",
+      "tags": [
+        "muzyka",
+        "live",
+        "trip-hop"
       ]
     },
     {
@@ -982,15 +1012,15 @@
     {
       "id": "e063",
       "zone": "umbra",
-      "title": "Adam Suski",
-      "artist": "Adam Suski",
-      "description": "psytrance",
+      "title": "WuYas",
+      "artist": "WuYas",
+      "description": "psychodelic",
       "start": "2026-07-05T02:00:00",
       "end": "2026-07-05T03:00:00",
       "tags": [
         "muzyka",
         "dj",
-        "psytrance"
+        "psychodelic"
       ]
     },
     {
@@ -1069,7 +1099,7 @@
     {
       "id": "e069",
       "zone": "sacrum",
-      "title": "W głąb i z powrotem: psychodeliczna podróż przez cień",
+      "title": "Psychodeliczny turysta czy świadomy podróżnik? O przygotowaniu psychodelicznym bez ściemy.",
       "artist": "Magdalena Gajdzińska",
       "description": "Wykład i grupowy trans hipnotyczny. Cień jako przestrzeń dziecięcych emocji i wypartych potrzeb. Samowspółczucie jako narzędzie integracji. Praca z wewnętrznym dzieckiem — bezpieczna przestrzeń, kontakt z tym, co nieakceptowane.",
       "start": "2026-07-05T10:00:00",
@@ -1099,7 +1129,7 @@
     {
       "id": "e071",
       "zone": "sacrum",
-      "title": "Przyszłość polskich psychodelików",
+      "title": "Retreaty psycho(log/del)iczne w praktyce",
       "artist": "Piotr Matejuk",
       "description": "Jak psychodeliki ujawniają ukryte wzorce i aspekty Cienia. Jak świadomie integrować te doświadczenia w ramy terapeutyczne. Jak rozpoznawać granice i Cienie środowiska psychodelicznego — od strony klinicysty z certyfikatami MAPS i IPI.",
       "start": "2026-07-05T13:00:00",
@@ -1114,7 +1144,7 @@
     {
       "id": "e072",
       "zone": "anima",
-      "title": "Cykliczność, stres i energia — psychologia kobiecego funkcjonowania w świecie ciągłego przekraczania granic",
+      "title": "Cykl menstruacyjny — najbardziej niedoceniany nauczyciel rozwoju kobiety.",
       "artist": "Aleksandra Langiewicz",
       "description": "O tym, jak cykl kobiecego ciała i psychiki zderza się ze światem zaprojektowanym wbrew niemu.",
       "start": "2026-07-05T10:00:00",
@@ -1204,8 +1234,8 @@
     {
       "id": "e078",
       "zone": "umbra",
-      "title": "Agamu Agora",
-      "artist": "Agamu Agora",
+      "title": "Agamu Agora & Monika",
+      "artist": "Agamu Agora & Monika",
       "description": "world music — zamknięcie festiwalu",
       "start": "2026-07-05T13:00:00",
       "end": "2026-07-05T17:00:00",
