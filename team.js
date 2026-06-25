@@ -5,6 +5,17 @@
 
 'use strict';
 
+// Pause all PB polling when tab is hidden, resume when visible
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    if (typeof _stopPoll === 'function') _stopPoll();
+    if (typeof _locUnsub !== 'undefined' && typeof _locUnsub === 'function') _locUnsub();
+  } else {
+    if (typeof _team !== 'undefined' && _team && typeof _startPoll === 'function') _startPoll();
+    if (typeof _locSharing !== 'undefined' && _locSharing && _team && typeof _listenTeamLocations === 'function') _listenTeamLocations();
+  }
+});
+
 const PB = 'https://sacrum.life/cien-pb';
 
 // ---- state ----
@@ -748,7 +759,7 @@ function _listenTeamLocations() {
   if (!_team) return;
   if (_locPollTimer) clearInterval(_locPollTimer);
   _fetchTeamLocsPB();
-  _locPollTimer = setInterval(_fetchTeamLocsPB, 5000);
+  _locPollTimer = setInterval(_fetchTeamLocsPB, 10000);
   _locUnsub = () => { clearInterval(_locPollTimer); _locPollTimer = null; };
 }
 
@@ -770,7 +781,7 @@ function _updateLocationUI() {
                  onclick="setNavTarget('teammate','${m.uid}',decodeURIComponent('${encodeURIComponent(m.name || 'Uczestnik')}'),${m.lat},${m.lng})">
       <div class="loc-member-name">${_esc(m.name || 'Uczestnik')}</div>
       ${dist != null ? `<div class="loc-dist-value">${_distLabel(dist)}</div><div class="loc-heat-label">${_heatLabel(dist)}</div>` : '<div class="loc-heat-label">Pozycja znana</div>'}
-      ${rel != null ? `<div class="loc-arrow" style="transform:rotate(${rel}deg)">▲</div>` : ''}
+      ${rel != null ? `<div class="loc-arrow" style="transform:rotate(${rel}deg)"><svg viewBox="0 0 20 28" width="20" height="28" fill="none"><path d="M10 1 L18 15 L10 11 L2 15 Z" fill="currentColor"/><rect x="8.5" y="11" width="3" height="9" rx="1" fill="currentColor" opacity="0.5"/><circle cx="10" cy="25" r="3" stroke="currentColor" stroke-width="1.5" fill="none"/><circle cx="10" cy="25" r="1" fill="currentColor"/></svg></div>` : ''}
     </div>`;
   }).join('');
 }
@@ -852,7 +863,7 @@ ${_navTarget ? `
 <div class="loc-section loc-nav-display">
   <div class="loc-nav-label">${_esc(_navTarget.label)}</div>
   <div class="loc-nav-arrow-wrap">
-    <div id="loc-nav-arrow" class="loc-nav-big-arrow" style="transform:rotate(0deg)">▲</div>
+    <div id="loc-nav-arrow" class="loc-nav-big-arrow" style="transform:rotate(0deg)"><svg viewBox="0 0 60 88" width="60" height="88" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M30 3 L54 42 L30 32 L6 42 Z" fill="#C9A84C" filter="url(#glow)"/><rect x="25" y="32" width="10" height="32" rx="4" fill="#C9A84C" opacity="0.45"/><circle cx="30" cy="76" r="9" stroke="#C9A84C" stroke-width="2" fill="rgba(201,168,76,0.15)"/><circle cx="30" cy="76" r="3.5" fill="#C9A84C"/><defs><filter id="glow"><feGaussianBlur stdDeviation="2" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs></svg></div>
   </div>
   <div id="loc-nav-dist" class="loc-nav-dist-val">${_myPos ? '…' : 'Włącz lokalizację'}</div>
   <div id="loc-nav-heat" class="loc-nav-heat">${!_myPos ? '' : _compassHeading == null ? 'Skieruj telefon w górę dla strzałki' : ''}</div>

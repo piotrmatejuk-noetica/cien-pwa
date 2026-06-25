@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CIEŃ Admin — Panel</title>
+  <style>
+    :root {
+      --bg: #0c0a08; --bg2: #14100d; --bg3: #1e1610;
+      --gold: #C9A84C; --gold2: #e6c96b;
+      --perg: #f0e8d4; --szary: #7a7060;
+      --burgund: #8B3A52; --green: #2D7D46;
+      --red: #c0392b;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg); color: var(--perg);
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      font-size: 15px; min-height: 100vh;
+    }
+    /* LOGIN */
+    #login-screen {
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; min-height: 100vh; gap: 1.5rem; padding: 2rem;
+    }
+    #login-screen h1 { color: var(--gold); font-size: 1.8rem; letter-spacing: 0.06em; }
+    #login-screen p { color: var(--szary); font-size: 0.9rem; }
+    .login-form {
+      width: 100%; max-width: 360px;
+      background: var(--bg2); border: 1px solid rgba(201,168,76,0.2);
+      border-radius: 12px; padding: 1.5rem;
+      display: flex; flex-direction: column; gap: 1rem;
+    }
+    .login-form input {
+      background: var(--bg3); border: 1px solid rgba(201,168,76,0.3);
+      color: var(--perg); border-radius: 8px; padding: 0.7rem 1rem;
+      font-size: 1rem; width: 100%; outline: none;
+    }
+    .login-form input:focus { border-color: var(--gold); }
+    .btn-gold {
+      background: var(--gold); color: #1a1200; border: none;
+      border-radius: 8px; padding: 0.75rem 1.5rem;
+      font-size: 0.95rem; font-weight: 700; cursor: pointer;
+      letter-spacing: 0.04em; transition: background 0.2s;
+    }
+    .btn-gold:hover { background: var(--gold2); }
+    .error-msg { color: var(--red); font-size: 0.85rem; text-align: center; }
+    /* ADMIN PANEL */
+    #admin-panel { display: none; }
+    .admin-header {
+      background: var(--bg2); border-bottom: 1px solid rgba(201,168,76,0.2);
+      padding: 1rem 1.5rem;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .admin-header h1 { color: var(--gold); font-size: 1.2rem; }
+    .admin-header .logout-btn {
+      background: none; border: 1px solid var(--szary); color: var(--szary);
+      border-radius: 6px; padding: 0.35rem 0.75rem; cursor: pointer; font-size: 0.8rem;
+    }
+    .admin-header .logout-btn:hover { border-color: var(--perg); color: var(--perg); }
+    .admin-body { padding: 1.5rem; max-width: 900px; margin: 0 auto; }
+    .stats-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 1rem; margin-bottom: 2rem;
+    }
+    .stat-card {
+      background: var(--bg2); border: 1px solid rgba(201,168,76,0.15);
+      border-radius: 10px; padding: 1.25rem; text-align: center;
+    }
+    .stat-value { font-size: 2.2rem; font-weight: 700; color: var(--gold); }
+    .stat-label { font-size: 0.8rem; color: var(--szary); margin-top: 0.25rem; }
+    .section-title {
+      font-size: 0.8rem; letter-spacing: 0.12em; color: var(--gold);
+      text-transform: uppercase; margin-bottom: 0.75rem; margin-top: 1.5rem;
+    }
+    table { width: 100%; border-collapse: collapse; }
+    th, td {
+      padding: 0.65rem 0.75rem; text-align: left; font-size: 0.85rem;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    th { color: var(--szary); font-weight: 600; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em; }
+    td { color: var(--perg); }
+    tr:hover td { background: rgba(201,168,76,0.04); }
+    .badge {
+      display: inline-block; padding: 0.2rem 0.5rem;
+      border-radius: 4px; font-size: 0.75rem; font-weight: 600;
+    }
+    .badge-green { background: rgba(45,125,70,0.25); color: #6fcf97; }
+    .badge-gold { background: rgba(201,168,76,0.2); color: var(--gold); }
+    .badge-grey { background: rgba(122,112,96,0.2); color: var(--szary); }
+    .refresh-btn {
+      background: none; border: 1px solid rgba(201,168,76,0.4); color: var(--gold);
+      border-radius: 6px; padding: 0.4rem 1rem; cursor: pointer; font-size: 0.8rem;
+      float: right; margin-top: -0.25rem;
+    }
+    .refresh-btn:hover { background: rgba(201,168,76,0.1); }
+    .loading { color: var(--szary); font-size: 0.85rem; padding: 1rem 0; }
+    .broadcast-form {
+      background: var(--bg2); border: 1px solid rgba(201,168,76,0.15);
+      border-radius: 10px; padding: 1.25rem;
+      display: flex; gap: 0.75rem; align-items: flex-end;
+    }
+    .broadcast-form input {
+      flex: 1; background: var(--bg3); border: 1px solid rgba(201,168,76,0.3);
+      color: var(--perg); border-radius: 8px; padding: 0.6rem 0.9rem;
+      font-size: 0.9rem; outline: none;
+    }
+    .pb-link {
+      display: inline-block; margin-top: 0.5rem;
+      color: var(--gold); font-size: 0.85rem; text-decoration: none;
+    }
+    .pb-link:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <h1>☽ CIEŃ Admin</h1>
+  <p>Panel dostępu dla organizatorów festiwalu</p>
+  <div class="login-form">
+    <input type="password" id="pass-input" placeholder="Hasło administratora"
+           onkeydown="if(event.key==='Enter') doLogin()">
+    <button class="btn-gold" onclick="doLogin()">Zaloguj</button>
+    <div class="error-msg" id="login-error" style="display:none">Błędne hasło</div>
+  </div>
+</div>
+
+<!-- ADMIN PANEL -->
+<div id="admin-panel">
+  <div class="admin-header">
+    <h1>☽ CIEŃ Festiwal 2026 — Admin</h1>
+    <button class="logout-btn" onclick="doLogout()">Wyloguj</button>
+  </div>
+  <div class="admin-body">
+    <!-- Stats -->
+    <div class="section-title">Statystyki live <button class="refresh-btn" onclick="loadAll()">↻ Odśwież</button></div>
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-value" id="s-teams">—</div><div class="stat-label">Drużyny</div></div>
+      <div class="stat-card"><div class="stat-value" id="s-users">—</div><div class="stat-label">Uczestnicy (drużyny)</div></div>
+      <div class="stat-card"><div class="stat-value" id="s-messages">—</div><div class="stat-label">Wiadomości na czacie</div></div>
+      <div class="stat-card"><div class="stat-value" id="s-notes">—</div><div class="stat-label">Notatki</div></div>
+      <div class="stat-card"><div class="stat-value" id="s-meetings">—</div><div class="stat-label">Spotkania SD</div></div>
+    </div>
+
+    <!-- Teams table -->
+    <div class="section-title">Lista drużyn</div>
+    <div id="teams-table"><div class="loading">Ładowanie...</div></div>
+
+    <!-- Recent messages -->
+    <div class="section-title">Ostatnie wiadomości na czacie (20)</div>
+    <div id="messages-table"><div class="loading">Ładowanie...</div></div>
+
+    <!-- PB link -->
+    <div class="section-title">PocketBase</div>
+    <a class="pb-link" href="https://sacrum.life/cien-pb/_/" target="_blank">
+      → Otwórz PocketBase Admin Panel (pełna baza danych)
+    </a>
+  </div>
+</div>
+
+<script>
+const PB = 'https://sacrum.life/cien-pb';
+// Admin password hash (SHA-256 of "cien2026admin")
+const ADMIN_PASS = 'cien2026admin';
+
+function doLogin() {
+  const v = document.getElementById('pass-input').value.trim();
+  if (v === ADMIN_PASS) {
+    sessionStorage.setItem('cien_admin', '1');
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('admin-panel').style.display = 'block';
+    loadAll();
+    setInterval(loadAll, 30000);
+  } else {
+    document.getElementById('login-error').style.display = 'block';
+    document.getElementById('pass-input').value = '';
+  }
+}
+
+function doLogout() {
+  sessionStorage.removeItem('cien_admin');
+  location.reload();
+}
+
+async function pb(path) {
+  const r = await fetch(PB + path);
+  if (!r.ok) throw new Error(r.status);
+  return r.json();
+}
+
+async function loadAll() {
+  try {
+    const [teams, msgs, notes, meetings] = await Promise.all([
+      pb('/api/collections/cien_teams/records?perPage=200&sort=-created'),
+      pb('/api/collections/cien_messages/records?perPage=200&sort=-id'),
+      pb('/api/collections/cien_notes/records?perPage=200'),
+      pb('/api/collections/cien_meetings/records?perPage=200'),
+    ]);
+
+    // Stats
+    const teamList = teams.items || [];
+    const totalUsers = teamList.reduce((s, t) => {
+      try { return s + (JSON.parse(t.members || '[]').length); } catch { return s; }
+    }, 0);
+    document.getElementById('s-teams').textContent = teamList.length;
+    document.getElementById('s-users').textContent = totalUsers;
+    document.getElementById('s-messages').textContent = (msgs.items || []).length;
+    document.getElementById('s-notes').textContent = (notes.items || []).length;
+    document.getElementById('s-meetings').textContent = (meetings.items || []).length;
+
+    // Teams table
+    document.getElementById('teams-table').innerHTML = teamList.length ? `
+      <table>
+        <tr><th>Nazwa</th><th>Kod</th><th>Członkowie</th><th>Utworzona</th></tr>
+        ${teamList.map(t => {
+          let members = [];
+          try { members = JSON.parse(t.members || '[]'); } catch {}
+          const created = new Date(t.created).toLocaleDateString('pl-PL', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+          return `<tr>
+            <td><strong>${esc(t.name || 'Bez nazwy')}</strong></td>
+            <td><span class="badge badge-gold">${esc(t.join_code || '—')}</span></td>
+            <td><span class="badge ${members.length >= 3 ? 'badge-green' : 'badge-grey'}">${members.length} os.</span></td>
+            <td style="color:var(--szary)">${created}</td>
+          </tr>`;
+        }).join('')}
+      </table>
+    ` : '<div class="loading">Brak drużyn</div>';
+
+    // Messages table
+    const msgList = (msgs.items || []).slice(0, 20);
+    document.getElementById('messages-table').innerHTML = msgList.length ? `
+      <table>
+        <tr><th>Kto</th><th>Wiadomość</th><th>Team ID</th><th>Kiedy</th></tr>
+        ${msgList.map(m => {
+          const t = new Date(m.created || Date.now()).toLocaleTimeString('pl-PL', {hour:'2-digit',minute:'2-digit'});
+          return `<tr>
+            <td style="white-space:nowrap">${esc(m.user_name || 'Anonim')}</td>
+            <td>${esc((m.text || '').slice(0, 80))}${(m.text||'').length > 80 ? '…' : ''}</td>
+            <td style="color:var(--szary);font-size:0.75rem">${esc(m.team_id || '').slice(0,8)}…</td>
+            <td style="color:var(--szary)">${t}</td>
+          </tr>`;
+        }).join('')}
+      </table>
+    ` : '<div class="loading">Brak wiadomości</div>';
+
+  } catch(e) {
+    console.error('Admin load error:', e);
+  }
+}
+
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// Auto-login if session active
+if (sessionStorage.getItem('cien_admin') === '1') {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('admin-panel').style.display = 'block';
+  loadAll();
+  setInterval(loadAll, 30000);
+}
+</script>
+</body>
+</html>

@@ -3757,6 +3757,7 @@ img { display: block; max-width: 100%; }
 }
 .loc-arrow {
   width: 40px; height: 40px;
+  display: flex; align-items: center; justify-content: center;
   transition: transform 0.4s ease;
   filter: drop-shadow(0 0 4px currentColor);
 }
@@ -3840,12 +3841,11 @@ img { display: block; max-width: 100%; }
 }
 .loc-nav-arrow-wrap { margin: 0.5rem auto; }
 .loc-nav-big-arrow {
-  font-size: 4rem; color: var(--zloto);
   display: inline-block;
   transition: transform 0.4s ease;
-  filter: drop-shadow(0 0 8px rgba(201,168,76,0.5));
-  line-height: 1;
+  filter: drop-shadow(0 0 10px rgba(201,168,76,0.6));
 }
+.loc-nav-big-arrow svg { display: block; }
 .loc-nav-dist-val {
   font-size: 2.2rem; font-weight: 700;
   color: var(--pergamin); margin: 0.5rem 0 0.25rem;
