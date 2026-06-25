@@ -700,7 +700,7 @@ async function loadData() {
 // ROUTER
 // ============================================
 
-const VIEWS = ['teraz', 'mapa', 'slowdating', 'dziennik', 'sacrum', 'druzyna', 'info', 'wiedza'];
+const VIEWS = ['teraz', 'mapa', 'slowdating', 'dziennik', 'sacrum', 'druzyna', 'info', 'wiedza', 'profil', 'ustawienia'];
 
 function setupRouter() {
   window.addEventListener('hashchange', () => {
@@ -721,9 +721,14 @@ function navigateTo(view) {
   if (!VIEWS.includes(view)) view = 'teraz';
   State.currentView = view;
 
-  // Update nav
+  // Update nav — "Więcej" btn highlights for secondary views
+  const moreViews = ['profil', 'dziennik', 'sacrum', 'wiedza', 'ustawienia'];
   document.querySelectorAll('.nav-btn').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.view === view);
+    if (btn.id === 'nav-more-btn') {
+      btn.classList.toggle('active', moreViews.includes(view));
+    } else {
+      btn.classList.toggle('active', btn.dataset.view === view);
+    }
   });
 
   // Update views
@@ -746,6 +751,8 @@ function renderView(view) {
     case 'druzyna':     renderTeamView(); break;
     case 'info':        renderInfo(); break;
     case 'wiedza':      renderKnowledge(); break;
+    case 'profil':      renderProfil(); break;
+    case 'ustawienia':  renderUstawienia(); break;
   }
 }
 
@@ -2569,6 +2576,7 @@ function sdSaveProfile() {
   profile.nick = nick;
   profile.about = about;
   saveSDProfile(profile);
+  if (typeof _syncProfileToTeam === 'function') _syncProfileToTeam().catch(() => {});
   showToast('Karta zapisana ✓');
 }
 
@@ -2706,6 +2714,189 @@ function showToast(msg, duration = 2500) {
 }
 
 // ============================================
+// PROFIL — unified profile (alias of SD profile, extended)
+// ============================================
+
+function getProfile() {
+  try { return JSON.parse(localStorage.getItem('cien_sd_profile_2026') || '{}'); } catch { return {}; }
+}
+function saveProfile(p) {
+  localStorage.setItem('cien_sd_profile_2026', JSON.stringify(p));
+}
+
+function renderProfil() {
+  const container = document.getElementById('profil-content');
+  if (!container) return;
+  const p = getProfile();
+  const photoHTML = p.photo
+    ? `<img src="${p.photo}" class="profil-photo" alt="Zdjęcie">`
+    : `<div class="profil-photo-placeholder">👤</div>`;
+  const tagsHTML = SD_TAGS.map(t => `
+    <button class="sd-tag-btn ${(p.tags || []).includes(t) ? 'selected' : ''}"
+            onclick="sdToggleTag('${t}')">${escHtml(t)}</button>`).join('');
+
+  container.innerHTML = `
+    <div class="profil-hero">
+      <div class="profil-photo-wrap" onclick="profilePhotoUpload()">
+        ${photoHTML}
+        <div class="profil-photo-edit">📷</div>
+      </div>
+      <div class="profil-nick">${escHtml(p.nick || 'Bez nicka')}</div>
+      ${p.about ? `<div class="profil-about">${escHtml(p.about)}</div>` : ''}
+    </div>
+
+    <div class="sd-section">
+      <div class="sd-section-title">Karta uczestnika</div>
+      <div class="sd-form">
+        <div>
+          <div class="sd-input-label">Nick / imię</div>
+          <input class="sd-input" id="profil-nick" type="text" maxlength="30"
+                 value="${escHtml(p.nick || '')}" placeholder="jak mówią na Ciebie">
+        </div>
+        <div>
+          <div class="sd-input-label">Jedno zdanie o sobie</div>
+          <input class="sd-input" id="profil-about" type="text" maxlength="80"
+                 value="${escHtml(p.about || '')}" placeholder="Co robisz / skąd jesteś / co tu szukasz">
+        </div>
+        <div>
+          <div class="sd-input-label">Zainteresowania (max 4)</div>
+          <div class="sd-tags-grid">${tagsHTML}</div>
+        </div>
+        <div>
+          <div class="sd-input-label">Moje Cienie</div>
+          <textarea class="sd-input profil-shadows-input" id="profil-shadows" maxlength="300"
+                    placeholder="Co przynoszę na ten festiwal? Co chcę zobaczyć w sobie?">${escHtml(p.shadows || '')}</textarea>
+          <div class="sd-char-hint">Widoczne dla członków drużyny</div>
+        </div>
+        <button class="btn btn-gold" onclick="profileSave()">Zapisz profil</button>
+      </div>
+    </div>
+
+    <input type="file" id="profil-photo-input" accept="image/*" style="display:none"
+           onchange="profilePhotoSelected(event)">
+  `;
+}
+
+function profileSave() {
+  const nick    = document.getElementById('profil-nick')?.value?.trim() || '';
+  const about   = document.getElementById('profil-about')?.value?.trim() || '';
+  const shadows = document.getElementById('profil-shadows')?.value?.trim() || '';
+  const p = getProfile();
+  p.nick = nick; p.about = about; p.shadows = shadows;
+  saveProfile(p);
+  if (typeof _syncProfileToTeam === 'function') _syncProfileToTeam().catch(() => {});
+  showToast('Profil zapisany ✓');
+  renderProfil();
+}
+
+function profilePhotoUpload() {
+  document.getElementById('profil-photo-input')?.click();
+}
+
+function profilePhotoSelected(evt) {
+  const file = evt.target.files?.[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const MAX = 200;
+      let w = img.width, h = img.height;
+      if (w > h) { if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; } }
+      else        { if (h > MAX) { w = Math.round(w * MAX / h); h = MAX; } }
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.75);
+      const p = getProfile();
+      p.photo = dataUrl;
+      saveProfile(p);
+      if (typeof _syncProfileToTeam === 'function') _syncProfileToTeam().catch(() => {});
+      renderProfil();
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+// ============================================
+// USTAWIENIA
+// ============================================
+
+function renderUstawienia() {
+  const container = document.getElementById('ustawienia-content');
+  if (!container) return;
+  const pushEnabled = localStorage.getItem('cien_push_enabled') === '1';
+  container.innerHTML = `
+    <div class="view-header">
+      <div class="view-title">Ustawienia</div>
+    </div>
+    <div class="ustawienia-list">
+      <div class="ustawienia-item">
+        <div class="ustawienia-label">
+          <div class="ustawienia-title">Powiadomienia push</div>
+          <div class="ustawienia-sub">Przypomnienia o wykładach i wiadomościach od drużyny</div>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" id="push-toggle" ${pushEnabled ? 'checked' : ''} onchange="togglePushNotifs(this.checked)">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="ustawienia-sep"></div>
+      <button class="ustawienia-item ustawienia-danger" onclick="if(confirm('Usunąć konto? Dane zostaną usunięte z tego urządzenia.')) deleteAccount()">
+        <div>
+          <div class="ustawienia-title">Usuń konto</div>
+          <div class="ustawienia-sub">Usuwa wszystkie dane z urządzenia</div>
+        </div>
+      </button>
+      <div class="ustawienia-sep"></div>
+      <a class="ustawienia-item" href="/polityka-prywatnosci.html" target="_blank">
+        <div class="ustawienia-title">Polityka prywatności</div>
+      </a>
+      <a class="ustawienia-item" href="/regulamin.html" target="_blank">
+        <div class="ustawienia-title">Regulamin</div>
+      </a>
+    </div>
+  `;
+}
+
+function togglePushNotifs(enabled) {
+  localStorage.setItem('cien_push_enabled', enabled ? '1' : '0');
+  if (enabled && 'Notification' in window) Notification.requestPermission();
+  showToast(enabled ? 'Powiadomienia włączone' : 'Powiadomienia wyłączone');
+}
+
+function deleteAccount() {
+  const keys = Object.keys(localStorage).filter(k => k.startsWith('cien_'));
+  keys.forEach(k => localStorage.removeItem(k));
+  location.reload();
+}
+
+// ============================================
+// WIĘCEJ MENU
+// ============================================
+
+function toggleMoreMenu() {
+  const panel = document.getElementById('more-panel');
+  if (!panel) return;
+  panel.style.display !== 'none' ? closeMoreMenu() : openMoreMenu();
+}
+
+function openMoreMenu() {
+  const panel = document.getElementById('more-panel');
+  if (!panel) return;
+  panel.style.display = 'flex';
+  requestAnimationFrame(() => panel.classList.add('open'));
+}
+
+function closeMoreMenu() {
+  const panel = document.getElementById('more-panel');
+  if (!panel) return;
+  panel.classList.remove('open');
+  setTimeout(() => { panel.style.display = 'none'; }, 250);
+}
+
+// ============================================
 // EXPOSE GLOBALS
 // ============================================
 
@@ -2717,7 +2908,10 @@ Object.assign(window, {
   sdToggleTag, sdSaveProfile, sdUpdatePreview, sdOpenAddMeeting, sdConfirmAddMeeting, sdDeleteMeeting, sdContact,
   toggleFavorite,
   setKBCategory, openArticle, closeArticle,
-  dismissOnboarding
+  dismissOnboarding,
+  renderProfil, renderUstawienia, profileSave, profilePhotoUpload, profilePhotoSelected,
+  togglePushNotifs, deleteAccount,
+  toggleMoreMenu, openMoreMenu, closeMoreMenu,
 });
 
 // ============================================

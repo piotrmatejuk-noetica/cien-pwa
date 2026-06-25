@@ -179,6 +179,16 @@
       <div id="wiedza-content"></div>
     </div>
 
+    <!-- VIEW: PROFIL -->
+    <div class="view" id="view-profil">
+      <div id="profil-content"></div>
+    </div>
+
+    <!-- VIEW: USTAWIENIA -->
+    <div class="view" id="view-ustawienia">
+      <div id="ustawienia-content"></div>
+    </div>
+
   </main>
 
   <!-- BOTTOM NAV -->
@@ -195,23 +205,39 @@
       <span class="nav-icon">💘</span>
       <span class="nav-label">Slow Dating</span>
     </button>
-    <button class="nav-btn" data-view="dziennik">
-      <span class="nav-icon">☽</span>
-      <span class="nav-label">Dziennik</span>
-    </button>
-    <button class="nav-btn" data-view="sacrum">
-      <img src="icons/ksiezyc-slonce.jpg" class="nav-sacrum-img" alt="Sacrum">
-      <span class="nav-label">Sacrum</span>
-    </button>
     <button class="nav-btn" data-view="druzyna">
       <span class="nav-icon">🛡</span>
       <span class="nav-label">Drużyna</span>
     </button>
-    <button class="nav-btn" data-view="wiedza">
-      <span class="nav-icon">📚</span>
-      <span class="nav-label">Wiedza</span>
+    <button class="nav-btn" id="nav-more-btn" onclick="toggleMoreMenu()">
+      <span class="nav-icon">☰</span>
+      <span class="nav-label">Więcej</span>
     </button>
   </nav>
+
+  <!-- WIĘCEJ PANEL -->
+  <div id="more-panel" class="more-panel" style="display:none">
+    <div class="more-panel-backdrop" onclick="closeMoreMenu()"></div>
+    <div class="more-panel-sheet">
+      <div class="more-panel-handle"></div>
+      <button class="more-item" onclick="closeMoreMenu();navigateTo('profil')">
+        <span class="more-item-icon">👤</span><span>Mój Profil</span>
+      </button>
+      <button class="more-item" onclick="closeMoreMenu();navigateTo('dziennik')">
+        <span class="more-item-icon">☽</span><span>Dziennik</span>
+      </button>
+      <button class="more-item" onclick="closeMoreMenu();navigateTo('sacrum')">
+        <img src="icons/ksiezyc-slonce.jpg" class="more-item-sacrum-img" alt=""><span>Sacrum</span>
+      </button>
+      <button class="more-item" onclick="closeMoreMenu();navigateTo('wiedza')">
+        <span class="more-item-icon">📚</span><span>Wiedza</span>
+      </button>
+      <div class="more-sep"></div>
+      <button class="more-item" onclick="closeMoreMenu();navigateTo('ustawienia')">
+        <span class="more-item-icon">⚙️</span><span>Ustawienia</span>
+      </button>
+    </div>
+  </div>
 
 </div><!-- #app -->
 

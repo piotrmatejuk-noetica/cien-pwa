@@ -85,6 +85,7 @@ async function teamJoin(code) {
     });
   }
   _persistTeam({ ...team, members });
+  _syncProfileToTeam().catch(() => {});
   return team;
 }
 
@@ -101,6 +102,7 @@ async function teamLoad() {
   try {
     const team = await _pb(`/api/collections/cien_teams/records/${id}`);
     _team = team;
+    _syncProfileToTeam().catch(() => {});
     return team;
   } catch (e) {
     localStorage.removeItem('cien_team_id');
@@ -317,12 +319,18 @@ function _tmplTeam() {
   const at = t => _chatTab === t ? 'active' : '';
   const membersHtml = members.map(m => {
     const isMe = m.uid === myUid;
-    const initials = (m.name || 'U').trim().split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2);
-    return `<div class="team-member-row">
-      <div class="team-member-avatar">${_esc(initials)}</div>
+    const displayName = m.nick || m.name || 'Uczestnik';
+    const initials = displayName.trim().split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2);
+    const avatarHTML = m.photo
+      ? `<img src="${m.photo}" class="team-member-avatar team-member-avatar--photo" alt="">`
+      : `<div class="team-member-avatar">${_esc(initials)}</div>`;
+    return `<div class="team-member-row" onclick="showMemberProfile('${_esc(m.uid)}')">
+      ${avatarHTML}
       <div class="team-member-info">
-        <div class="team-member-name">${_esc(m.name || 'Uczestnik')}${isMe ? ' <span class="team-member-you">(Ty)</span>' : ''}</div>
+        <div class="team-member-name">${_esc(displayName)}${isMe ? ' <span class="team-member-you">(Ty)</span>' : ''}</div>
+        ${m.about ? `<div class="team-member-about">${_esc(m.about)}</div>` : ''}
       </div>
+      <span class="team-member-arrow">›</span>
     </div>`;
   }).join('');
   return `
@@ -934,6 +942,83 @@ async function teamJoinUI() {
     _showTeamError(e.message);
     if (inp) inp.disabled = false;
   }
+}
+
+// ============================================
+// Profile sync
+// ============================================
+
+async function _syncProfileToTeam() {
+  if (!_team) return;
+  const myUid = localStorage.getItem('cien_user_id') || '';
+  if (!myUid) return;
+  const p = (function() { try { return JSON.parse(localStorage.getItem('cien_sd_profile_2026') || '{}'); } catch { return {}; } })();
+  const current = await _pb(`/api/collections/cien_teams/records/${_team.id}`);
+  let members = current.members || [];
+  if (typeof members === 'string') { try { members = JSON.parse(members); } catch { members = []; } }
+  const idx = members.findIndex(m => m.uid === myUid);
+  const entry = idx >= 0 ? { ...members[idx] } : { uid: myUid, name: localStorage.getItem('cien_user_name') || 'Uczestnik' };
+  if (p.nick)    entry.nick    = p.nick;
+  if (p.about)   entry.about   = p.about;
+  if (p.tags)    entry.tags    = p.tags;
+  if (p.photo)   entry.photo   = p.photo;
+  if (p.shadows) entry.shadows = p.shadows;
+  if (idx >= 0) members[idx] = entry; else members.push(entry);
+  await _pb(`/api/collections/cien_teams/records/${_team.id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ members: JSON.stringify(members) }),
+  });
+  _team.members = JSON.stringify(members);
+}
+
+// ============================================
+// Member profile modal
+// ============================================
+
+function showMemberProfile(uid) {
+  const members = _parseMembersList();
+  const m = members.find(x => x.uid === uid);
+  if (!m) return;
+  const myUid = localStorage.getItem('cien_user_id') || '';
+  const isMe = m.uid === myUid;
+  const displayName = m.nick || m.name || 'Uczestnik';
+  const initials = displayName.trim().split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2);
+  const avatarHTML = m.photo
+    ? `<img src="${m.photo}" class="member-modal-photo" alt="">`
+    : `<div class="member-modal-avatar">${_esc(initials)}</div>`;
+  const tagsHTML = (m.tags || []).map(t => `<span class="sd-tag">${_esc(t)}</span>`).join('');
+
+  let modal = document.getElementById('member-profile-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'member-profile-modal';
+    modal.className = 'member-modal-overlay';
+    modal.onclick = e => { if (e.target === modal) closeMemberProfile(); };
+    document.body.appendChild(modal);
+  }
+  modal.innerHTML = `
+    <div class="member-modal-sheet">
+      <button class="member-modal-close" onclick="closeMemberProfile()">✕</button>
+      <div class="member-modal-header">
+        ${avatarHTML}
+        <div class="member-modal-name">${_esc(displayName)}${isMe ? ' <span class="team-member-you">(Ty)</span>' : ''}</div>
+        ${m.about ? `<div class="member-modal-about">${_esc(m.about)}</div>` : ''}
+      </div>
+      ${tagsHTML ? `<div class="member-modal-tags">${tagsHTML}</div>` : ''}
+      ${m.shadows ? `
+        <div class="member-modal-section">
+          <div class="member-modal-section-title">🌑 Moje Cienie</div>
+          <div class="member-modal-section-body">${_esc(m.shadows)}</div>
+        </div>` : ''}
+      ${isMe ? `<button class="btn btn-gold" style="margin:1rem 0 0;width:100%" onclick="closeMemberProfile();navigateTo('profil')">Edytuj profil</button>` : ''}
+    </div>`;
+  modal.style.display = 'flex';
+}
+
+function closeMemberProfile() {
+  const modal = document.getElementById('member-profile-modal');
+  if (modal) modal.style.display = 'none';
 }
 
 // ============================================
