@@ -161,20 +161,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     if (window.Babel && typeof window.Babel.transformScriptTags === 'function') {
       window.Babel.transformScriptTags();
     }
-    // Responsive: scale map to viewport width on mobile
-    function cienFitMap() {
-      var root = document.getElementById('dc-root') || document.querySelector('x-dc') || document.body.firstElementChild;
-      if (!root) return;
-      var s = Math.min(window.innerWidth / 1080, 1);
-      if (s >= 1) { root.style.transform = ''; document.body.style.height = ''; return; }
-      root.style.transformOrigin = '0 0';
-      root.style.transform = 'scale(' + s + ')';
-      document.body.style.height = Math.ceil(root.offsetHeight * s) + 'px';
-      document.body.style.overflow = 'hidden';
-      document.documentElement.style.overflow = 'hidden';
-    }
-    setTimeout(cienFitMap, 800);
-    window.addEventListener('resize', cienFitMap);
+    // Map uses 100vw/100vh — no scaling needed
   } catch (err) {
     setStatus('Error unpacking: ' + err.message);
     console.error('Bundle unpack error:', err);

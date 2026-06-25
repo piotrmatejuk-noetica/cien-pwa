@@ -132,7 +132,9 @@ const State = {
   currentView: 'teraz',
   schedule: {
     activeDay: '2026-07-03',
-    activeZone: 'all'
+    activeZone: 'all',
+    showFavOnly: false,
+    searchQuery: ''
   },
   map: {
     activePOIType: 'all',
@@ -579,6 +581,8 @@ async function init() {
   navigateTo(location.hash.slice(1) || 'teraz');
   const splash = document.getElementById('splash-screen');
   if (splash) setTimeout(() => splash.classList.add('hidden'), 400);
+  initParticles();
+  _fetchWeather();
 
   const loggedIn = localStorage.getItem('cien_user_id');
   if (!loggedIn) {
@@ -589,13 +593,15 @@ async function init() {
   }
   // Init team feature after auth check
   if (loggedIn && typeof initTeam === 'function') initTeam();
-  // Inicjuj Google One Tap
-  if (typeof google !== 'undefined' && google.accounts) {
-    _initGoogleAuth();
-  } else {
-    window.addEventListener('load', () => setTimeout(_initGoogleAuth, 300));
+  // Google Identity Services — init tylko jeśli załadowane i funkcja istnieje
+  if (typeof _initGoogleAuth === 'function') {
+    if (typeof google !== 'undefined' && google.accounts) {
+      _initGoogleAuth();
+    } else {
+      window.addEventListener('load', () => setTimeout(_initGoogleAuth, 300));
+    }
   }
-  if (_fbAuth) {
+  if (typeof _fbAuth !== 'undefined' && _fbAuth) {
     _fbAuth.onAuthStateChanged(user => {
       if (user) {
         _setUser(user.uid, user.email, user.displayName);
@@ -670,7 +676,7 @@ function renderView(view) {
   switch (view) {
     case 'teraz':       renderSchedule(); break;
     case 'mapa':        renderMap(); break;
-    case 'slowdating':  renderSlowDating(); break;
+    case 'slowdating':  _sdTab = 'odkryj'; _sdDeckOk = false; renderSlowDating(); document.getElementById('content')?.scrollTo({top:0}); break;
     case 'dziennik':    renderJournal(); break;
     case 'sacrum':      renderSacrum(); break;
     case 'druzyna':     renderTeamView(); break;
@@ -779,67 +785,104 @@ function renderSchedule() {
   if (!container || !State.data) return;
 
   const events = State.data.events || [];
-  const zones = State.data.festival?.zones || [];
+  const zones  = State.data.festival?.zones || [];
 
-  // TU I TERAZ — zawsze na górze, wszystkie strefy
   const festivalStarted = new Date() >= new Date('2026-07-03T06:00:00');
-  const tuITerazHTML = festivalStarted ? renderTuITeraz(events) : '';
+  const tuITerazHTML    = festivalStarted ? renderTuITeraz(events) : '';
+  const countdownHTML   = !festivalStarted ? _renderCountdown() : '';
+  const weatherHTML     = `<div id="weather-widget-slot" style="margin:0 0 0.5rem">${_renderWeatherWidget()}</div>`;
 
-  const days = ['2026-07-03', '2026-07-04', '2026-07-05'];
-  const DAY_LABELS = {
-    '2026-07-03': 'Piątek 3 VII — Nigredo',
-    '2026-07-04': 'Sobota 4 VII — Albedo',
-    '2026-07-05': 'Niedziela 5 VII — Rubedo',
+  const DAYS = ['2026-07-03', '2026-07-04', '2026-07-05'];
+  const DAY_META = {
+    '2026-07-03': { stage: 'nigredo', label: 'Nigredo', date: 'Pt 3 VII' },
+    '2026-07-04': { stage: 'albedo',  label: 'Albedo',  date: 'Sb 4 VII' },
+    '2026-07-05': { stage: 'rubedo',  label: 'Rubedo',  date: 'Nd 5 VII' },
   };
 
+  const activeDay = State.schedule.activeDay || '2026-07-03';
+
+  // Day tabs
+  const dayTabsHTML = DAYS.map(d => {
+    const m = DAY_META[d];
+    const isActive = d === activeDay;
+    return `<button class="day-tab ${m.stage}${isActive ? ' active' : ''}" onclick="setActiveDay('${d}')">
+      <div class="tab-stage">${m.label}</div>
+      <div class="tab-date">${m.date}</div>
+    </button>`;
+  }).join('');
+
   // Zone chips
+  const favCount = getFavorites().length;
   const zoneChipsHTML = [
-    `<button class="zone-chip all ${State.schedule.activeZone === 'all' ? 'active' : ''}" onclick="setActiveZone('all')">Wszystkie</button>`,
+    `<button class="zone-chip favs ${State.schedule.showFavOnly ? 'active' : ''}" onclick="setFavOnly(${!State.schedule.showFavOnly})">★ Mój Plan${favCount ? ` (${favCount})` : ''}</button>`,
+    `<button class="zone-chip all ${!State.schedule.showFavOnly && State.schedule.activeZone === 'all' ? 'active' : ''}" onclick="setActiveZone('all')">Wszystkie</button>`,
     ...zones.map(z => `
-      <button class="zone-chip ${State.schedule.activeZone === z.id ? 'active' : ''}"
+      <button class="zone-chip ${!State.schedule.showFavOnly && State.schedule.activeZone === z.id ? 'active' : ''}"
               data-zone="${z.id}"
               onclick="setActiveZone('${z.id}')">
         ${z.icon} ${z.shortName}
       </button>`)
   ].join('');
 
-  // All events sorted within each festival day
-  function sortDayEvents(evts) {
-    return evts.sort((a, b) => {
-      const aH = new Date(a.start).getHours();
-      const bH = new Date(b.start).getHours();
-      const aOrd = aH < 6 ? aH + 24 : aH;
-      const bOrd = bH < 6 ? bH + 24 : bH;
-      if (aOrd !== bOrd) return aOrd - bOrd;
-      return a.start.localeCompare(b.start);
-    });
+  // Events for active day only
+  const dayEvts = events.filter(ev => {
+    const matchDay  = getFestivalDay(ev.start) === activeDay;
+    const matchZone = State.schedule.activeZone === 'all' || ev.zone === State.schedule.activeZone;
+    const matchFav  = !State.schedule.showFavOnly || getFavorites().includes(ev.id);
+    return matchDay && matchZone && matchFav;
+  }).sort((a, b) => {
+    const aH = new Date(a.start).getHours();
+    const bH = new Date(b.start).getHours();
+    const aOrd = aH < 6 ? aH + 24 : aH;
+    const bOrd = bH < 6 ? bH + 24 : bH;
+    return aOrd !== bOrd ? aOrd - bOrd : a.start.localeCompare(b.start);
+  });
+
+  const q = (State.schedule.searchQuery || '').toLowerCase().trim();
+  const filteredEvts = q
+    ? dayEvts.filter(ev =>
+        ev.title.toLowerCase().includes(q) ||
+        (ev.artist || '').toLowerCase().includes(q) ||
+        (ev.description || '').toLowerCase().includes(q))
+    : dayEvts;
+
+  let eventsHTML;
+  if (filteredEvts.length) {
+    eventsHTML = `<div class="events-list">${renderEventsList(filteredEvts)}</div>`;
+  } else if (State.schedule.showFavOnly) {
+    eventsHTML = `<div class="empty-favs">
+      <div class="empty-favs-icon">☆</div>
+      <div class="empty-favs-title">Mój Plan jest pusty</div>
+      <div class="empty-favs-hint">Tap ☆ na wydarzeniu żeby dodać je do planu. Twój plan zapisuje się na urządzeniu.</div>
+    </div>`;
+  } else if (q) {
+    eventsHTML = `<div style="padding:2.5rem 1rem;text-align:center;color:var(--szary)">
+      Brak wyników dla <em style="color:var(--pergamin)">"${escHtml(q)}"</em>
+    </div>`;
+  } else {
+    eventsHTML = `<div style="padding:2rem 1rem;text-align:center;color:var(--szary)">Brak wydarzeń w tej strefie.</div>`;
   }
 
-  const allDaysHTML = days.map(day => {
-    const stage = DAY_STAGES[day];
-    const dayEvts = events.filter(ev => {
-      const matchDay = getFestivalDay(ev.start) === day;
-      const matchZone = State.schedule.activeZone === 'all' || ev.zone === State.schedule.activeZone;
-      return matchDay && matchZone;
-    });
-    sortDayEvents(dayEvts);
-    if (dayEvts.length === 0) return '';
-    return `
-      <div class="program-day-section">
-        <div class="program-day-header ${stage}">
-          <span class="program-day-stage">${stage.toUpperCase()}</span>
-          <span class="program-day-date">${DAY_LABELS[day]}</span>
-        </div>
-        <div class="events-list">${renderEventsList(dayEvts)}</div>
-      </div>`;
-  }).join('');
+  const searchVal = escHtml(State.schedule.searchQuery || '');
+  const quoteHTML = !festivalStarted ? _renderAlchemicQuote() : '';
 
   container.innerHTML = `
+    ${countdownHTML}
+    ${quoteHTML}
     ${_onboardingCard()}
     ${tuITerazHTML}
+    ${weatherHTML}
+    <div class="day-tabs">${dayTabsHTML}</div>
     <div class="zone-filter">${zoneChipsHTML}</div>
-    ${allDaysHTML}
+    <div class="schedule-search-wrap">
+      <span class="schedule-search-icon">🔍</span>
+      <input class="schedule-search" type="search" placeholder="Szukaj — wykład, strefa, prowadzący..."
+             value="${searchVal}"
+             oninput="scheduleSearch(this.value)">
+    </div>
+    ${eventsHTML}
   `;
+  _startCountdownTimer();
 }
 
 function renderTuITeraz(allEvents) {
@@ -986,23 +1029,34 @@ function renderEventsList(events) {
 
     const isNow = now >= new Date(ev.start) && now <= new Date(ev.end);
     const isPast = now > new Date(ev.end);
+    const isFav = getFavorites().includes(ev.id);
     const zone = (State.data?.festival?.zones || []).find(z => z.id === ev.zone) || {};
     const color = zone.color || ZONES_MAP[ev.zone]?.color || '#888';
     const icon = zone.icon || ZONES_MAP[ev.zone]?.icon || '●';
 
+    let progressBar = '';
+    if (isNow) {
+      const totalMs = new Date(ev.end) - new Date(ev.start);
+      const elapsed = now - new Date(ev.start);
+      const pct = Math.min(100, Math.round((elapsed / totalMs) * 100));
+      progressBar = `<div class="event-progress"><div class="event-progress-fill" style="width:${pct}%"></div></div>`;
+    }
+
     parts.push(`
-      <div class="event-card ${isNow ? 'is-now' : ''} ${isPast ? 'is-past' : ''}"
+      <div class="event-card ${isNow ? 'is-now' : ''} ${isPast ? 'is-past' : ''} ${isFav ? 'is-fav' : ''}"
            style="border-left-color:${color}"
            onclick="openEventModal('${ev.id}')">
+        ${progressBar}
         <div class="event-time">
-          ${formatTime(ev.start)} <span class="event-duration">→ ${formatTime(ev.end)} (${getDuration(ev.start, ev.end)})</span>
+          ${isNow ? '<span class="live-dot" title="Teraz">●</span> ' : ''}${formatTime(ev.start)} <span class="event-duration">→ ${formatTime(ev.end)} (${getDuration(ev.start, ev.end)})</span>
         </div>
         <div class="event-title">${ev.title}</div>
         ${ev.artist ? `<div class="event-artist">${ev.artist}</div>` : ''}
         <div class="event-zone-tag" style="color:${color}">${icon} ${zone.shortName || zone.name || ev.zone}</div>
-        <button class="fav-btn ${getFavorites().includes(ev.id) ? 'active' : ''}"
-                onclick="event.stopPropagation();toggleFavorite('${ev.id}')">
-          ${getFavorites().includes(ev.id) ? '★' : '☆'}
+        <button class="fav-btn ${isFav ? 'active' : ''}"
+                onclick="event.stopPropagation();toggleFavorite('${ev.id}')"
+                title="${isFav ? 'Usuń z Mojego Planu' : 'Dodaj do Mojego Planu'}">
+          ${isFav ? '★' : '☆'}
         </button>
       </div>`);
   });
@@ -1012,12 +1066,28 @@ function renderEventsList(events) {
 
 function setActiveDay(day) {
   State.schedule.activeDay = day;
+  State.schedule.activeZone = 'all';
+  State.schedule.searchQuery = '';
   renderSchedule();
   updateHeader();
+  document.getElementById('schedule-content')?.scrollTo({ top: 0 });
 }
 
 function setActiveZone(zone) {
   State.schedule.activeZone = zone;
+  State.schedule.showFavOnly = false;
+  renderSchedule();
+}
+
+function setFavOnly(val) {
+  State.schedule.showFavOnly = val;
+  if (val) State.schedule.activeZone = 'all';
+  State.schedule.searchQuery = '';
+  renderSchedule();
+}
+
+function scheduleSearch(q) {
+  State.schedule.searchQuery = q;
   renderSchedule();
 }
 
@@ -1077,7 +1147,68 @@ function openEventModal(eventId) {
     }
   }
 
+  const actionsEl = document.getElementById('modal-actions');
+  if (actionsEl) {
+    const isFav = getFavorites().includes(ev.id);
+    actionsEl.innerHTML = `
+      <button class="modal-action-btn fav-btn ${isFav ? 'is-fav' : ''}" onclick="toggleFavorite('${ev.id}'); this.classList.toggle('is-fav'); this.textContent = this.classList.contains('is-fav') ? '★ W Moim Planie' : '☆ Dodaj do Planu'">
+        ${isFav ? '★ W Moim Planie' : '☆ Dodaj do Planu'}
+      </button>
+      <div class="modal-action-row">
+        <button class="modal-action-sm" onclick="shareEvent('${ev.id}')">↗ Udostępnij</button>
+        <button class="modal-action-sm" onclick="addToCalendar('${ev.id}')">📅 Kalendarze</button>
+      </div>`;
+  }
+
   modal.querySelector('.modal-overlay').classList.add('open');
+}
+
+function shareEvent(eventId) {
+  const ev = (State.data?.events || []).find(e => e.id === eventId);
+  if (!ev) return;
+  const text = `${ev.title}${ev.artist ? ` — ${ev.artist}` : ''}\n${formatTime(ev.start)}–${formatTime(ev.end)} · Cień Festiwal 3–5 VII 2026`;
+  if (navigator.share) {
+    navigator.share({ title: ev.title, text, url: 'https://app.cienfestiwal.com' }).catch(() => {});
+  } else {
+    navigator.clipboard.writeText(text).then(() => showToast('Skopiowano do schowka'));
+  }
+}
+
+function shareApp() {
+  const url = 'https://app.cienfestiwal.com';
+  if (navigator.share) {
+    navigator.share({ title: 'CIEŃ Festiwal 2026', text: 'Masz bilet na Cień? Pobierz aplikację uczestnika 📱', url }).catch(() => {});
+  } else {
+    navigator.clipboard?.writeText(url).then(() => showToast('Link skopiowany!')).catch(() => showToast(url));
+  }
+}
+
+function addToCalendar(eventId) {
+  const ev = (State.data?.events || []).find(e => e.id === eventId);
+  if (!ev) return;
+  // Convert ISO 2026-07-03T12:00:00 → 20260703T120000
+  const toICS = iso => iso.replace(/-/g, '').replace(/:/g, '').replace('T', 'T');
+  const ics = [
+    'BEGIN:VCALENDAR', 'VERSION:2.0',
+    'PRODID:-//CIEŃ Festiwal//App//PL',
+    'X-WR-CALNAME:CIEŃ Festiwal 2026',
+    'BEGIN:VEVENT',
+    `UID:${ev.id}@cienfestiwal.com`,
+    `DTSTART;TZID=Europe/Warsaw:${toICS(ev.start)}`,
+    `DTEND;TZID=Europe/Warsaw:${toICS(ev.end)}`,
+    `SUMMARY:${ev.title}${ev.artist ? ` — ${ev.artist}` : ''}`,
+    `DESCRIPTION:${(ev.description || '').replace(/[\n\r]/g, '\\n')}`,
+    'LOCATION:Zamek Świny\\, Świny\\, Bolków\\, Polska',
+    'GEO:50.8561;16.0464',
+    'END:VEVENT', 'END:VCALENDAR'
+  ].join('\r\n');
+  const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `cien-${ev.id}.ics`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('📅 Plik .ics pobrany');
 }
 
 function closeEventModal() {
@@ -2096,11 +2227,156 @@ function callHelp() {
 // VIEW: INFO
 // ============================================
 
+// ---- NEWS FEED ----
+const ANN_PB   = 'https://sacrum.life/cien-pb';
+const ANN_COL  = 'cien_announcements';
+const PUSH_COL = 'cien_push_subs';
+const VAPID_PUBLIC_KEY = 'BAyjko7oSupodgFaB_WrS8nlMsy17fqdTWy4TbIgX9WCks-mbZYR1lH0zvy-sf8RkfUEgkGooHCt5pVT6MR1WQU';
+const ANN_ADMIN_PIN = '2026cien';  // PIN admina
+
+let _annAdminMode = false;
+let _annHeaderTaps = 0;
+let _annHeaderTapTimer = null;
+
+function _annTapHeader() {
+  _annHeaderTaps++;
+  clearTimeout(_annHeaderTapTimer);
+  _annHeaderTapTimer = setTimeout(() => { _annHeaderTaps = 0; }, 2000);
+  if (_annHeaderTaps >= 5) {
+    _annHeaderTaps = 0;
+    const pin = prompt('PIN admina:');
+    if (pin === ANN_ADMIN_PIN) { _annAdminMode = true; renderInfo(); showToast('Tryb admina aktywny'); }
+  }
+}
+
+async function annPost(e) {
+  e.preventDefault();
+  const title = document.getElementById('ann-title-in')?.value?.trim();
+  const body  = document.getElementById('ann-body-in')?.value?.trim();
+  const type  = document.getElementById('ann-type-in')?.value || 'info';
+  if (!title) return;
+  const btn = e.submitter || document.querySelector('#ann-form button[type=submit]');
+  if (btn) btn.disabled = true;
+  try {
+    await fetch(`${ANN_PB}/api/collections/${ANN_COL}/records`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ title, body: body||'', type }),
+    });
+    showToast('✓ Ogłoszenie dodane');
+    document.getElementById('ann-title-in').value = '';
+    document.getElementById('ann-body-in').value  = '';
+    _loadAnnouncements();
+  } catch { showToast('Błąd zapisu'); }
+  finally { if (btn) btn.disabled = false; }
+}
+
+async function annDelete(id) {
+  if (!confirm('Usunąć ogłoszenie?')) return;
+  await fetch(`${ANN_PB}/api/collections/${ANN_COL}/records/${id}`, { method: 'DELETE' });
+  _loadAnnouncements();
+}
+
+async function _loadAnnouncements() {
+  const el = document.getElementById('ann-list');
+  if (!el) return;
+  try {
+    const r = await fetch(`${ANN_PB}/api/collections/${ANN_COL}/records?sort=-created&perPage=20`);
+    const d = await r.json();
+    const items = d.items || [];
+    const lastSeen = localStorage.getItem('cien_ann_last_seen') || '';
+    if (items.length) localStorage.setItem('cien_ann_last_seen', items[0].id);
+
+    if (!items.length) {
+      el.innerHTML = `<div style="padding:1rem;color:var(--szary);font-size:0.85rem;text-align:center">Brak ogłoszeń</div>`;
+      return;
+    }
+    const TYPE_META = {
+      urgent: { icon:'🚨', color:'#E05C5C', label:'PILNE' },
+      warning:{ icon:'⚠️', color:'#C9A84C', label:'UWAGA' },
+      info:   { icon:'📢', color:'var(--zloto-2)', label:'INFO' },
+    };
+    el.innerHTML = items.map(a => {
+      const m = TYPE_META[a.type] || TYPE_META.info;
+      const isNew = lastSeen && a.id > lastSeen ? '<span style="background:#E05C5C;color:#fff;font-size:0.6rem;padding:0.1rem 0.4rem;border-radius:8px;margin-left:0.4rem;vertical-align:middle">NOWE</span>' : '';
+      const ts = new Date(a.created).toLocaleString('pl-PL',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+      return `<div class="ann-item ann-${a.type||'info'}">
+        <div class="ann-header">
+          <span class="ann-icon">${m.icon}</span>
+          <span class="ann-title">${escHtml(a.title)}${isNew}</span>
+          ${_annAdminMode ? `<button class="ann-del" onclick="annDelete('${a.id}')">✕</button>` : ''}
+        </div>
+        ${a.body ? `<div class="ann-body">${escHtml(a.body)}</div>` : ''}
+        <div class="ann-ts">${ts}</div>
+      </div>`;
+    }).join('');
+  } catch {
+    el.innerHTML = `<div style="padding:1rem;color:var(--szary);font-size:0.85rem">Brak połączenia</div>`;
+  }
+}
+
+function _urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64  = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const raw     = atob(base64);
+  return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
+}
+
+async function subscribePush() {
+  const btn = document.getElementById('push-sub-btn');
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+    showToast('Push nie jest obsługiwany w tej przeglądarce'); return;
+  }
+  try {
+    const perm = await Notification.requestPermission();
+    if (perm !== 'granted') { showToast('Powiadomienia zablokowane — zmień w ustawieniach'); return; }
+    const reg  = await navigator.serviceWorker.ready;
+    const sub  = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: _urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+    });
+    const j = sub.toJSON();
+    await fetch(`${ANN_PB}/api/collections/${PUSH_COL}/records`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ uid: getSDUid(), endpoint: j.endpoint, p256dh: j.keys.p256dh, auth: j.keys.auth }),
+    });
+    localStorage.setItem('cien_push_subscribed', '1');
+    if (btn) { btn.textContent = '🔔 Powiadomienia aktywne'; btn.disabled = true; }
+    showToast('🔔 Powiadomienia włączone!');
+  } catch (e) { showToast('Błąd: ' + e.message); }
+}
+
 function renderInfo() {
   const container = document.getElementById('info-content');
   if (!container) return;
+  const pushSub = localStorage.getItem('cien_push_subscribed');
 
   container.innerHTML = `
+    <div class="ann-section">
+      <div class="ann-section-header" onclick="_annTapHeader()">
+        <span>📢 Ogłoszenia organizatorów</span>
+        ${!pushSub ? `<button class="ann-push-btn" id="push-sub-btn" onclick="subscribePush();event.stopPropagation()">🔔 Powiadomienia</button>` : `<span style="color:var(--szary);font-size:0.75rem">🔔 aktywne</span>`}
+      </div>
+      <div id="ann-list"><div style="padding:1rem;color:var(--szary);font-size:0.85rem;text-align:center">Ładowanie...</div></div>
+    </div>
+
+    ${_annAdminMode ? `
+    <div class="ann-admin-panel">
+      <div class="ann-admin-title">⚙️ Panel admina</div>
+      <form id="ann-form" onsubmit="annPost(event)">
+        <input class="sd-input" id="ann-title-in" placeholder="Tytuł ogłoszenia" required maxlength="120">
+        <textarea class="sd-input" id="ann-body-in" placeholder="Treść (opcjonalnie)" maxlength="1000" rows="3" style="resize:vertical;margin-top:0.5rem"></textarea>
+        <select class="sd-input" id="ann-type-in" style="margin-top:0.5rem">
+          <option value="info">📢 Info</option>
+          <option value="warning">⚠️ Uwaga</option>
+          <option value="urgent">🚨 Pilne</option>
+        </select>
+        <button type="submit" class="btn btn-gold" style="margin-top:0.75rem;width:100%">Opublikuj ogłoszenie</button>
+      </form>
+      <button class="btn-burgund" style="margin-top:0.5rem;width:100%" onclick="_annAdminMode=false;renderInfo()">Wyjdź z trybu admina</button>
+    </div>` : ''}
+
     <div class="info-section" style="margin-top:1rem">
       <div class="info-card">
         <div class="info-card-header">
@@ -2203,6 +2479,7 @@ function renderInfo() {
       </div>
     </div>
   `;
+  _loadAnnouncements();
 }
 
 // ============================================
@@ -2324,13 +2601,31 @@ function dismissInstall() {
 // ============================================
 
 function registerSW() {
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js').catch(console.error);
-  }
+  if (!('serviceWorker' in navigator)) return;
+  navigator.serviceWorker.register('sw.js').then(reg => {
+    // Reload page when new SW takes over — ensures fresh app.js on every update
+    navigator.serviceWorker.addEventListener('controllerchange', () => location.reload());
+
+    // If a new SW is waiting, send it a skip-waiting message immediately
+    if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+    reg.addEventListener('updatefound', () => {
+      const newWorker = reg.installing;
+      if (newWorker) {
+        newWorker.addEventListener('statechange', () => {
+          if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+            newWorker.postMessage({ type: 'SKIP_WAITING' });
+          }
+        });
+      }
+    });
+  }).catch(console.error);
 }
 
 // ============================================
-// VIEW: SLOW DATING
+// VIEW: SLOW DATING (v2 — swipe deck + PocketBase)
+// PocketBase collections needed (public List/View/Create):
+//   cien_sd_profiles: uid, nick, about, tags, emoji
+//   cien_sd_likes:    from_uid, to_uid
 // ============================================
 
 const SD_TAGS = [
@@ -2338,6 +2633,16 @@ const SD_TAGS = [
   'Buddyzm', 'Sztuka', 'Natura', 'Medytacja', 'Trauma', 'NVC',
   'Filozofia', 'Ruch', 'Dźwięk', 'Integracja'
 ];
+
+const SD_EMOJIS = ['💫','🌙','☀️','🌊','🔥','🌿','⚡','🦋','🌸','🐺'];
+
+const SD_PB = 'https://sacrum.life/cien-pb';
+const SD_COL_PROFILES = 'cien_sd_profiles';
+const SD_COL_LIKES    = 'cien_sd_likes';
+
+let _sdTab    = 'odkryj';
+let _sdDeck   = [];
+let _sdDeckOk = false;
 
 function getSDProfile() {
   try { return JSON.parse(localStorage.getItem('cien_sd_profile_2026') || '{}'); } catch { return {}; }
@@ -2353,6 +2658,397 @@ function getSDMeetings() {
 
 function saveSDMeetings(meetings) {
   localStorage.setItem('cien_sd_meetings_2026', JSON.stringify(meetings));
+}
+
+function getSDUid() {
+  let uid = localStorage.getItem('cien_user_id');
+  if (!uid) {
+    uid = 'u_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+    localStorage.setItem('cien_user_id', uid);
+  }
+  return uid;
+}
+
+function getSDSeen() {
+  try { return new Set(JSON.parse(localStorage.getItem('cien_sd_seen_2026') || '[]')); }
+  catch { return new Set(); }
+}
+
+function addSDSeen(uid) {
+  const seen = getSDSeen();
+  seen.add(uid);
+  localStorage.setItem('cien_sd_seen_2026', JSON.stringify([...seen]));
+}
+
+function _sdParseTags(raw) {
+  if (!raw) return [];
+  if (Array.isArray(raw)) return raw;
+  try { return JSON.parse(raw); } catch { return []; }
+}
+
+// ---- main render ----
+
+function renderSlowDating() {
+  const container = document.getElementById('slowdating-content');
+  if (!container) return;
+  const profile = getSDProfile();
+  const emoji   = profile.emoji || '💘';
+  const nick    = profile.nick  || '';
+  container.innerHTML = `
+    <div class="dating-user-bar">
+      <div class="dating-user-avatar">${emoji}</div>
+      <div class="dating-user-name">${nick ? escHtml(nick) : '<span style="color:var(--szary)">Uzupełnij profil</span>'}</div>
+    </div>
+    <div class="dating-tabs">
+      <button class="dating-tab${_sdTab==='odkryj'?' active':''}" onclick="sdSetTab('odkryj')">Odkryj</button>
+      <button class="dating-tab${_sdTab==='karta'?' active':''}" onclick="sdSetTab('karta')">Moja karta</button>
+      <button class="dating-tab${_sdTab==='dopasowania'?' active':''}" onclick="sdSetTab('dopasowania')" id="sd-tab-match-btn">Dopasowania</button>
+    </div>
+    <div id="sd-tab-content" class="sd-tab-body"></div>`;
+  _sdRenderTab();
+}
+
+function sdSetTab(tab) {
+  _sdTab = tab;
+  renderSlowDating();
+}
+
+function _sdRenderTab() {
+  const el = document.getElementById('sd-tab-content');
+  if (!el) return;
+  if (_sdTab === 'odkryj')       _sdRenderDiscover(el);
+  else if (_sdTab === 'karta')   _sdRenderCardForm(el);
+  else                           _sdRenderMatches(el);
+}
+
+// ---- TAB: Odkryj ----
+
+const _SD_DEMO = [
+  { uid:'_demo1', nick:'Marta', about:'Psycholożka z Krakowa. Szukam rozmów o snach i cieniu.', tags:'["Jung","Psychologia","Medytacja"]', emoji:'🌙' },
+  { uid:'_demo2', nick:'Kuba', about:'Muzykant i psychonauta. Gram, podróżuję, integruję.', tags:'["Muzyka","Psychodeliki","Integracja"]', emoji:'🎵' },
+  { uid:'_demo3', nick:'Ania', about:'Terapeutka traumy. Tu po raz pierwszy.', tags:'["Trauma","NVC","Ruch"]', emoji:'🌿' },
+  { uid:'_demo4', nick:'Maciek', about:'Reżyser dźwięku, miłośnik misek gongowych.', tags:'["Dźwięk","Buddyzm","Natura"]', emoji:'🔔' },
+  { uid:'_demo5', nick:'Zuza', about:'Filozofka, doktorantka. Cień to mój ulubiony koncept.', tags:'["Filozofia","Jung","Sztuka"]', emoji:'⚡' },
+];
+
+function _sdRenderDiscover(el) {
+  // Pokaż demo karty natychmiast — zero czekania
+  _sdDeck = [..._SD_DEMO];
+  el.innerHTML = `<div id="sd-deck-wrap"></div>`;
+  _sdRenderDeck(document.getElementById('sd-deck-wrap'));
+  // W tle sprawdź czy są prawdziwe profile i podmień
+  _sdFetchReal();
+}
+
+async function _sdFetchReal() {
+  const myUid = getSDUid();
+  try {
+    const res = await fetch(`${SD_PB}/api/collections/${SD_COL_PROFILES}/records?perPage=100&sort=-created`, { headers: {'Content-Type':'application/json'} });
+    if (!res.ok) return;
+    const data = await res.json();
+    const seen = getSDSeen();
+    const real = (data.items || []).filter(p => p.uid !== myUid && !seen.has(p.uid));
+    if (!real.length) return;
+    _sdDeck = real;
+    const wrap = document.getElementById('sd-deck-wrap');
+    if (wrap) _sdRenderDeck(wrap);
+  } catch { /* zostają demo */ }
+}
+
+function _sdRenderDeck(wrap) {
+  if (!wrap) return;
+  if (_sdDeck.length === 0) {
+    wrap.innerHTML = `
+      <div style="padding:3rem 2rem;text-align:center">
+        <div style="font-size:2.5rem;margin-bottom:1rem">✨</div>
+        <div style="color:var(--pergamin);margin-bottom:0.5rem;font-family:var(--font-display)">Przeswipowałeś wszystkich!</div>
+        <div style="color:var(--szary);font-size:0.85rem;line-height:1.5">Nowe profile pojawią się w dniu festiwalu.</div>
+        <button class="btn-burgund" style="margin-top:1.25rem" onclick="localStorage.removeItem('cien_sd_seen_2026');_sdDeckOk=false;_sdRenderDiscover(document.getElementById('sd-tab-content'))">Zacznij od nowa</button>
+      </div>`;
+    return;
+  }
+  const total   = _sdDeck.length;
+  const visible = _sdDeck.slice(0, 3);
+  const cards   = visible.map((p, i) => {
+    const tags    = _sdParseTags(p.tags);
+    const scale   = 1 - i * 0.025;
+    const yOff    = i * 7;
+    const photoUrl = p.photo ? `${SD_PB}/api/files/${p.collectionId}/${p.id}/${p.photo}?thumb=400x400` : '';
+    const bgStyle  = photoUrl ? `background-image:url(${photoUrl});background-size:cover;background-position:center top;` : '';
+    const hintClass = (i === 0 && !localStorage.getItem('cien_sd_hinted')) ? ' swipe-hint' : '';
+    return `<div class="dating-card${i===0?' is-top':''}${photoUrl?' has-photo':''}${hintClass}" data-uid="${escHtml(p.uid)}"
+              style="transform:scale(${scale}) translateY(${yOff}px);z-index:${3-i};${bgStyle}">
+      <div class="dating-card-overlay">
+        <div class="dating-card-name">${escHtml(p.emoji||'💫')} ${escHtml(p.nick||'')}</div>
+        ${p.about ? `<div class="dating-card-bio">${escHtml(p.about)}</div>` : ''}
+        ${tags.length ? `<div style="display:flex;flex-wrap:wrap;gap:0.4rem;margin-top:0.5rem">${tags.map(t=>`<span class="sd-tag">${escHtml(t)}</span>`).join('')}</div>` : ''}
+      </div>
+      <div class="dating-swipe-indicator left">NOPE</div>
+      <div class="dating-swipe-indicator right">LIKE</div>
+    </div>`;
+  }).join('');
+  wrap.innerHTML = `
+    <div class="dating-deck-info">${total} profil${total===1?'':'e'} do odkrycia</div>
+    <div class="dating-stack" id="sd-stack">${cards}</div>
+    <div class="dating-actions">
+      <button class="dating-action-btn dating-action-no"  onclick="sdSwipe('left')">✕</button>
+      <button class="dating-action-btn dating-action-yes" onclick="sdSwipe('right')">♡</button>
+    </div>`;
+  _sdAttachSwipe();
+}
+
+function _sdAttachSwipe() {
+  const card = document.querySelector('.dating-card.is-top');
+  if (!card) return;
+  let startX = 0, currX = 0, dragging = false;
+
+  const onStart = (x) => { startX = currX = x; dragging = true; card.style.transition = 'none'; card.classList.remove('swipe-hint'); localStorage.setItem('cien_sd_hinted','1'); };
+  const onMove  = (x) => {
+    if (!dragging) return;
+    currX = x;
+    const dx  = currX - startX;
+    const rot = dx * 0.07;
+    card.style.transform = `translate(${dx}px,${Math.abs(dx)*0.04}px) rotate(${rot}deg)`;
+    const pct = Math.min(1, Math.abs(dx) / 80);
+    card.querySelector('.dating-swipe-indicator.left').style.opacity  = dx < 0 ? pct : 0;
+    card.querySelector('.dating-swipe-indicator.right').style.opacity = dx > 0 ? pct : 0;
+  };
+  const onEnd = () => {
+    if (!dragging) return;
+    dragging = false;
+    const dx = currX - startX;
+    card.style.transition = 'transform 300ms ease';
+    if (Math.abs(dx) > 75) {
+      _sdFlyOut(card, dx > 0 ? 'right' : 'left');
+    } else {
+      card.style.transform = '';
+      card.querySelectorAll('.dating-swipe-indicator').forEach(i => i.style.opacity = 0);
+      setTimeout(() => { card.style.transition = ''; }, 300);
+    }
+  };
+
+  card.addEventListener('touchstart', e => { e.stopPropagation(); onStart(e.touches[0].clientX); }, { passive: true });
+  card.addEventListener('touchmove',  e => { e.preventDefault(); onMove(e.touches[0].clientX); },  { passive: false });
+  card.addEventListener('touchend',   onEnd);
+  card.addEventListener('mousedown',  e => { e.preventDefault(); onStart(e.clientX); document.addEventListener('mousemove', _sdMouseMove); document.addEventListener('mouseup', _sdMouseUp, { once: true }); });
+}
+
+function _sdMouseMove(e) { const card = document.querySelector('.dating-card.is-top'); if (!card) return; const dx = e.clientX - (card._sdStartX||e.clientX); if (!card._sdStartX) { card._sdStartX = e.clientX; return; } const rot = dx*0.07; card.style.transform=`translate(${dx}px,${Math.abs(dx)*0.04}px) rotate(${rot}deg)`; const pct=Math.min(1,Math.abs(dx)/80); card.querySelector('.dating-swipe-indicator.left').style.opacity=dx<0?pct:0; card.querySelector('.dating-swipe-indicator.right').style.opacity=dx>0?pct:0; }
+function _sdMouseUp()   { document.removeEventListener('mousemove', _sdMouseMove); const card = document.querySelector('.dating-card.is-top'); if (!card||!card._sdStartX) return; const dummy = { clientX: card._sdStartX }; const stored = card._sdStartX; card._sdStartX=null; /* handled by touchend logic above */ }
+
+function sdSwipe(dir) {
+  const card = document.querySelector('.dating-card.is-top');
+  if (!card) return;
+  card.style.transition = 'transform 300ms ease';
+  _sdFlyOut(card, dir);
+}
+
+function _sdFlyOut(card, dir) {
+  const x = dir === 'right' ? '130vw' : '-130vw';
+  card.querySelector('.dating-swipe-indicator.' + (dir==='right'?'right':'left')).style.opacity = 1;
+  card.style.transform = `translate(${x}, 15px) rotate(${dir==='right'?25:-25}deg)`;
+  setTimeout(() => _sdHandleSwipe(dir), 320);
+}
+
+function _sdHandleSwipe(dir) {
+  const top = _sdDeck[0];
+  if (!top) return;
+  addSDSeen(top.uid);
+  _sdDeck.shift();
+  if (dir === 'right') {
+    _sdSendLike(top);
+    if ('vibrate' in navigator) navigator.vibrate([15, 30, 15]);
+  }
+  const wrap = document.getElementById('sd-deck-wrap');
+  if (wrap) _sdRenderDeck(wrap);
+}
+
+async function _sdSendLike(profile) {
+  const toUid = typeof profile === 'string' ? profile : profile.uid;
+  const profileObj = typeof profile === 'object' ? profile : { uid: toUid };
+  const myUid = getSDUid();
+  try {
+    await fetch(`${SD_PB}/api/collections/${SD_COL_LIKES}/records`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ from_uid: myUid, to_uid: toUid }),
+    });
+    const check = await fetch(`${SD_PB}/api/collections/${SD_COL_LIKES}/records?filter=${encodeURIComponent(`from_uid='${toUid}'&&to_uid='${myUid}'`)}&perPage=1`, { headers:{'Content-Type':'application/json'} });
+    const cd    = await check.json();
+    if (cd.items && cd.items.length) showMatchModal(profileObj);
+  } catch { /* offline */ }
+}
+
+async function _sdPushProfile(photoBlob) {
+  const profile = getSDProfile();
+  if (!profile.nick) return;
+  const myUid = getSDUid();
+  try {
+    const chk  = await fetch(`${SD_PB}/api/collections/${SD_COL_PROFILES}/records?filter=${encodeURIComponent(`uid='${myUid}'`)}&perPage=1`, { headers:{'Content-Type':'application/json'} });
+    const data = await chk.json();
+    let body, headers;
+    if (photoBlob) {
+      const fd = new FormData();
+      fd.append('uid',   myUid);
+      fd.append('nick',  profile.nick);
+      fd.append('about', profile.about || '');
+      fd.append('tags',  JSON.stringify(profile.tags || []));
+      fd.append('emoji', profile.emoji || '💫');
+      fd.append('photo', photoBlob, 'photo.jpg');
+      body = fd; headers = {};
+    } else {
+      body = JSON.stringify({ uid:myUid, nick:profile.nick, about:profile.about||'', tags:JSON.stringify(profile.tags||[]), emoji:profile.emoji||'💫' });
+      headers = {'Content-Type':'application/json'};
+    }
+    if (data.items && data.items.length) {
+      await fetch(`${SD_PB}/api/collections/${SD_COL_PROFILES}/records/${data.items[0].id}`, { method:'PATCH', headers, body });
+    } else {
+      await fetch(`${SD_PB}/api/collections/${SD_COL_PROFILES}/records`, { method:'POST', headers, body });
+    }
+    if (photoBlob) window._sdPendingPhoto = null;
+    _sdDeckOk = false;
+  } catch { /* offline */ }
+}
+
+// ---- TAB: Dopasowania ----
+
+async function _sdRenderMatches(el) {
+  el.innerHTML = `<div style="padding:2.5rem;text-align:center;color:var(--szary)">Ładowanie...</div>`;
+  const myUid = getSDUid();
+  try {
+    const [r1, r2] = await Promise.all([
+      fetch(`${SD_PB}/api/collections/${SD_COL_LIKES}/records?filter=${encodeURIComponent(`from_uid='${myUid}'`)}&perPage=200`, {headers:{'Content-Type':'application/json'}}),
+      fetch(`${SD_PB}/api/collections/${SD_COL_LIKES}/records?filter=${encodeURIComponent(`to_uid='${myUid}'`)}&perPage=200`,   {headers:{'Content-Type':'application/json'}}),
+    ]);
+    const iLiked   = new Set((await r1.json()).items?.map(l=>l.to_uid) || []);
+    const likedMe  = new Set((await r2.json()).items?.map(l=>l.from_uid) || []);
+    const matchUids= [...iLiked].filter(uid => likedMe.has(uid));
+    if (!matchUids.length) {
+      el.innerHTML = `<div style="padding:3rem 2rem;text-align:center">
+        <div style="font-size:2.5rem;margin-bottom:1rem">🌙</div>
+        <div style="color:var(--pergamin);margin-bottom:0.5rem;font-family:var(--font-display)">Brak dopasowań</div>
+        <div style="color:var(--szary);font-size:0.85rem">Odkryj więcej profili — dopasowania pojawią się tu, gdy ktoś polubi Cię wzajemnie.</div></div>`;
+      return;
+    }
+    const filter = matchUids.map(u => `uid='${u}'`).join('||');
+    const pr = await fetch(`${SD_PB}/api/collections/${SD_COL_PROFILES}/records?filter=${encodeURIComponent(filter)}&perPage=100`, {headers:{'Content-Type':'application/json'}});
+    const profiles = (await pr.json()).items || [];
+    el.innerHTML = `<div class="dating-matches-list">${profiles.map(p=>`
+      <div class="dating-match-item">
+        <div class="dating-match-avatar">${p.emoji||'💫'}</div>
+        <div>
+          <div class="dating-match-name">${escHtml(p.nick||'')}</div>
+          <div class="dating-match-last">${escHtml(p.about||'')}</div>
+        </div>
+      </div>`).join('')}</div>`;
+  } catch {
+    el.innerHTML = `<div style="padding:3rem;text-align:center;color:var(--szary)">Brak połączenia — sprawdź internet</div>`;
+  }
+}
+
+// ---- TAB: Moja karta ----
+
+function _sdRenderCardForm(el) {
+  const profile = getSDProfile();
+  const meetings = getSDMeetings();
+
+  const selectedTags = profile.tags || [];
+  const tagsHTML = SD_TAGS.map(t => `
+    <button class="sd-tag-btn ${selectedTags.includes(t)?'selected':''}" onclick="sdToggleTag('${t}')">${t}</button>`).join('');
+
+  const emojiHTML = SD_EMOJIS.map(e => `
+    <button class="sd-emoji-btn${(profile.emoji||'💫')===e?' selected':''}" onclick="sdSetEmoji('${e}')" style="font-size:1.4rem;background:none;border:2px solid ${(profile.emoji||'💫')===e?'var(--zloto)':'transparent'};border-radius:50%;width:2.5rem;height:2.5rem;cursor:pointer;transition:border-color 200ms">${e}</button>`).join('');
+
+  const meetingsHTML = meetings.length ? meetings.map((m,i) => `
+    <div class="sd-meeting-card">
+      <div class="sd-meeting-info">
+        <div class="sd-meeting-nick">${escHtml(m.nick)}</div>
+        ${m.note ? `<div class="sd-meeting-note">${escHtml(m.note)}</div>` : ''}
+      </div>
+      <div class="sd-meeting-actions">
+        ${m.contact ? `<button class="sd-action-btn" onclick="sdContact('${escHtml(m.contact)}')" title="Kontakt">✉</button>` : ''}
+        <button class="sd-action-btn" onclick="sdDeleteMeeting(${i})" title="Usuń">✕</button>
+      </div>
+    </div>`).join('') :
+    `<div class="sd-empty-state">Nie zapisałeś jeszcze żadnego spotkania</div>`;
+
+  const photoDataUrl = localStorage.getItem('cien_sd_photo') || '';
+  const cardBgStyle  = photoDataUrl ? `background-image:url(${photoDataUrl});background-size:cover;background-position:center top;` : '';
+
+  el.innerHTML = `
+    <div class="sd-hero">
+      <div class="sd-hero-icon">💘</div>
+      <div class="sd-hero-title">SLOW DATING</div>
+      <div class="sd-hero-sub">Spotkanie bez algorytmów · prowadzi Maciek Kołodziejczyk EUPHIRE</div>
+    </div>
+    <div class="sd-anima-hero">
+      <img src="icons/ksiezyc-slonce.jpg" alt="Anima Animus" class="sd-anima-img">
+      <div class="sd-anima-label">Anima / Animus · Księżyc · Słońce</div>
+    </div>
+    <div class="sd-sessions">
+      <div class="sd-session-pill">💘 Piątek 16:30–18:00 · Anima/Animus</div>
+      <div class="sd-session-pill">💘 Piątek 18:30–20:00 · Anima/Animus</div>
+    </div>
+    <div class="sd-section">
+      <div class="sd-section-title">Twoja karta</div>
+      <div class="sd-card-preview" id="sd-card-preview" style="${cardBgStyle}">
+        <div class="sd-card-preview-info">
+          <div class="sd-card-nick ${profile.nick?'':'placeholder'}" id="sd-prev-nick">${profile.nick ? escHtml(profile.nick) : 'Twój nick'}</div>
+          <div class="sd-card-about ${profile.about?'':'placeholder'}" id="sd-prev-about">${profile.about ? escHtml(profile.about) : 'Jedno zdanie o sobie...'}</div>
+          <div class="sd-card-tags" id="sd-prev-tags">
+            ${selectedTags.length ? selectedTags.map(t=>`<span class="sd-tag">${t}</span>`).join('') : '<span class="sd-tag" style="opacity:0.4">tagi</span>'}
+          </div>
+        </div>
+      </div>
+      <div class="sd-form">
+        <div>
+          <div class="sd-input-label">Zdjęcie profilowe</div>
+          <input type="file" id="sd-photo-input" accept="image/*" style="display:none" onchange="sdPhotoSelected(this)">
+          <div class="sd-photo-upload" onclick="document.getElementById('sd-photo-input').click()">
+            ${photoDataUrl
+              ? `<img src="${photoDataUrl}" class="sd-photo-thumb" alt="Twoje zdjęcie">`
+              : `<div class="sd-photo-placeholder"><span style="font-size:1.6rem">📷</span><span>Dodaj zdjęcie</span></div>`
+            }
+            <div class="sd-photo-change">${photoDataUrl ? 'Zmień' : 'Dodaj'}</div>
+          </div>
+        </div>
+        <div>
+          <div class="sd-input-label">Emoji avatara</div>
+          <div style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-top:0.25rem" id="sd-emoji-grid">${emojiHTML}</div>
+        </div>
+        <div>
+          <div class="sd-input-label">Nick / imię</div>
+          <input class="sd-input" id="sd-nick" type="text" maxlength="30"
+                 value="${escHtml(profile.nick||'')}" placeholder="jak mówią na Ciebie"
+                 oninput="sdUpdatePreview()">
+        </div>
+        <div>
+          <div class="sd-input-label">Jedno zdanie o sobie</div>
+          <input class="sd-input" id="sd-about" type="text" maxlength="80"
+                 value="${escHtml(profile.about||'')}" placeholder="Co robisz / skąd jesteś / co tu szukasz"
+                 oninput="sdUpdatePreview()">
+          <div class="sd-char-count" id="sd-char-count">${(profile.about||'').length}/80</div>
+        </div>
+        <div>
+          <div class="sd-input-label">Tematy (max 4)</div>
+          <div class="sd-tags-grid">${tagsHTML}</div>
+        </div>
+        <button class="btn btn-gold" onclick="sdSaveProfile()">Zapisz kartę</button>
+      </div>
+    </div>
+    <div class="sd-section">
+      <div class="sd-section-title">Moje spotkania</div>
+      <div class="sd-meetings-list" id="sd-meetings-list">${meetingsHTML}</div>
+      <button class="btn-burgund" onclick="sdOpenAddMeeting()" style="margin-top:0.75rem">+ Dodaj spotkanie</button>
+    </div>`;
+}
+
+function sdSetEmoji(emoji) {
+  const profile = getSDProfile();
+  profile.emoji = emoji;
+  saveSDProfile(profile);
+  if (_sdTab === 'karta') _sdRenderCardForm(document.getElementById('sd-tab-content'));
+  else renderSlowDating();
 }
 
 function renderSlowDatingLocal() {
@@ -2491,15 +3187,50 @@ function sdToggleTag(tag) {
   }
 }
 
+function sdPhotoSelected(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      const MAX = 600;
+      let w = img.width, h = img.height;
+      if (w > MAX || h > MAX) {
+        if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+        else        { w = Math.round(w * MAX / h); h = MAX; }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      canvas.toBlob(blob => {
+        window._sdPendingPhoto = blob;
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.82);
+        localStorage.setItem('cien_sd_photo', dataUrl);
+        // Update upload button
+        const uploadEl = document.querySelector('.sd-photo-upload');
+        if (uploadEl) uploadEl.innerHTML = `<img src="${dataUrl}" class="sd-photo-thumb" alt="Twoje zdjęcie"><div class="sd-photo-change">Zmień</div>`;
+        // Update card preview background (just the inline style — CSS handles sizing)
+        const preview = document.getElementById('sd-card-preview');
+        if (preview) preview.style.backgroundImage = `url(${dataUrl})`;
+      }, 'image/jpeg', 0.82);
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
 function sdSaveProfile() {
-  const nick = document.getElementById('sd-nick')?.value?.trim() || '';
+  const nick  = document.getElementById('sd-nick')?.value?.trim()  || '';
   const about = document.getElementById('sd-about')?.value?.trim() || '';
   const profile = getSDProfile();
-  profile.nick = nick;
+  profile.nick  = nick;
   profile.about = about;
   saveSDProfile(profile);
   if (typeof _syncProfileToTeam === 'function') _syncProfileToTeam().catch(() => {});
+  _sdPushProfile(window._sdPendingPhoto || null);
   showToast('Karta zapisana ✓');
+  renderSlowDating();
 }
 
 function sdOpenAddMeeting() {
@@ -2561,7 +3292,8 @@ function sdDeleteMeeting(idx) {
   const meetings = getSDMeetings();
   meetings.splice(idx, 1);
   saveSDMeetings(meetings);
-  renderSlowDating();
+  if (_sdTab === 'karta') _sdRenderCardForm(document.getElementById('sd-tab-content'));
+  else renderSlowDating();
 }
 
 function sdContact(contact) {
@@ -2585,9 +3317,12 @@ function getFavorites() {
 function toggleFavorite(evId) {
   const favs = getFavorites();
   const idx = favs.indexOf(evId);
+  const adding = idx < 0;
   if (idx >= 0) favs.splice(idx, 1); else favs.push(evId);
   localStorage.setItem('cien_favs_2026', JSON.stringify(favs));
+  if ('vibrate' in navigator) navigator.vibrate(adding ? [20] : [10]);
   renderSchedule();
+  if (adding) showToast('★ Dodano do Mojego Planu');
 }
 
 // ============================================
@@ -2772,6 +3507,13 @@ function renderUstawienia() {
         </div>
       </button>
       <div class="ustawienia-sep"></div>
+      <button class="ustawienia-item" onclick="shareApp()">
+        <div>
+          <div class="ustawienia-title">↗ Podziel się aplikacją</div>
+          <div class="ustawienia-sub">Wyślij link znajomym jadącym na festiwal</div>
+        </div>
+      </button>
+      <div class="ustawienia-sep"></div>
       <a class="ustawienia-item" href="/polityka-prywatnosci.html" target="_blank">
         <div class="ustawienia-title">Polityka prywatności</div>
       </a>
@@ -2835,6 +3577,314 @@ function closeMoreMenu() {
 }
 
 // ============================================
+// ALCHEMIC QUOTE
+// ============================================
+
+const _ALCHEMIC_QUOTES = [
+  { text: 'Złoto nie pochodzi ze złota. Pochodzi z ołowiu, który zrozumiał samego siebie.', attr: '— Alchemia' },
+  { text: 'Nigredo to nie koniec. To gleba, z której wyrasta wszystko inne.', attr: '— Cień Festiwal' },
+  { text: 'To, co odrzucasz w sobie, rządzi tobą z cienia.', attr: '— C.G. Jung' },
+  { text: 'Rubedo nie jest nagrodą za cierpienie. Jest naturą ognia, który przeżył własne wygaśnięcie.', attr: '— Alchemia' },
+  { text: 'Zamek nie szuka. Zamek czeka. Ty przychodzisz z pytaniem, które już jest odpowiedzią.', attr: '— Zamek Świny' },
+  { text: 'Każda transformacja zaczyna się od rozkładu. Bój się stagnacji, nie ciemności.', attr: '— Tradycja hermetyczna' },
+  { text: 'Solve et coagula. Rozpuść i scal. Nie inaczej.', attr: '— Paracelsus' },
+];
+
+function _renderAlchemicQuote() {
+  const dayOfYear = Math.floor((new Date() - new Date(new Date().getFullYear(), 0, 0)) / 86400000);
+  const q = _ALCHEMIC_QUOTES[dayOfYear % _ALCHEMIC_QUOTES.length];
+  return `<div class="alchemic-quote">
+    <div class="alchemic-quote-text">${q.text}</div>
+    <div class="alchemic-quote-attr">${q.attr}</div>
+  </div>`;
+}
+
+// ============================================
+// FESTIVAL COUNTDOWN
+// ============================================
+
+function _renderCountdown() {
+  const festival = new Date('2026-07-03T12:00:00');
+  const diff = festival - new Date();
+  if (diff <= 0) return '';
+  const d = Math.floor(diff / 86400000);
+  const h = Math.floor((diff % 86400000) / 3600000);
+  const m = Math.floor((diff % 3600000) / 60000);
+  const s = Math.floor((diff % 60000) / 1000);
+  return `
+<div class="countdown-block" id="cien-countdown">
+  <div class="countdown-label">DO ZAMKU ŚWINY</div>
+  <div class="countdown-units">
+    <div class="countdown-unit"><span class="countdown-num" id="cd-d">${d}</span><span class="countdown-lbl">dni</span></div>
+    <span class="countdown-colon">:</span>
+    <div class="countdown-unit"><span class="countdown-num" id="cd-h">${String(h).padStart(2,'0')}</span><span class="countdown-lbl">godz</span></div>
+    <span class="countdown-colon">:</span>
+    <div class="countdown-unit"><span class="countdown-num" id="cd-m">${String(m).padStart(2,'0')}</span><span class="countdown-lbl">min</span></div>
+    <span class="countdown-colon">:</span>
+    <div class="countdown-unit"><span class="countdown-num" id="cd-s">${String(s).padStart(2,'0')}</span><span class="countdown-lbl">sek</span></div>
+  </div>
+  <div class="countdown-sub">3–5 LIPCA · ZAMEK ŚWINY · BOLKÓW</div>
+</div>`;
+}
+
+let _cdTimer = null;
+function _startCountdownTimer() {
+  if (_cdTimer) { clearInterval(_cdTimer); _cdTimer = null; }
+  const cd = document.getElementById('cien-countdown');
+  if (!cd) return;
+  _cdTimer = setInterval(() => {
+    const festival = new Date('2026-07-03T12:00:00');
+    const diff = festival - new Date();
+    if (diff <= 0) { clearInterval(_cdTimer); _cdTimer = null; return; }
+    const d = Math.floor(diff / 86400000);
+    const h = Math.floor((diff % 86400000) / 3600000);
+    const m = Math.floor((diff % 3600000) / 60000);
+    const s = Math.floor((diff % 60000) / 1000);
+    const block = document.getElementById('cien-countdown');
+    if (!block) { clearInterval(_cdTimer); _cdTimer = null; return; }
+    const dEl = document.getElementById('cd-d'); if (dEl) dEl.textContent = d;
+    const hEl = document.getElementById('cd-h'); if (hEl) hEl.textContent = String(h).padStart(2,'0');
+    const mEl = document.getElementById('cd-m'); if (mEl) mEl.textContent = String(m).padStart(2,'0');
+    const sEl = document.getElementById('cd-s'); if (sEl) sEl.textContent = String(s).padStart(2,'0');
+  }, 1000);
+}
+
+// ============================================
+// WEATHER WIDGET
+// ============================================
+
+let _weatherData = null;
+async function _fetchWeather() {
+  try {
+    const cached = sessionStorage.getItem('cien_weather_v3');
+    if (cached) {
+      const { data, ts } = JSON.parse(cached);
+      if (Date.now() - ts < 60 * 60 * 1000) {
+        _weatherData = data;
+        _updateWeatherWidget();
+        return;
+      }
+    }
+    // Fetch current + 3-day daily for festival dates
+    const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=50.8561&longitude=16.0464&current=temperature_2m,weathercode&daily=temperature_2m_max,temperature_2m_min,weathercode,precipitation_sum&timezone=Europe%2FWarsaw&forecast_days=14');
+    if (!res.ok) return;
+    const json = await res.json();
+    _weatherData = json;
+    sessionStorage.setItem('cien_weather_v3', JSON.stringify({ data: _weatherData, ts: Date.now() }));
+    _updateWeatherWidget();
+  } catch { /* offline */ }
+}
+
+function _weatherEmoji(code) {
+  if (code === 0) return '☀️';
+  if (code <= 2)  return '🌤';
+  if (code <= 3)  return '☁️';
+  if (code <= 48) return '🌫';
+  if (code <= 55) return '🌦';
+  if (code <= 67) return '🌧';
+  if (code <= 77) return '❄️';
+  if (code <= 82) return '🌦';
+  if (code <= 99) return '⛈';
+  return '🌡';
+}
+
+function _renderWeatherWidget() {
+  if (!_weatherData) return `<div id="weather-widget-slot-inner" style="display:none"></div>`;
+
+  // Try to show 3-day festival forecast if daily data available
+  const daily = _weatherData.daily;
+  if (daily && daily.time) {
+    const festDays = ['2026-07-03', '2026-07-04', '2026-07-05'];
+    const labels   = ['Pt 3 VII',  'Sb 4 VII',  'Nd 5 VII'];
+    const dayItems = festDays.map((date, i) => {
+      const idx = daily.time.indexOf(date);
+      if (idx < 0) return null;
+      const code = daily.weathercode?.[idx] ?? 0;
+      const max  = Math.round(daily.temperature_2m_max?.[idx] ?? 0);
+      const min  = Math.round(daily.temperature_2m_min?.[idx] ?? 0);
+      const rain = Math.round(daily.precipitation_sum?.[idx] ?? 0);
+      const icon = _weatherEmoji(code);
+      return `<div class="weather-fday">
+        <div class="weather-fday-label">${labels[i]}</div>
+        <div class="weather-fday-icon">${icon}</div>
+        <div class="weather-fday-temp">${max}°<span class="weather-fday-min">/${min}°</span></div>
+        ${rain > 0 ? `<div style="font-size:0.6rem;color:var(--szary)">💧${rain}mm</div>` : ''}
+      </div>`;
+    }).filter(Boolean).join('');
+
+    if (dayItems) {
+      return `<div class="weather-forecast">
+        <div class="weather-forecast-title">Pogoda na festiwal · Zamek Świny</div>
+        <div class="weather-forecast-days">${dayItems}</div>
+      </div>`;
+    }
+  }
+
+  // Fallback: current weather pill
+  const cur = _weatherData.current || _weatherData;
+  const temp = Math.round(cur.temperature_2m ?? 0);
+  const emoji = _weatherEmoji(cur.weathercode ?? 0);
+  return `<div class="weather-widget" onclick="_fetchWeather()" title="Kliknij, żeby odświeżyć">
+    <span class="weather-loc">Zamek Świny</span>
+    <span class="weather-temp">${emoji} ${temp}°C</span>
+  </div>`;
+}
+
+function _updateWeatherWidget() {
+  const el = document.getElementById('weather-widget-slot');
+  if (el) el.innerHTML = _renderWeatherWidget();
+}
+
+// ============================================
+// PARTICLE BACKGROUND
+// ============================================
+
+function initParticles() {
+  const canvas = document.createElement('canvas');
+  canvas.id = 'particle-bg';
+  document.body.insertBefore(canvas, document.body.firstChild);
+  const ctx = canvas.getContext('2d');
+
+  const resize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
+  resize();
+  window.addEventListener('resize', resize);
+
+  const pts = Array.from({ length: 65 }, () => ({
+    x: Math.random() * canvas.width,
+    y: Math.random() * canvas.height,
+    r: Math.random() * 1.2 + 0.4,
+    vx: (Math.random() - 0.5) * 0.12,
+    vy: (Math.random() - 0.5) * 0.12,
+    a: Math.random() * 0.5 + 0.25,
+  }));
+
+  const draw = () => {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for (let i = 0; i < pts.length; i++) {
+      for (let j = i + 1; j < pts.length; j++) {
+        const dx = pts[i].x - pts[j].x, dy = pts[i].y - pts[j].y;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        if (dist < 110) {
+          ctx.beginPath();
+          ctx.moveTo(pts[i].x, pts[i].y);
+          ctx.lineTo(pts[j].x, pts[j].y);
+          ctx.strokeStyle = `rgba(201,168,76,${(1 - dist/110) * 0.12})`;
+          ctx.lineWidth = 0.5;
+          ctx.stroke();
+        }
+      }
+    }
+    pts.forEach(p => {
+      p.x += p.vx; p.y += p.vy;
+      if (p.x < 0) p.x = canvas.width;
+      if (p.x > canvas.width) p.x = 0;
+      if (p.y < 0) p.y = canvas.height;
+      if (p.y > canvas.height) p.y = 0;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(201,168,76,${p.a})`;
+      ctx.fill();
+    });
+    requestAnimationFrame(draw);
+  };
+  requestAnimationFrame(draw);
+}
+
+// ============================================
+// CONFETTI
+// ============================================
+
+function fireConfetti() {
+  const canvas = document.createElement('canvas');
+  canvas.id = 'confetti-canvas';
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  document.body.appendChild(canvas);
+  const ctx = canvas.getContext('2d');
+  const colors = ['#C9A84C','#F0CB70','#F5E6C8','#6B2D3E','#8B3A52','#ffffff','#E8D4A8'];
+  const particles = Array.from({ length: 90 }, () => ({
+    x: Math.random() * canvas.width,
+    y: -Math.random() * 40 - 10,
+    vx: (Math.random() - 0.5) * 5,
+    vy: Math.random() * 3 + 1.5,
+    color: colors[Math.floor(Math.random() * colors.length)],
+    size: Math.random() * 9 + 4,
+    rotation: Math.random() * Math.PI * 2,
+    vr: (Math.random() - 0.5) * 0.25,
+    isCircle: Math.random() > 0.5,
+    opacity: 1,
+  }));
+  let frame = 0;
+  const animate = () => {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    particles.forEach(p => {
+      p.x += p.vx; p.y += p.vy; p.vy += 0.09; p.rotation += p.vr;
+      if (frame > 80) p.opacity = Math.max(0, p.opacity - 0.025);
+      ctx.save();
+      ctx.globalAlpha = p.opacity;
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rotation);
+      ctx.fillStyle = p.color;
+      if (p.isCircle) {
+        ctx.beginPath(); ctx.arc(0, 0, p.size / 2, 0, Math.PI * 2); ctx.fill();
+      } else {
+        ctx.fillRect(-p.size / 2, -p.size / 4, p.size, p.size / 2);
+      }
+      ctx.restore();
+    });
+    frame++;
+    if (frame < 140) requestAnimationFrame(animate);
+    else canvas.remove();
+  };
+  requestAnimationFrame(animate);
+}
+
+// ============================================
+// MATCH MODAL
+// ============================================
+
+function showMatchModal(profile) {
+  const modal = document.getElementById('dating-match-modal');
+  if (!modal) return;
+  const theirPhoto = modal.querySelector('.match-their-photo');
+  if (theirPhoto) {
+    const photoUrl = profile.photo && profile.collectionId && profile.id
+      ? `${SD_PB}/api/files/${profile.collectionId}/${profile.id}/${profile.photo}?thumb=200x200` : '';
+    if (photoUrl) {
+      theirPhoto.style.cssText = `background-image:url(${photoUrl});background-size:cover;background-position:center;`;
+      theirPhoto.textContent = '';
+    } else {
+      theirPhoto.textContent = profile.emoji || '💫';
+    }
+  }
+  const ownPhoto = modal.querySelector('.match-own-photo');
+  if (ownPhoto) {
+    const myPhoto = localStorage.getItem('cien_sd_photo');
+    if (myPhoto) {
+      ownPhoto.style.cssText = `background-image:url(${myPhoto});background-size:cover;background-position:center;`;
+      ownPhoto.textContent = '';
+    } else {
+      ownPhoto.textContent = getSDProfile().emoji || '💘';
+    }
+  }
+  const nameEl = modal.querySelector('.match-their-name');
+  if (nameEl) nameEl.textContent = profile.nick || '';
+  modal.dataset.matchUid = profile.uid;
+  modal.classList.add('open');
+  setTimeout(fireConfetti, 50);
+}
+
+function closeMatchModal() {
+  const modal = document.getElementById('dating-match-modal');
+  if (modal) modal.classList.remove('open');
+}
+
+function goToMatchChat() {
+  closeMatchModal();
+  sdSetTab('dopasowania');
+}
+
+// ============================================
 // EXPOSE GLOBALS
 // ============================================
 
@@ -2844,12 +3894,15 @@ Object.assign(window, {
   setJournalStage, autoSaveJournal, saveJournalEntry, emailJournalEntry, toggleEntry,
   callHelp, triggerInstall, dismissInstall,
   sdToggleTag, sdSaveProfile, sdUpdatePreview, sdOpenAddMeeting, sdConfirmAddMeeting, sdDeleteMeeting, sdContact,
-  toggleFavorite,
+  toggleFavorite, setFavOnly, scheduleSearch,
   setKBCategory, openArticle, closeArticle,
   dismissOnboarding,
   renderProfil, renderUstawienia, profileSave, profilePhotoUpload, profilePhotoSelected,
   togglePushNotifs, deleteAccount,
   toggleMoreMenu, openMoreMenu, closeMoreMenu,
+  closeMatchModal, goToMatchChat,
+  shareEvent, shareApp, addToCalendar,
+  _fetchWeather,
   updateApp,
 });
 

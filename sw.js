@@ -1,26 +1,28 @@
-const CACHE_NAME = 'cien-2026-v45';
-const ASSETS = [
-  '/',
-  '/index.html',
-  '/app.css',
-  '/app.js',
-  '/team.js',
+const CACHE_NAME = 'cien-2026-v56';
+
+// Only cache truly static assets — NOT app.js / app.css (they change frequently)
+const STATIC_ASSETS = [
+  '/manifest.json',
+  '/icons/icon.svg',
   '/data/schedule.json',
   '/data/speakers.json',
   '/data/pois.json',
-  '/manifest.json',
-  '/icons/icon.svg',
-  '/maps/zamek.html',
   '/regulamin.html',
   '/polityka-prywatnosci.html',
-  'https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=EB+Garamond:ital,wght@0,400;0,500;1,400&display=swap'
 ];
+
+// Never cache these — always fetch from network
+const NO_CACHE = ['/app.js', '/app.css', '/team.js', '/sw.js'];
 
 self.addEventListener('install', e => {
   e.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS.filter(u => !u.startsWith('http'))))
+    caches.open(CACHE_NAME).then(cache => cache.addAll(STATIC_ASSETS))
       .then(() => self.skipWaiting())
   );
+});
+
+self.addEventListener('message', e => {
+  if (e.data && e.data.type === 'SKIP_WAITING') self.skipWaiting();
 });
 
 self.addEventListener('activate', e => {
@@ -50,6 +52,29 @@ self.addEventListener('notificationclick', e => {
 
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
+
+  const url = new URL(e.request.url);
+
+  // Always network for: HTML, JS, CSS — never serve stale code
+  if (
+    url.hostname === self.location.hostname &&
+    (url.pathname === '/' || url.pathname.endsWith('.html') ||
+     url.pathname.endsWith('.js') || url.pathname.endsWith('.css'))
+  ) {
+    e.respondWith(
+      fetch(e.request).then(res => {
+        // Cache maps/zamek.html for offline since it's large
+        if (url.pathname.includes('zamek.html')) {
+          const clone = res.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(e.request, clone));
+        }
+        return res;
+      }).catch(() => caches.match(e.request).then(c => c || caches.match('/index.html')))
+    );
+    return;
+  }
+
+  // Cache-first for static assets (icons, JSON data, fonts)
   e.respondWith(
     caches.match(e.request).then(cached => {
       if (cached) return cached;
