@@ -767,6 +767,7 @@ function _listenTeamLocations() {
 
 function _updateLocationUI() {
   if (_chatTab !== 'lokalizacja') return;
+  _drawRadar();
   const el = document.getElementById('loc-teammates');
   if (!el) return;
   const active = Object.values(_teamLocs);
@@ -776,20 +777,18 @@ function _updateLocationUI() {
   }
   el.innerHTML = active.map(m => {
     const dist = _myPos ? _haversine(_myPos.lat, _myPos.lng, m.lat, m.lng) : null;
-    const bear = _myPos ? _bearing(_myPos.lat, _myPos.lng, m.lat, m.lng) : null;
-    const rel  = (bear != null && _compassHeading != null) ? (bear - _compassHeading + 360) % 360 : null;
     const isSelected = _navTarget?.isTeammate && _navTarget.uid === m.uid;
     return `<div class="loc-member-card ${dist != null ? _heatClass(dist) : ''} ${isSelected ? 'loc-selected' : ''}"
                  onclick="setNavTarget('teammate','${m.uid}',decodeURIComponent('${encodeURIComponent(m.name || 'Uczestnik')}'),${m.lat},${m.lng})">
       <div class="loc-member-name">${_esc(m.name || 'Uczestnik')}</div>
       ${dist != null ? `<div class="loc-dist-value">${_distLabel(dist)}</div><div class="loc-heat-label">${_heatLabel(dist)}</div>` : '<div class="loc-heat-label">Pozycja znana</div>'}
-      ${rel != null ? `<div class="loc-arrow" style="transform:rotate(${rel}deg)"><svg viewBox="0 0 24 28" width="22" height="26" fill="currentColor"><path d="M12 2 L22 20 H16 V26 H8 V20 H2 Z"/></svg></div>` : ''}
     </div>`;
   }).join('');
 }
 
 function _updateLocationArrows() {
   if (_chatTab !== 'lokalizacja') return;
+  _drawRadar();
   _updateLocationUI();
   const arrowEl = document.getElementById('loc-nav-arrow');
   const distEl  = document.getElementById('loc-nav-dist');
@@ -810,6 +809,131 @@ function _updateLocationArrows() {
   if (distEl) distEl.textContent = _distLabel(dist);
   if (heatEl) { heatEl.textContent = _heatLabel(dist); heatEl.className = 'loc-nav-heat ' + _heatClass(dist); }
   arrowEl.style.transform = `rotate(${rel}deg)`;
+}
+
+// ============================================
+// Radar canvas
+// ============================================
+
+const _RADAR_MAX_DIST = 500; // metres shown at edge
+
+function _drawRadar() {
+  const canvas = document.getElementById('loc-radar-canvas');
+  if (!canvas) return;
+  const dpr  = window.devicePixelRatio || 1;
+  const SIZE = canvas.clientWidth || 260;
+  canvas.width  = SIZE * dpr;
+  canvas.height = SIZE * dpr;
+  const ctx = canvas.getContext('2d');
+  ctx.save();
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, SIZE, SIZE);
+
+  const cx = SIZE / 2, cy = SIZE / 2;
+  const R  = SIZE / 2 - 18;
+  const GOLD = '#C9A84C';
+
+  // Background circle
+  ctx.beginPath(); ctx.arc(cx, cy, R + 2, 0, Math.PI * 2);
+  ctx.fillStyle = '#0b150b'; ctx.fill();
+
+  // Rings: 100m / 250m / 500m
+  [[0.2, '100m'], [0.5, '250m'], [1.0, '500m']].forEach(([frac, lbl], i) => {
+    ctx.beginPath(); ctx.arc(cx, cy, R * frac, 0, Math.PI * 2);
+    ctx.strokeStyle = `rgba(201,168,76,${0.13 + i * 0.07})`; ctx.lineWidth = 1; ctx.stroke();
+    ctx.fillStyle = 'rgba(201,168,76,0.3)';
+    ctx.font = `${Math.round(SIZE * 0.033)}px sans-serif`;
+    ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
+    ctx.fillText(lbl, cx + R * frac * 0.71 + 2, cy - 2);
+  });
+
+  // Crosshairs
+  ctx.strokeStyle = 'rgba(201,168,76,0.1)'; ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(cx - R, cy); ctx.lineTo(cx + R, cy);
+  ctx.moveTo(cx, cy - R); ctx.lineTo(cx, cy + R);
+  ctx.stroke();
+
+  // Border ring
+  ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2);
+  ctx.strokeStyle = 'rgba(201,168,76,0.4)'; ctx.lineWidth = 1.5; ctx.stroke();
+
+  // North marker — rotates with compass
+  const northBear = _compassHeading != null ? (360 - _compassHeading) % 360 : 0;
+  const northRad  = (northBear - 90) * Math.PI / 180;
+  const nx = cx + (R - 9) * Math.cos(northRad);
+  const ny = cy + (R - 9) * Math.sin(northRad);
+  ctx.fillStyle = '#ff5555';
+  ctx.font = `bold ${Math.round(SIZE * 0.05)}px sans-serif`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('N', nx, ny);
+
+  // Teammate dots
+  if (_myPos) {
+    Object.values(_teamLocs).forEach(m => {
+      const dist     = _haversine(_myPos.lat, _myPos.lng, m.lat, m.lng);
+      const bear     = _bearing(_myPos.lat, _myPos.lng, m.lat, m.lng);
+      const relBear  = _compassHeading != null ? (bear - _compassHeading + 360) % 360 : bear;
+      const rad      = (relBear - 90) * Math.PI / 180;
+      const scaledR  = Math.min(dist / _RADAR_MAX_DIST, 1) * R;
+      const x = cx + scaledR * Math.cos(rad);
+      const y = cy + scaledR * Math.sin(rad);
+      const isSelected = _navTarget?.isTeammate && _navTarget.uid === m.uid;
+
+      if (isSelected) {
+        ctx.beginPath(); ctx.arc(x, y, 14, 0, Math.PI * 2);
+        ctx.strokeStyle = GOLD; ctx.lineWidth = 2; ctx.stroke();
+      }
+
+      ctx.beginPath(); ctx.arc(x, y, 7, 0, Math.PI * 2);
+      ctx.fillStyle = isSelected ? GOLD : '#3BAFBA'; ctx.fill();
+
+      const firstName = (m.nick || m.name || '?').split(/\s+/)[0];
+      ctx.fillStyle = '#ffffff';
+      ctx.font = `${Math.round(SIZE * 0.044)}px sans-serif`;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+      ctx.fillText(firstName, x, y - 9);
+
+      ctx.fillStyle = 'rgba(255,255,255,0.5)';
+      ctx.font      = `${Math.round(SIZE * 0.037)}px sans-serif`;
+      ctx.textBaseline = 'top';
+      ctx.fillText(_distLabel(dist), x, y + 9);
+    });
+  }
+
+  // Self dot (center)
+  ctx.beginPath(); ctx.arc(cx, cy, 5, 0, Math.PI * 2);
+  ctx.fillStyle = '#ffffff'; ctx.fill();
+  ctx.beginPath(); ctx.arc(cx, cy, 5, 0, Math.PI * 2);
+  ctx.strokeStyle = GOLD; ctx.lineWidth = 2; ctx.stroke();
+
+  ctx.restore();
+}
+
+function _radarClick(e) {
+  if (!_myPos) return;
+  const canvas = e.currentTarget;
+  const rect   = canvas.getBoundingClientRect();
+  const SIZE   = canvas.clientWidth;
+  const cx     = SIZE / 2, cy = SIZE / 2;
+  const R      = SIZE / 2 - 18;
+  const cx_px  = e.clientX - rect.left;
+  const cy_px  = e.clientY - rect.top;
+
+  for (const m of Object.values(_teamLocs)) {
+    const dist    = _haversine(_myPos.lat, _myPos.lng, m.lat, m.lng);
+    const bear    = _bearing(_myPos.lat, _myPos.lng, m.lat, m.lng);
+    const relBear = _compassHeading != null ? (bear - _compassHeading + 360) % 360 : bear;
+    const rad     = (relBear - 90) * Math.PI / 180;
+    const scaledR = Math.min(dist / _RADAR_MAX_DIST, 1) * R;
+    const x = cx + scaledR * Math.cos(rad);
+    const y = cy + scaledR * Math.sin(rad);
+    const dx = cx_px - x, dy = cy_px - y;
+    if (Math.sqrt(dx * dx + dy * dy) < 22) {
+      setNavTarget('teammate', m.uid, m.name || 'Uczestnik', m.lat, m.lng);
+      return;
+    }
+  }
 }
 
 function setNavTarget(type, uid, name, lat, lng) {
@@ -893,10 +1017,14 @@ ${_navTarget ? `
 </div>
 
 <div class="loc-section">
-  <div class="loc-section-title">Drużyna</div>
-  <div id="loc-teammates">
+  <div class="loc-section-title">Radar drużyny</div>
+  <div class="loc-radar-wrap">
+    <canvas id="loc-radar-canvas" class="loc-radar-canvas"></canvas>
+  </div>
+  ${!_locSharing ? '<div class="loc-radar-hint">Włącz lokalizację żeby zobaczyć ziomków na radarze</div>' : ''}
+  <div id="loc-teammates" class="loc-teammates-list">
     ${!_locSharing
-      ? '<div class="loc-empty">Włącz lokalizację, żeby zobaczyć gdzie są ziomkowie</div>'
+      ? ''
       : '<div class="loc-empty">Ładowanie…</div>'
     }
   </div>
@@ -908,7 +1036,12 @@ function _renderLocTab() {
   const body = document.getElementById('team-tab-body');
   if (!body) return;
   body.innerHTML = _tmplLocTab();
-  if (_myPos) setTimeout(_updateLocationArrows, 50);
+  const canvas = document.getElementById('loc-radar-canvas');
+  if (canvas) canvas.addEventListener('click', _radarClick);
+  setTimeout(() => {
+    _drawRadar();
+    if (_myPos) _updateLocationArrows();
+  }, 30);
 }
 
 function toggleLocSharing() {

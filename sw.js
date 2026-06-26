@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cien-2026-v68';
+const CACHE_NAME = 'cien-2026-v69';
 
 // Only cache truly static assets — NOT app.js / app.css (they change frequently)
 const STATIC_ASSETS = [
