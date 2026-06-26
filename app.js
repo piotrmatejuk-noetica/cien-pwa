@@ -8,8 +8,6 @@
 // AUTH
 // ============================================
 
-const GOOGLE_CLIENT_ID = '797161544700-dsh51dd918bdqto7fpfpamlvq409m38e.apps.googleusercontent.com';
-
 function initFirebase() {} // Firebase not used
 
 function _setUser(uid, email, name) {
@@ -529,9 +527,6 @@ const ARTICLES_DATA = [
   },
 ];
 
-// Google Calendar token (in-memory only)
-let _gcalToken = null;
-let _gcalTokenClient = null;
 
 // ============================================
 // INIT
@@ -593,14 +588,6 @@ async function init() {
   }
   // Init team feature after auth check
   if (loggedIn && typeof initTeam === 'function') initTeam();
-  // Google Identity Services — init tylko jeśli załadowane i funkcja istnieje
-  if (typeof _initGoogleAuth === 'function') {
-    if (typeof google !== 'undefined' && google.accounts) {
-      _initGoogleAuth();
-    } else {
-      window.addEventListener('load', () => setTimeout(_initGoogleAuth, 300));
-    }
-  }
   if (typeof _fbAuth !== 'undefined' && _fbAuth) {
     _fbAuth.onAuthStateChanged(user => {
       if (user) {
@@ -621,9 +608,11 @@ async function loadData() {
     const pois = await poisRes.json();
     const speakers = speakersRes ? await speakersRes.json().catch(() => ({})) : {};
     State.data = { ...schedule, ...pois, speakers };
+    State.dataLoadError = false;
   } catch (e) {
     console.error('Failed to load data:', e);
     State.data = { events: [], zones: [], pois: [], festival: { zones: [] }, speakers: {} };
+    State.dataLoadError = true;
   }
 }
 
@@ -771,7 +760,7 @@ function _onboardingCard() {
     <ul class="onb-rules-list">
       <li><span>🤝</span><span>Szanuj granice innych. Pytaj zanim dotkniesz.</span></li>
       <li><span>📸</span><span>Zdjęcia i nagrania tylko za wyraźną zgodą osoby.</span></li>
-<li><span>🛡</span><span>Coś się dzieje? Czill &amp; Heal, punkt Help lub kamizelka organizatora.</span></li>
+<li><span>🛡</span><span>Coś się dzieje? PsyCare SACRUM, konsultacje poranne, punkt medyczny lub kamizelka/koszulka Strażników CIEŃa.</span></li>
       <li><span>🌙</span><span>Cisza w strefach nocnych i namiotowych po 4:00.</span></li>
     </ul>
   </div>
@@ -783,6 +772,15 @@ function _onboardingCard() {
 function renderSchedule() {
   const container = document.getElementById('schedule-content');
   if (!container || !State.data) return;
+  if (State.dataLoadError) {
+    container.innerHTML = `<div style="padding:3rem 2rem;text-align:center">
+      <div style="font-size:2rem;margin-bottom:0.75rem">📡</div>
+      <div style="color:var(--pergamin);margin-bottom:0.5rem;font-family:var(--font-display)">Brak połączenia</div>
+      <div style="color:var(--szary);font-size:0.9rem;line-height:1.5;margin-bottom:1.25rem">Program nie mógł się załadować. Sprawdź połączenie i spróbuj ponownie.</div>
+      <button class="btn-burgund" onclick="loadData().then(renderSchedule)">Spróbuj ponownie</button>
+    </div>`;
+    return;
+  }
 
   const events = State.data.events || [];
   const zones  = State.data.festival?.zones || [];
@@ -867,6 +865,7 @@ function renderSchedule() {
   const quoteHTML = !festivalStarted ? _renderAlchemicQuote() : '';
 
   container.innerHTML = `
+    <div id="ann-teraz-slot"></div>
     ${countdownHTML}
     ${quoteHTML}
     ${_onboardingCard()}
@@ -883,6 +882,55 @@ function renderSchedule() {
     ${eventsHTML}
   `;
   _startCountdownTimer();
+  _loadAnnTeraz();
+}
+
+async function _loadAnnTeraz() {
+  const slot = document.getElementById('ann-teraz-slot');
+  if (!slot) return;
+  try {
+    const r = await fetch(`${ANN_PB}/api/collections/${ANN_COL}/records?sort=-created&perPage=1`);
+    if (!r.ok) return;
+    const d = await r.json();
+    const ann = d.items?.[0];
+    if (!ann) return;
+
+    if (localStorage.getItem(`cien_ann_dismissed_${ann.id}`)) return;
+
+    const TYPE_META = {
+      urgent:  { border: '#E05C5C', bg: 'rgba(224,92,92,0.1)',        icon: '🚨', label: 'PILNE' },
+      warning: { border: '#C9A84C', bg: 'rgba(201,168,76,0.1)',        icon: '⚠️', label: 'UWAGA' },
+      info:    { border: 'rgba(201,168,76,0.35)', bg: 'rgba(201,168,76,0.06)', icon: '📢', label: 'INFO' },
+    };
+    const m  = TYPE_META[ann.type] || TYPE_META.info;
+    const ts = new Date(ann.created).toLocaleString('pl-PL', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+    const lastSeen = localStorage.getItem('cien_ann_last_seen') || '';
+    const isNew = lastSeen && ann.id > lastSeen;
+    const annId  = escHtml(ann.id);
+
+    slot.innerHTML = `
+      <div class="ann-teraz-card" style="border-left-color:${m.border};background:${m.bg}" id="ann-teraz-${annId}">
+        <div class="ann-teraz-top">
+          <span class="ann-teraz-badge" style="background:${m.border}">${m.icon} ${m.label}</span>
+          ${isNew ? '<span class="ann-teraz-new">NOWE</span>' : ''}
+          <button class="ann-teraz-dismiss" data-ann-id="${annId}" onclick="_dismissAnnTeraz(this.dataset.annId)">✕</button>
+        </div>
+        <div class="ann-teraz-title">${escHtml(ann.title)}</div>
+        ${ann.body ? `<div class="ann-teraz-body">${escHtml(ann.body)}</div>` : ''}
+        <div class="ann-teraz-footer">
+          <span class="ann-teraz-ts">${ts}</span>
+          <button class="ann-teraz-more" onclick="navigateTo('info')">Wszystkie →</button>
+        </div>
+      </div>`;
+
+    localStorage.setItem('cien_ann_last_seen', ann.id);
+  } catch {}
+}
+
+function _dismissAnnTeraz(id) {
+  localStorage.setItem(`cien_ann_dismissed_${id}`, '1');
+  const card = document.getElementById(`ann-teraz-${id}`);
+  if (card) card.remove();
 }
 
 function renderTuITeraz(allEvents) {
@@ -1501,6 +1549,7 @@ function renderJournal() {
     </div>`).join('');
 
   container.innerHTML = tabsHTML + `
+    <div class="journal-privacy-note">🔒 Dziennik jest prywatny — zapisuje się tylko na Twoim urządzeniu i nigdy nie opuszcza telefonu.</div>
     <div class="alchemy-arc">${arcHTML}</div>
     <div class="journal-prompt">
       <div class="prompt-label">Pytanie dnia</div>
@@ -1728,8 +1777,12 @@ function buildPlanHTML(area, plan) {
     </div>
   </div>
   <div class="wplan-date">Wygenerowano: ${plan.createdAt || ''}</div>
-  <button class="btn btn-outline" style="font-size:0.78rem;padding:0.45rem 0.75rem;margin-top:0.5rem;width:100%"
-    onclick="saveAreaPlanToGCal('${area.id}')">📅 Zapisz w Google Kalendarzu</button>`;
+  <div style="display:flex;gap:0.5rem;margin-top:0.5rem">
+    <button class="btn btn-outline" style="flex:1;font-size:0.78rem;padding:0.45rem 0.5rem"
+      onclick="sharePlan('${area.id}')">📤 Zapisz / Wyślij</button>
+    <button class="btn btn-gold" style="flex:1;font-size:0.78rem;padding:0.45rem 0.5rem"
+      onclick="aiCustomizePlan('${area.id}')">✨ Generuj plan</button>
+  </div>`;
 }
 
 function togglePlanItem(areaId, horizon, idx) {
@@ -1743,81 +1796,123 @@ function togglePlanItem(areaId, horizon, idx) {
   if (item) item.classList.toggle('done', !!wd.plans[areaId].tracking[key]);
 }
 
-function connectGCal() {
-  if (typeof google === 'undefined' || !google.accounts) {
-    showToast('Google nie załadowany — sprawdź połączenie');
-    return;
-  }
-  if (!_gcalTokenClient) {
-    _gcalTokenClient = google.accounts.oauth2.initTokenClient({
-      client_id: GOOGLE_CLIENT_ID,
-      scope: 'https://www.googleapis.com/auth/calendar.events',
-      callback: (resp) => {
-        if (resp.error) { showToast('Błąd autoryzacji Google'); return; }
-        _gcalToken = resp.access_token;
-        showToast('Google Kalendarz połączony ✓');
-        // refresh gcal banner
-        const banner = document.querySelector('.gcal-banner');
-        if (banner) {
-          banner.querySelector('.gcal-text span').textContent = 'Połączony — możesz zapisywać plany';
-          const btn = banner.querySelector('button');
-          if (btn) { btn.textContent = '✓ Połączono'; btn.className = 'btn btn-outline'; }
-        }
-      }
-    });
-  }
-  _gcalTokenClient.requestAccessToken();
+function _buildPlanText(area, plan) {
+  const lines = [
+    `CIEŃ Festiwal 2026 — Plan integracji`,
+    `Obszar: ${area.name}`,
+    `Wygenerowano: ${plan.createdAt || ''}`,
+    ``,
+    `⚡ TERAZ (ten tydzień)`,
+    ...(plan.teraz || []).map((x, i) => `${i+1}. ${x}`),
+    ``,
+    `🔄 REGULARNIE (co tydzień)`,
+    ...(plan.regularnie || []).map((x, i) => `${i+1}. ${x}`),
+    ``,
+    `🌟 ZA ROK`,
+    plan.rok || '—',
+  ];
+  return lines.join('\n');
 }
 
-async function saveAreaPlanToGCal(areaId) {
-  if (!_gcalToken) { connectGCal(); showToast('Najpierw połącz Google Kalendarz'); return; }
+async function sharePlan(areaId) {
   const wd = getWheelData();
   const plan = wd.plans && wd.plans[areaId];
   if (!plan) { showToast('Brak planu — najpierw go wygeneruj'); return; }
   const area = WHEEL_AREAS.find(a => a.id === areaId);
+  const text = _buildPlanText(area, plan);
+  const title = `Plan integracji — ${area.name} · CIEŃ 2026`;
 
-  const today = new Date();
-  const fmtDate = (d) => d.toISOString().slice(0, 10);
-  const nextWeek = new Date(today); nextWeek.setDate(today.getDate() + 7);
-  const nextYear = new Date(today); nextYear.setFullYear(today.getFullYear() + 1);
-
-  const events = [
-    ...(plan.teraz || []).map((item, i) => ({
-      summary: `CIEŃ · ${area.name} [TERAZ] ${item.slice(0, 60)}`,
-      start: { date: fmtDate(today) },
-      end: { date: fmtDate(nextWeek) },
-      description: `Plan integracji CIEŃ Festiwal 2026 — obszar: ${area.name}\n\nKrok TERAZ:\n${item}`,
-      colorId: '5'
-    })),
-    ...(plan.regularnie || []).map((item) => ({
-      summary: `CIEŃ · ${area.name} [REGULARNIE] ${item.slice(0, 50)}`,
-      recurrence: ['RRULE:FREQ=WEEKLY;COUNT=12'],
-      start: { date: fmtDate(nextWeek) },
-      end: { date: fmtDate(new Date(nextWeek.getTime() + 86400000)) },
-      description: `Plan integracji CIEŃ Festiwal 2026 — obszar: ${area.name}\n\nNawyk regularny:\n${item}`,
-      colorId: '2'
-    })),
-    {
-      summary: `CIEŃ · ${area.name} [ROK] ${plan.rok.slice(0, 60)}`,
-      start: { date: fmtDate(nextYear) },
-      end: { date: fmtDate(new Date(nextYear.getTime() + 86400000)) },
-      description: `Plan integracji CIEŃ Festiwal 2026 — obszar: ${area.name}\n\nMoja wizja za rok:\n${plan.rok}`,
-      colorId: '11'
-    }
-  ];
-
-  let saved = 0;
-  for (const ev of events) {
+  if (navigator.share) {
     try {
-      const r = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${_gcalToken}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify(ev)
-      });
-      if (r.ok) saved++;
-    } catch { /* ignore individual failures */ }
+      await navigator.share({ title, text });
+      return;
+    } catch (e) {
+      if (e.name === 'AbortError') return;
+    }
   }
-  showToast(saved > 0 ? `Zapisano ${saved} wydarzeń w kalendarzu ✓` : 'Błąd zapisu — spróbuj ponownie');
+  // fallback: mailto
+  const mailto = `mailto:?subject=${encodeURIComponent(title)}&body=${encodeURIComponent(text)}`;
+  window.open(mailto);
+}
+
+async function aiCustomizePlan(areaId) {
+  const wd = getWheelData();
+  const plan = wd.plans && wd.plans[areaId];
+  if (!plan) { showToast('Brak planu — najpierw go wygeneruj'); return; }
+  const area = WHEEL_AREAS.find(a => a.id === areaId);
+  const answers = (wd.answers || {})[areaId] || [];
+  const score = answers.length ? Math.round(answers.reduce((s,v)=>s+(v||0),0)/answers.length*10)/10 : null;
+
+  const journalEntries = (() => {
+    try { return JSON.parse(localStorage.getItem('cien_journal_2026') || '[]'); } catch { return []; }
+  })();
+  const journalSnippet = journalEntries.slice(0, 3).map(e =>
+    `[${e.stage || ''}] ${(e.answers || []).filter(Boolean).slice(0,2).join(' / ')}`
+  ).filter(Boolean).join('\n');
+
+  const wheelScores = WHEEL_AREAS.map(a => {
+    const ans = (wd.answers || {})[a.id] || [];
+    const avg = ans.length ? (ans.reduce((s,v)=>s+(v||0),0)/ans.length).toFixed(1) : '?';
+    return `${a.name}: ${avg}/5`;
+  }).join(', ');
+
+  _showAIPlanModal(area, null); // loading state
+
+  try {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 25000);
+    const resp = await fetch('/.netlify/functions/generate-plan', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      signal: ctrl.signal,
+      body: JSON.stringify({
+        areaName: area.name,
+        score,
+        wheelScores,
+        planTeraz: (plan.teraz || []).join('; '),
+        planRegularnie: (plan.regularnie || []).join('; '),
+        planRok: plan.rok || '',
+        journalSnippet,
+      }),
+    });
+    clearTimeout(timer);
+    if (!resp.ok) throw new Error(`Błąd serwera (${resp.status})`);
+    const data = await resp.json();
+    if (data.error) throw new Error(data.error);
+    _showAIPlanModal(area, data.plan);
+  } catch (e) {
+    const msg = e.name === 'AbortError' ? 'Przekroczono czas — spróbuj ponownie' : (e.message || 'Spróbuj ponownie');
+    _showAIPlanModal(area, null, msg);
+  }
+}
+
+function _showAIPlanModal(area, planText, errorMsg) {
+  const existing = document.getElementById('ai-plan-modal');
+  if (existing) existing.remove();
+
+  const content = errorMsg
+    ? `<div class="aipm-error">⚠️ ${errorMsg}</div>`
+    : planText === null
+    ? `<div class="aipm-loading"><div class="aipm-spinner"></div><div>Generuję plan dla <strong>${escHtml(area.name)}</strong>…</div></div>`
+    : `<div class="aipm-result">${planText.replace(/^## (.+)$/gm, '<div class="aipm-section-title">$1</div>').replace(/^• (.+)$/gm, '<div class="aipm-item">• $1</div>').replace(/\n/g, '<br>')}</div>`;
+
+  const shareBtn = planText ? `<button class="btn btn-outline" style="flex:0 0 auto;font-size:0.8rem" onclick="
+    navigator.share ? navigator.share({title:'Plan AI — ${escHtml(area.name)}',text:document.querySelector('#ai-plan-modal .aipm-result')?.innerText||''}) : showToast('Udostępnianie niedostępne')
+  ">📤</button>` : '';
+
+  const m = document.createElement('div');
+  m.id = 'ai-plan-modal';
+  m.innerHTML = `
+    <div class="aipm-inner">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem">
+        <div class="aipm-title">🤖 Plan AI — ${escHtml(area.name)}</div>
+        <button class="btn btn-outline" style="flex:0 0 auto;padding:0.3rem 0.6rem;font-size:0.8rem" onclick="document.getElementById('ai-plan-modal').remove()">✕</button>
+      </div>
+      ${content}
+      ${planText ? `<div style="display:flex;gap:0.5rem;margin-top:0.75rem">${shareBtn}<button class="btn btn-gold" style="flex:1;font-size:0.82rem" onclick="document.getElementById('ai-plan-modal').remove()">Zamknij</button></div>` : ''}
+    </div>`;
+  m.onclick = e => { if (e.target === m) m.remove(); };
+  document.body.appendChild(m);
 }
 
 function buildWheelQuestionnaireHTML(answers) {
@@ -1904,23 +1999,11 @@ function buildWheelResultsHTML(answers) {
     </div>`;
   }).join('');
 
-  const gcalHTML = `<div class="gcal-banner">
-    <div class="gcal-text">
-      <strong>Google Kalendarz</strong>
-      <span>${_gcalToken ? 'Połączony — zapisuj plany jako wydarzenia' : 'Połącz i zapisuj plany do swojego kalendarza'}</span>
-    </div>
-    <button class="btn ${_gcalToken ? 'btn-outline' : 'btn-gold'}"
-      onclick="connectGCal()" style="flex-shrink:0;font-size:0.78rem;padding:0.45rem 0.75rem">
-      ${_gcalToken ? '✓ Połączono' : 'Połącz'}
-    </button>
-  </div>`;
-
   return `<div class="wheel-results-header">
     <div class="wheel-results-title">Twoje koło życia</div>
     <div class="wheel-results-avg">Średnia: <strong>${avg}/10</strong></div>
   </div>
   <div class="wheel-chart-wrap"><canvas id="wheel-chart"></canvas></div>
-  ${gcalHTML}
   ${areasHTML}
   <button class="btn btn-outline" style="width:100%;margin:0.5rem 0" onclick="emailWheelResults()">✉ Wyślij sobie wyniki</button>
   <button class="btn btn-outline" style="width:100%;margin-bottom:1.5rem" onclick="resetWheel()">Wypełnij ponownie</button>`;
@@ -2082,7 +2165,7 @@ function renderSacrum() {
       <div class="sacrum-card">
         <div class="sacrum-card-title">🗺 Lokalizacja</div>
         <div class="sacrum-card-body">
-          Strefa SACRUM — Kaplica.<br>
+          Strefa SACRUM — Śródzamcze.<br>
           <strong>Piątek i sobota, godz. 19:00–04:00.</strong><br>
           Dyżuruje team PsyCare — wsparcie emocjonalne, harm reduction, pierwsza pomoc psychologiczna.
         </div>
@@ -2158,10 +2241,10 @@ function renderSacrum() {
       </div>
 
       <div class="sacrum-card">
-        <div class="sacrum-card-title">🔄 Warsztaty integracyjne</div>
+        <div class="sacrum-card-title">🎁 Darmowe konsultacje terapeutyczne</div>
         <div class="sacrum-card-body">
-          Sprawdź w harmonogramie sesje integracyjne — są zaplanowane każdego ranka.<br>
-          SACRUM oferuje też sesje indywidualne — <a href="mailto:kontakt@cienfestiwal.com" style="color:var(--zloto)">skontaktuj się po festiwalu</a>.
+          Strefa SACRUM i Podświadomości oferuje bezpłatne konsultacje indywidualne przez cały czas trwania festiwalu — bez zapisu, bez oceniania.<br><br>
+          Przyjdź na Śródzamcze i porozmawiaj z terapeutą kiedy czujesz potrzebę.
         </div>
       </div>
     </div>
@@ -2201,6 +2284,15 @@ function renderSacrum() {
         </div>
       </div>
     </div>
+
+    <div class="sacrum-disclaimer">
+      <div class="sacrum-disclaimer-title">Ważna informacja</div>
+      <p>Cień Festiwal jest wydarzeniem kulturalnym i edukacyjnym. Organizatorzy <strong>nie zachęcają do przyjmowania żadnych substancji psychoaktywnych</strong>, w tym substancji nielegalnych na terenie Rzeczypospolitej Polskiej.</p>
+      <p>Punkt SACRUM prowadzi wyłącznie działalność z zakresu <strong>psychoedukacji, wsparcia emocjonalnego i redukcji szkód</strong> — rozumianej jako neutralna i nieoceniająca informacja o bezpieczeństwie psychicznym. Nie świadczymy usług medycznych ani nie udzielamy porad lekarskich.</p>
+      <p>Zachęcamy wszystkich uczestników do <strong>pełnego przeżywania festiwalu w stanie trzeźwości</strong> — wiele osób odkrywa, że odmienne stany świadomości są dostępne bez substancji: przez ruch, oddech, medytację, muzykę i kontakt z innymi.</p>
+      <p>Jeśli znajdziesz się lub będziesz świadkiem trudnego stanu emocjonalnego lub psychicznego — niezależnie od przyczyny — nasz team jest dostępny. Zapewniamy przestrzeń bez oceniania i bez zadawania zbędnych pytań. W sytuacji zagrożenia zdrowia lub życia wzywamy pomoc medyczną (112).</p>
+      <div class="sacrum-disclaimer-legal">Działalność punktu SACRUM nie stanowi świadczenia usług zdrowotnych w rozumieniu ustawy o działalności leczniczej z dnia 15 kwietnia 2011 r. (Dz.U. 2011 nr 112 poz. 654 ze zm.). Wsparcie emocjonalne i psychoedukacja prowadzone są przez osoby posiadające kwalifikacje z zakresu psychologii i psychoterapii, wyłącznie na zasadach dobrowolności i na wniosek uczestnika.</div>
+    </div>
   `;
 }
 
@@ -2228,24 +2320,40 @@ function callHelp() {
 // ============================================
 
 // ---- NEWS FEED ----
-const ANN_PB   = 'https://sacrum.life/cien-pb';
+const ANN_PB   = '/pb';
 const ANN_COL  = 'cien_announcements';
 const PUSH_COL = 'cien_push_subs';
-const VAPID_PUBLIC_KEY = 'BAyjko7oSupodgFaB_WrS8nlMsy17fqdTWy4TbIgX9WCks-mbZYR1lH0zvy-sf8RkfUEgkGooHCt5pVT6MR1WQU';
-const ANN_ADMIN_PIN = '2026cien';  // PIN admina
+const VAPID_PUBLIC_KEY = 'BOwqgma2codWLDw8kCO6aSpSVIGBQxA0d5fMGRvthDbqVdPInyHeRm9L1X6VZtIaVA3j9mqnWpZe91YlrUiylJo';
 
 let _annAdminMode = false;
+let _annAdminPin = null;
 let _annHeaderTaps = 0;
 let _annHeaderTapTimer = null;
 
-function _annTapHeader() {
+async function _annTapHeader() {
   _annHeaderTaps++;
   clearTimeout(_annHeaderTapTimer);
   _annHeaderTapTimer = setTimeout(() => { _annHeaderTaps = 0; }, 2000);
   if (_annHeaderTaps >= 5) {
     _annHeaderTaps = 0;
     const pin = prompt('PIN admina:');
-    if (pin === ANN_ADMIN_PIN) { _annAdminMode = true; renderInfo(); showToast('Tryb admina aktywny'); }
+    if (!pin) return;
+    // Weryfikacja przez serwer — PIN nie jest w source code
+    try {
+      const r = await fetch('/.netlify/functions/send-push', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pin, action: 'verify' }),
+      });
+      if (r.ok) {
+        _annAdminPin = pin;
+        _annAdminMode = true;
+        renderInfo();
+        showToast('Tryb admina aktywny');
+      } else {
+        showToast('Nieprawidłowy PIN');
+      }
+    } catch { showToast('Błąd połączenia'); }
   }
 }
 
@@ -2269,6 +2377,33 @@ async function annPost(e) {
     _loadAnnouncements();
   } catch { showToast('Błąd zapisu'); }
   finally { if (btn) btn.disabled = false; }
+}
+
+async function annSendPush() {
+  const title = document.getElementById('ann-title-in')?.value?.trim();
+  const message = document.getElementById('ann-body-in')?.value?.trim() || '';
+  if (!title) { showToast('Wpisz tytuł ogłoszenia'); return; }
+  if (!_annAdminPin) { showToast('Brak tokenu admina — zaloguj się ponownie'); return; }
+  const statusEl = document.getElementById('ann-push-status');
+  if (statusEl) statusEl.textContent = 'Wysyłanie...';
+  try {
+    const r = await fetch('/.netlify/functions/send-push', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pin: _annAdminPin, title, message }),
+    });
+    const data = await r.json();
+    if (!r.ok) {
+      if (statusEl) statusEl.textContent = '✗ ' + (data.error || 'Błąd');
+      showToast('Błąd: ' + (data.error || r.status));
+    } else {
+      if (statusEl) statusEl.textContent = `✓ Wysłano do ${data.sent} urządzeń (${data.failed} błędów)`;
+      showToast(`🔔 Push wysłany do ${data.sent} urządzeń`);
+    }
+  } catch (e) {
+    if (statusEl) statusEl.textContent = '✗ Błąd połączenia';
+    showToast('Błąd: ' + e.message);
+  }
 }
 
 async function annDelete(id) {
@@ -2372,9 +2507,13 @@ function renderInfo() {
           <option value="warning">⚠️ Uwaga</option>
           <option value="urgent">🚨 Pilne</option>
         </select>
-        <button type="submit" class="btn btn-gold" style="margin-top:0.75rem;width:100%">Opublikuj ogłoszenie</button>
+        <div style="display:flex;gap:0.5rem;margin-top:0.75rem">
+          <button type="submit" class="btn btn-gold" style="flex:1">Opublikuj</button>
+          <button type="button" class="btn" style="flex:0 0 auto;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);color:var(--pergamin);border-radius:10px;padding:0 1rem;font-size:0.85rem" onclick="annSendPush()">🔔 Push</button>
+        </div>
       </form>
-      <button class="btn-burgund" style="margin-top:0.5rem;width:100%" onclick="_annAdminMode=false;renderInfo()">Wyjdź z trybu admina</button>
+      <div id="ann-push-status" style="font-size:0.8rem;color:var(--szary);margin-top:0.4rem;min-height:1.2em"></div>
+      <button class="btn-burgund" style="margin-top:0.5rem;width:100%" onclick="_annAdminMode=false;_annAdminPin=null;renderInfo()">Wyjdź z trybu admina</button>
     </div>` : ''}
 
     <div class="info-section" style="margin-top:1rem">
@@ -2574,6 +2713,19 @@ function closeArticle() {
 let installPromptEvent = null;
 
 function setupInstallPrompt() {
+  const isStandalone = window.navigator.standalone === true ||
+                       window.matchMedia('(display-mode: standalone)').matches;
+  if (isStandalone) return;
+
+  const isIOS = /iP(hone|ad|od)/i.test(navigator.userAgent) && !window.MSStream;
+
+  if (isIOS) {
+    if (!localStorage.getItem('cien_install_dismissed')) {
+      setTimeout(() => showInstallGuide('ios'), 2500);
+    }
+    return;
+  }
+
   window.addEventListener('beforeinstallprompt', e => {
     e.preventDefault();
     installPromptEvent = e;
@@ -2582,12 +2734,50 @@ function setupInstallPrompt() {
   });
 }
 
+function showInstallGuide(platform) {
+  const isIOS = platform === 'ios' || /iP(hone|ad|od)/i.test(navigator.userAgent);
+  const steps = isIOS
+    ? [
+        ['⬆', 'Kliknij ikonę <strong>Udostępnij</strong> na dole Safari'],
+        ['➕', 'Wybierz <strong>„Dodaj do ekranu głównego"</strong>'],
+        ['✓',  'Kliknij <strong>„Dodaj"</strong> w prawym górnym rogu'],
+      ]
+    : [
+        ['⋮',  'Otwórz menu przeglądarki (trzy kropki)'],
+        ['📱', 'Wybierz <strong>„Dodaj do ekranu głównego"</strong>'],
+        ['✓',  'Kliknij <strong>„Zainstaluj"</strong>'],
+      ];
+
+  const stepsEl = document.getElementById('install-guide-steps');
+  if (stepsEl) {
+    stepsEl.innerHTML = steps.map(([icon, text], i) =>
+      `<div class="install-guide-step">
+        <span class="install-guide-step-num">${i + 1}</span>
+        <span class="install-guide-step-text">${text}</span>
+      </div>`
+    ).join('');
+  }
+
+  const cta = document.getElementById('install-guide-cta');
+  if (cta) cta.style.display = (!isIOS && installPromptEvent) ? 'block' : 'none';
+
+  const guide = document.getElementById('install-guide');
+  if (guide) guide.classList.add('show');
+}
+
+function dismissInstallModal() {
+  const guide = document.getElementById('install-guide');
+  if (guide) guide.classList.remove('show');
+  localStorage.setItem('cien_install_dismissed', '1');
+}
+
 function triggerInstall() {
   if (!installPromptEvent) return;
   installPromptEvent.prompt();
   installPromptEvent.userChoice.then(() => {
     installPromptEvent = null;
     dismissInstall();
+    dismissInstallModal();
   });
 }
 
@@ -2636,7 +2826,7 @@ const SD_TAGS = [
 
 const SD_EMOJIS = ['💫','🌙','☀️','🌊','🔥','🌿','⚡','🦋','🌸','🐺'];
 
-const SD_PB = 'https://sacrum.life/cien-pb';
+const SD_PB = '/pb';
 const SD_COL_PROFILES = 'cien_sd_profiles';
 const SD_COL_LIKES    = 'cien_sd_likes';
 
@@ -2691,6 +2881,24 @@ function _sdParseTags(raw) {
 function renderSlowDating() {
   const container = document.getElementById('slowdating-content');
   if (!container) return;
+
+  if (!localStorage.getItem('cien_sd_consent_v1')) {
+    container.innerHTML = `
+      <div class="sd-consent-screen">
+        <div class="sd-consent-title">💘 Slow Dating</div>
+        <div class="sd-consent-subtitle">Jak to działa?</div>
+        <div class="sd-consent-points">
+          <div class="sd-consent-point">👤 Twój profil (nick, zdjęcie, opis, tagi) jest widoczny dla wszystkich zalogowanych uczestników festiwalu</div>
+          <div class="sd-consent-point">💘 Dopasowanie następuje gdy oboje się polubiecie — tylko wtedy widzicie się nawzajem</div>
+          <div class="sd-consent-point">🗑 Profile są trwale kasowane 30 dni po zakończeniu festiwalu (5 VIII 2026)</div>
+        </div>
+        <button class="btn btn-gold" style="width:100%;margin-top:1rem" onclick="localStorage.setItem('cien_sd_consent_v1','1');renderSlowDating()">Rozumiem i dołączam →</button>
+        <button class="dating-btn-text" style="margin-top:0.75rem" onclick="navigateTo('teraz')">Nie chcę brać udziału</button>
+        <div class="sd-consent-fine-print">Administratorem danych jest Sacrum sp. z o.o., ul. Klaudyny 34c, 01-684 Warszawa. Podstawa prawna: zgoda (art. 6 ust. 1 lit. a RODO). Możesz wycofać zgodę usuwając profil w zakładce Moja karta.</div>
+      </div>`;
+    return;
+  }
+
   const profile = getSDProfile();
   const emoji   = profile.emoji || '💘';
   const nick    = profile.nick  || '';
@@ -2773,8 +2981,18 @@ function _sdRenderDeck(wrap) {
     const tags    = _sdParseTags(p.tags);
     const scale   = 1 - i * 0.025;
     const yOff    = i * 7;
-    const photoUrl = p.photo ? `${SD_PB}/api/files/${p.collectionId}/${p.id}/${p.photo}?thumb=400x400` : '';
-    const bgStyle  = photoUrl ? `background-image:url(${photoUrl});background-size:cover;background-position:center top;` : '';
+    const photoUrl = p.photoUrl || (p.photo ? `${SD_PB}/api/files/${p.collectionId}/${p.id}/${p.photo}?thumb=400x400` : '');
+    const _gradients = [
+      'linear-gradient(145deg,#1a1035 0%,#3d1a5c 60%,#1a2535 100%)',
+      'linear-gradient(145deg,#0d2535 0%,#1a4a3a 60%,#2d1a10 100%)',
+      'linear-gradient(145deg,#2d1a10 0%,#4a2d1a 60%,#1a1535 100%)',
+      'linear-gradient(145deg,#1a2d10 0%,#2d4a1a 60%,#10251a 100%)',
+      'linear-gradient(145deg,#10151a 0%,#1a2d40 60%,#2d1a3a 100%)',
+    ];
+    const gradIdx = p.uid ? p.uid.charCodeAt(p.uid.length - 1) % _gradients.length : i % _gradients.length;
+    const bgStyle  = photoUrl
+      ? `background-image:url(${photoUrl});background-size:cover;background-position:center 25%;`
+      : `background:${_gradients[gradIdx]};`;
     const hintClass = (i === 0 && !localStorage.getItem('cien_sd_hinted')) ? ' swipe-hint' : '';
     return `<div class="dating-card${i===0?' is-top':''}${photoUrl?' has-photo':''}${hintClass}" data-uid="${escHtml(p.uid)}"
               style="transform:scale(${scale}) translateY(${yOff}px);z-index:${3-i};${bgStyle}">
@@ -2830,11 +3048,11 @@ function _sdAttachSwipe() {
   card.addEventListener('touchstart', e => { e.stopPropagation(); onStart(e.touches[0].clientX); }, { passive: true });
   card.addEventListener('touchmove',  e => { e.preventDefault(); onMove(e.touches[0].clientX); },  { passive: false });
   card.addEventListener('touchend',   onEnd);
-  card.addEventListener('mousedown',  e => { e.preventDefault(); onStart(e.clientX); document.addEventListener('mousemove', _sdMouseMove); document.addEventListener('mouseup', _sdMouseUp, { once: true }); });
-}
 
-function _sdMouseMove(e) { const card = document.querySelector('.dating-card.is-top'); if (!card) return; const dx = e.clientX - (card._sdStartX||e.clientX); if (!card._sdStartX) { card._sdStartX = e.clientX; return; } const rot = dx*0.07; card.style.transform=`translate(${dx}px,${Math.abs(dx)*0.04}px) rotate(${rot}deg)`; const pct=Math.min(1,Math.abs(dx)/80); card.querySelector('.dating-swipe-indicator.left').style.opacity=dx<0?pct:0; card.querySelector('.dating-swipe-indicator.right').style.opacity=dx>0?pct:0; }
-function _sdMouseUp()   { document.removeEventListener('mousemove', _sdMouseMove); const card = document.querySelector('.dating-card.is-top'); if (!card||!card._sdStartX) return; const dummy = { clientX: card._sdStartX }; const stored = card._sdStartX; card._sdStartX=null; /* handled by touchend logic above */ }
+  const _mmove = e => onMove(e.clientX);
+  const _mup   = () => { onEnd(); document.removeEventListener('mousemove', _mmove); document.removeEventListener('mouseup', _mup); };
+  card.addEventListener('mousedown', e => { e.preventDefault(); onStart(e.clientX); document.addEventListener('mousemove', _mmove); document.addEventListener('mouseup', _mup); });
+}
 
 function sdSwipe(dir) {
   const card = document.querySelector('.dating-card.is-top');
@@ -2905,7 +3123,7 @@ async function _sdPushProfile(photoBlob) {
     } else {
       await fetch(`${SD_PB}/api/collections/${SD_COL_PROFILES}/records`, { method:'POST', headers, body });
     }
-    if (photoBlob) window._sdPendingPhoto = null;
+    if (photoBlob) { window._sdPendingPhoto = null; localStorage.setItem('cien_sd_photo_pushed', 'true'); }
     _sdDeckOk = false;
   } catch { /* offline */ }
 }
@@ -2933,14 +3151,21 @@ async function _sdRenderMatches(el) {
     const filter = matchUids.map(u => `uid='${u}'`).join('||');
     const pr = await fetch(`${SD_PB}/api/collections/${SD_COL_PROFILES}/records?filter=${encodeURIComponent(filter)}&perPage=100`, {headers:{'Content-Type':'application/json'}});
     const profiles = (await pr.json()).items || [];
-    el.innerHTML = `<div class="dating-matches-list">${profiles.map(p=>`
-      <div class="dating-match-item">
-        <div class="dating-match-avatar">${p.emoji||'💫'}</div>
-        <div>
+    el.innerHTML = `<div class="dating-matches-list">${profiles.map(p=>{
+      const photoUrl = p.photo && p.collectionId && p.id
+        ? `${SD_PB}/api/files/${p.collectionId}/${p.id}/${p.photo}?thumb=80x80` : '';
+      const avatarStyle = photoUrl
+        ? `background-image:url(${photoUrl});background-size:cover;background-position:center;`
+        : '';
+      return `<div class="dating-match-item">
+        <div class="dating-match-avatar" style="${avatarStyle}">${photoUrl ? '' : (p.emoji||'💫')}</div>
+        <div style="flex:1;min-width:0">
           <div class="dating-match-name">${escHtml(p.nick||'')}</div>
           <div class="dating-match-last">${escHtml(p.about||'')}</div>
         </div>
-      </div>`).join('')}</div>`;
+        <button class="btn-burgund" style="font-size:0.75rem;padding:0.3rem 0.6rem;flex-shrink:0" onclick="sdOpenAddMeeting('${escHtml(p.nick||'')}')">+ Spotkanie</button>
+      </div>`;
+    }).join('')}</div>`;
   } catch {
     el.innerHTML = `<div style="padding:3rem;text-align:center;color:var(--szary)">Brak połączenia — sprawdź internet</div>`;
   }
@@ -2966,14 +3191,18 @@ function _sdRenderCardForm(el) {
         ${m.note ? `<div class="sd-meeting-note">${escHtml(m.note)}</div>` : ''}
       </div>
       <div class="sd-meeting-actions">
-        ${m.contact ? `<button class="sd-action-btn" onclick="sdContact('${escHtml(m.contact)}')" title="Kontakt">✉</button>` : ''}
+        ${m.contact ? `<button class="sd-action-btn" data-contact="${escHtml(m.contact)}" onclick="sdContact(this.dataset.contact)" title="Kontakt">✉</button>` : ''}
         <button class="sd-action-btn" onclick="sdDeleteMeeting(${i})" title="Usuń">✕</button>
       </div>
     </div>`).join('') :
     `<div class="sd-empty-state">Nie zapisałeś jeszcze żadnego spotkania</div>`;
 
   const photoDataUrl = localStorage.getItem('cien_sd_photo') || '';
-  const cardBgStyle  = photoDataUrl ? `background-image:url(${photoDataUrl});background-size:cover;background-position:center top;` : '';
+  const _c = _sdGetCrop();
+  const _cx = _c.x||0, _cy = _c.y||0, _cz = _c.z||1;
+  const cardBgStyle  = photoDataUrl
+    ? `background-image:url(${photoDataUrl});background-size:${_cz>1?_cz*100+'%':'cover'};background-position:calc(50% - ${_cx*0.6}%) calc(50% - ${_cy*0.6}%);`
+    : '';
 
   el.innerHTML = `
     <div class="sd-hero">
@@ -3004,13 +3233,20 @@ function _sdRenderCardForm(el) {
         <div>
           <div class="sd-input-label">Zdjęcie profilowe</div>
           <input type="file" id="sd-photo-input" accept="image/*" style="display:none" onchange="sdPhotoSelected(this)">
-          <div class="sd-photo-upload" onclick="document.getElementById('sd-photo-input').click()">
-            ${photoDataUrl
-              ? `<img src="${photoDataUrl}" class="sd-photo-thumb" alt="Twoje zdjęcie">`
-              : `<div class="sd-photo-placeholder"><span style="font-size:1.6rem">📷</span><span>Dodaj zdjęcie</span></div>`
-            }
-            <div class="sd-photo-change">${photoDataUrl ? 'Zmień' : 'Dodaj'}</div>
+          ${photoDataUrl ? `
+          <div class="sd-photo-saved" onclick="document.getElementById('sd-photo-input').click()">
+            <img src="${photoDataUrl}" class="sd-photo-thumb" id="sd-photo-thumb-img" alt="Twoje zdjęcie">
+            <div class="sd-photo-saved-overlay">
+              <span class="sd-photo-saved-label">✓ Zdjęcie ustawione</span>
+              <span class="sd-photo-saved-change">Zmień</span>
+            </div>
           </div>
+          ` : `
+          <button class="sd-photo-add-btn" onclick="document.getElementById('sd-photo-input').click()">
+            <span class="sd-photo-add-icon">📷</span>
+            <span class="sd-photo-add-text">Dodaj zdjęcie profilowe</span>
+            <span class="sd-photo-add-sub">Tapnij żeby wybrać</span>
+          </button>`}
         </div>
         <div>
           <div class="sd-input-label">Emoji avatara</div>
@@ -3033,14 +3269,76 @@ function _sdRenderCardForm(el) {
           <div class="sd-input-label">Tematy (max 4)</div>
           <div class="sd-tags-grid">${tagsHTML}</div>
         </div>
-        <button class="btn btn-gold" onclick="sdSaveProfile()">Zapisz kartę</button>
+        <div style="display:flex;gap:0.6rem;margin-top:0.25rem">
+          <button class="btn btn-gold" style="flex:1" onclick="sdSaveProfile()">Zapisz kartę</button>
+          <button class="btn" style="flex:0 0 auto;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);color:var(--pergamin);border-radius:10px;padding:0 1rem;font-size:0.85rem" onclick="sdShowPreview()">👁</button>
+          <button class="btn" style="flex:0 0 auto;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);color:var(--pergamin);border-radius:10px;padding:0 1rem;font-size:0.85rem" onclick="sdShareCard()">↑</button>
+        </div>
       </div>
     </div>
     <div class="sd-section">
       <div class="sd-section-title">Moje spotkania</div>
       <div class="sd-meetings-list" id="sd-meetings-list">${meetingsHTML}</div>
       <button class="btn-burgund" onclick="sdOpenAddMeeting()" style="margin-top:0.75rem">+ Dodaj spotkanie</button>
+    </div>
+    <div class="sd-section sd-danger-zone">
+      <div class="sd-section-title">Usuń profil</div>
+      <div style="font-size:0.78rem;color:var(--szary);margin-bottom:0.75rem">Usuwa Twój profil, zdjęcie i wszystkie lajki z serwera. Nieodwracalne.</div>
+      <button class="btn-burgund" onclick="sdDeleteProfile()">Usuń mój profil Slow Dating</button>
     </div>`;
+}
+
+async function sdDeleteProfile() {
+  if (!confirm('Czy na pewno chcesz usunąć profil? Ta operacja jest nieodwracalna.')) return;
+  const profile = getSDProfile();
+  if (profile.id) {
+    await fetch(`${SD_PB}/api/collections/cien_sd_profiles/records/${profile.id}`, {
+      method: 'DELETE',
+    }).catch(() => {});
+  }
+  ['cien_sd_photo','cien_sd_crop','cien_sd_photo_pos','cien_sd_profile_2026','cien_sd_consent_v1','cien_sd_photo_pushed'].forEach(k => localStorage.removeItem(k));
+  showToast('Profil usunięty');
+  renderSlowDating();
+}
+
+function sdShowPreview() {
+  const profile = getSDProfile();
+  const photoDataUrl = localStorage.getItem('cien_sd_photo') || '';
+  const tags = _sdParseTags(profile.tags || []);
+  const bgStyle = photoDataUrl
+    ? `background-image:url(${photoDataUrl});background-size:cover;background-position:center;`
+    : '';
+  const existing = document.getElementById('sd-preview-overlay');
+  if (existing) existing.remove();
+  const overlay = document.createElement('div');
+  overlay.id = 'sd-preview-overlay';
+  overlay.innerHTML = `
+    <button class="sdpv-x" onclick="document.getElementById('sd-preview-overlay').remove()">✕</button>
+    <div class="sdpv-inner">
+      <div class="sdpv-label">Tak widzą Cię inni</div>
+      <div class="dating-card has-photo sdpv-card" style="${bgStyle}">
+        <div class="dating-card-overlay">
+          <div class="dating-card-name">${escHtml(profile.emoji||'💫')} ${escHtml(profile.nick||'Twój nick')}</div>
+          ${profile.about ? `<div class="dating-card-bio">${escHtml(profile.about)}</div>` : ''}
+          ${tags.length ? `<div style="display:flex;flex-wrap:wrap;gap:0.4rem;margin-top:0.5rem">${tags.map(t=>`<span class="sd-tag">${escHtml(t)}</span>`).join('')}</div>` : ''}
+        </div>
+      </div>
+      <button class="sdpv-close-btn" onclick="document.getElementById('sd-preview-overlay').remove()">← Wróć</button>
+    </div>`;
+  overlay.onclick = e => { if (e.target === overlay) overlay.remove(); };
+  document.body.appendChild(overlay);
+}
+
+function sdShareCard() {
+  const profile = getSDProfile();
+  if (!profile.nick) { showToast('Najpierw wypełnij kartę'); return; }
+  const tags = _sdParseTags(profile.tags || []);
+  const text = `${profile.emoji||'💫'} ${profile.nick}\n${profile.about ? profile.about + '\n' : ''}${tags.length ? tags.join(' · ') + '\n' : ''}\nSłow Dating @ Cień Festiwal 2026 🌙\napp.cienfestiwal.com`;
+  if (navigator.share) {
+    navigator.share({ title: `${profile.nick} @ Cień Festiwal`, text }).catch(() => {});
+  } else if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(() => showToast('Skopiowano do schowka ✓')).catch(() => showToast(text));
+  }
 }
 
 function sdSetEmoji(emoji) {
@@ -3051,97 +3349,6 @@ function sdSetEmoji(emoji) {
   else renderSlowDating();
 }
 
-function renderSlowDatingLocal() {
-  const container = document.getElementById('slowdating-content');
-  if (!container) return;
-
-  const profile = getSDProfile();
-  const meetings = getSDMeetings();
-
-  const hasProfile = !!(profile.nick && profile.nick.trim());
-
-  const cardHTML = `
-    <div class="sd-card-preview">
-      <div class="sd-card-nick ${hasProfile ? '' : 'placeholder'}">${profile.nick || 'Twój nick'}</div>
-      <div class="sd-card-about ${profile.about ? '' : 'placeholder'}">${profile.about || 'Jedno zdanie o sobie...'}</div>
-      <div class="sd-card-tags">
-        ${(profile.tags || []).map(t => `<span class="sd-tag">${t}</span>`).join('')}
-        ${!(profile.tags || []).length ? '<span class="sd-tag" style="opacity:0.4">tagi</span>' : ''}
-      </div>
-    </div>`;
-
-  const sessionsHTML = `
-    <div class="sd-anima-hero">
-      <img src="icons/ksiezyc-slonce.jpg" alt="Anima Animus" class="sd-anima-img">
-      <div class="sd-anima-label">Anima / Animus · Księżyc · Słońce</div>
-    </div>
-    <div class="sd-sessions">
-      <div class="sd-session-pill">💘 Piątek 16:30–18:00 · Anima/Animus</div>
-      <div class="sd-session-pill">💘 Piątek 18:30–20:00 · Anima/Animus</div>
-    </div>`;
-
-  const selectedTags = profile.tags || [];
-  const tagsHTML = SD_TAGS.map(t => `
-    <button class="sd-tag-btn ${selectedTags.includes(t) ? 'selected' : ''}"
-            onclick="sdToggleTag('${t}')">${t}</button>`).join('');
-
-  const meetingsHTML = meetings.length ? meetings.map((m, i) => `
-    <div class="sd-meeting-card">
-      <div class="sd-meeting-info">
-        <div class="sd-meeting-nick">${escHtml(m.nick)}</div>
-        ${m.note ? `<div class="sd-meeting-note">${escHtml(m.note)}</div>` : ''}
-      </div>
-      <div class="sd-meeting-actions">
-        ${m.contact ? `<button class="sd-action-btn" onclick="sdContact('${escHtml(m.contact)}')" title="Kontakt">✉</button>` : ''}
-        <button class="sd-action-btn" onclick="sdDeleteMeeting(${i})" title="Usuń">✕</button>
-      </div>
-    </div>`).join('') :
-    `<div class="sd-empty-state">Nie zapisałeś jeszcze żadnego spotkania</div>`;
-
-  container.innerHTML = `
-    <div class="sd-hero">
-      <div class="sd-hero-icon">💘</div>
-      <div class="sd-hero-title">SLOW DATING</div>
-      <div class="sd-hero-sub">Spotkanie bez algorytmów · prowadzi Maciek Kołodziejczyk EUPHIRE</div>
-    </div>
-
-    ${sessionsHTML}
-
-    <div class="sd-section">
-      <div class="sd-section-title">Twoja karta</div>
-      ${cardHTML}
-
-      <div class="sd-form">
-        <div>
-          <div class="sd-input-label">Nick / imię</div>
-          <input class="sd-input" id="sd-nick" type="text" maxlength="30"
-                 value="${escHtml(profile.nick || '')}"
-                 placeholder="jak mówią na Ciebie"
-                 oninput="sdUpdatePreview()">
-        </div>
-        <div>
-          <div class="sd-input-label">Jedno zdanie o sobie</div>
-          <input class="sd-input" id="sd-about" type="text" maxlength="80"
-                 value="${escHtml(profile.about || '')}"
-                 placeholder="Co robisz / skąd jesteś / co tu szukasz"
-                 oninput="sdUpdatePreview()">
-          <div class="sd-char-count" id="sd-char-count">${(profile.about || '').length}/80</div>
-        </div>
-        <div>
-          <div class="sd-input-label">Tematy (max 4)</div>
-          <div class="sd-tags-grid">${tagsHTML}</div>
-        </div>
-        <button class="btn btn-gold" onclick="sdSaveProfile()">Zapisz kartę</button>
-      </div>
-    </div>
-
-    <div class="sd-section">
-      <div class="sd-section-title">Moje spotkania</div>
-      <div class="sd-meetings-list" id="sd-meetings-list">${meetingsHTML}</div>
-      <button class="btn-burgund" onclick="sdOpenAddMeeting()" style="margin-top:0.75rem">+ Dodaj spotkanie</button>
-    </div>
-  `;
-}
 
 function sdUpdatePreview() {
   const nick = document.getElementById('sd-nick')?.value || '';
@@ -3160,6 +3367,50 @@ function sdUpdatePreview() {
     aboutEl.textContent = about || 'Jedno zdanie o sobie...';
     aboutEl.classList.toggle('placeholder', !about);
   }
+}
+
+function _sdGetCrop() {
+  try { return JSON.parse(localStorage.getItem('cien_sd_crop') || '{}'); } catch { return {}; }
+}
+
+function _sdApplyCrop(c) {
+  const x = c.x || 0, y = c.y || 0, z = c.z || 1;
+  const thumb = document.getElementById('sd-photo-thumb-img');
+  if (thumb) {
+    thumb.style.transform = `translate(${x}%, ${y}%) scale(${z})`;
+    thumb.style.transformOrigin = 'center center';
+  }
+  const preview = document.getElementById('sd-card-preview');
+  if (preview) {
+    preview.style.backgroundPosition = `calc(50% - ${x * 0.6}%) calc(50% - ${y * 0.6}%)`;
+    preview.style.backgroundSize = z > 1 ? `${z * 100}%` : 'cover';
+  }
+}
+
+function sdCrop(dir) {
+  const c = _sdGetCrop();
+  const STEP = 6, ZS = 0.15, MAX = 45, ZMAX = 3, ZMIN = 1;
+  if (dir === 'up')    c.y = Math.max(-MAX, (c.y||0) - STEP);
+  if (dir === 'down')  c.y = Math.min( MAX, (c.y||0) + STEP);
+  if (dir === 'left')  c.x = Math.max(-MAX, (c.x||0) - STEP);
+  if (dir === 'right') c.x = Math.min( MAX, (c.x||0) + STEP);
+  if (dir === 'in')    c.z = Math.min(ZMAX, +((c.z||1) + ZS).toFixed(2));
+  if (dir === 'out')   c.z = Math.max(ZMIN, +((c.z||1) - ZS).toFixed(2));
+  localStorage.setItem('cien_sd_crop', JSON.stringify(c));
+  _sdApplyCrop(c);
+}
+
+function sdCropReset() {
+  localStorage.removeItem('cien_sd_crop');
+  _sdApplyCrop({});
+}
+
+function sdSetPhotoPos(pos) {
+  // legacy — redirect to crop
+  const map = { top: { y: -25 }, center: {}, bottom: { y: 25 } };
+  const c = { ..._sdGetCrop(), ...(map[pos] || {}) };
+  localStorage.setItem('cien_sd_crop', JSON.stringify(c));
+  _sdApplyCrop(c);
 }
 
 function sdToggleTag(tag) {
@@ -3187,40 +3438,74 @@ function sdToggleTag(tag) {
   }
 }
 
+let _sdCropper = null;
+
 function sdPhotoSelected(input) {
   const file = input.files[0];
   if (!file) return;
+  input.value = '';
   const reader = new FileReader();
   reader.onload = e => {
-    const img = new Image();
-    img.onload = () => {
-      const MAX = 600;
-      let w = img.width, h = img.height;
-      if (w > MAX || h > MAX) {
-        if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
-        else        { w = Math.round(w * MAX / h); h = MAX; }
-      }
-      const canvas = document.createElement('canvas');
-      canvas.width = w; canvas.height = h;
-      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-      canvas.toBlob(blob => {
-        window._sdPendingPhoto = blob;
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.82);
-        localStorage.setItem('cien_sd_photo', dataUrl);
-        // Update upload button
-        const uploadEl = document.querySelector('.sd-photo-upload');
-        if (uploadEl) uploadEl.innerHTML = `<img src="${dataUrl}" class="sd-photo-thumb" alt="Twoje zdjęcie"><div class="sd-photo-change">Zmień</div>`;
-        // Update card preview background (just the inline style — CSS handles sizing)
-        const preview = document.getElementById('sd-card-preview');
-        if (preview) preview.style.backgroundImage = `url(${dataUrl})`;
-      }, 'image/jpeg', 0.82);
-    };
+    const modal = document.getElementById('sd-crop-modal');
+    const img   = document.getElementById('sdc-img');
+    if (!modal || !img) return;
     img.src = e.target.result;
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    if (_sdCropper) { _sdCropper.destroy(); _sdCropper = null; }
+    img.onload = () => {
+      _sdCropper = new Cropper(img, {
+        aspectRatio: 3 / 4,
+        viewMode: 1,
+        dragMode: 'move',
+        autoCropArea: 0.85,
+        restore: false,
+        guides: false,
+        center: false,
+        highlight: false,
+        cropBoxMovable: false,
+        cropBoxResizable: false,
+        toggleDragModeOnDblclick: false,
+        ready() {
+          // round crop box via CSS
+          const box = document.querySelector('.cropper-crop-box');
+          if (box) box.style.borderRadius = '16px';
+          const face = document.querySelector('.cropper-face');
+          if (face) face.style.borderRadius = '16px';
+        },
+      });
+    };
   };
   reader.readAsDataURL(file);
 }
 
-function sdSaveProfile() {
+function sdCropDone() {
+  if (!_sdCropper) return;
+  const canvas = _sdCropper.getCroppedCanvas({ width: 600, height: 800, imageSmoothingQuality: 'high' });
+  canvas.toBlob(blob => {
+    window._sdPendingPhoto = blob;
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.88);
+    localStorage.setItem('cien_sd_photo', dataUrl);
+    localStorage.setItem('cien_sd_photo_pushed', 'false');
+    localStorage.removeItem('cien_sd_crop');
+    _sdCropper.destroy(); _sdCropper = null;
+    document.getElementById('sd-crop-modal').style.display = 'none';
+    document.body.style.overflow = '';
+    // update card preview
+    const preview = document.getElementById('sd-card-preview');
+    if (preview) { preview.style.backgroundImage = `url(${dataUrl})`; preview.style.backgroundSize = 'cover'; preview.style.backgroundPosition = 'center'; }
+    // re-render the form section to show the saved photo
+    if (_sdTab === 'karta') _sdRenderCardForm(document.getElementById('sd-tab-content'));
+  }, 'image/jpeg', 0.88);
+}
+
+function sdCropCancel() {
+  if (_sdCropper) { _sdCropper.destroy(); _sdCropper = null; }
+  document.getElementById('sd-crop-modal').style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+async function sdSaveProfile() {
   const nick  = document.getElementById('sd-nick')?.value?.trim()  || '';
   const about = document.getElementById('sd-about')?.value?.trim() || '';
   const profile = getSDProfile();
@@ -3228,12 +3513,19 @@ function sdSaveProfile() {
   profile.about = about;
   saveSDProfile(profile);
   if (typeof _syncProfileToTeam === 'function') _syncProfileToTeam().catch(() => {});
-  _sdPushProfile(window._sdPendingPhoto || null);
+  let photoBlob = window._sdPendingPhoto || null;
+  if (!photoBlob && localStorage.getItem('cien_sd_photo_pushed') === 'false') {
+    const dataUrl = localStorage.getItem('cien_sd_photo');
+    if (dataUrl) {
+      try { const r = await fetch(dataUrl); photoBlob = await r.blob(); } catch {}
+    }
+  }
+  _sdPushProfile(photoBlob);
   showToast('Karta zapisana ✓');
   renderSlowDating();
 }
 
-function sdOpenAddMeeting() {
+function sdOpenAddMeeting(prefillNick) {
   const modal = document.getElementById('event-modal');
   modal.querySelector('.modal-zone-badge').style.color = '#8B3A52';
   modal.querySelector('.modal-zone-badge').innerHTML = '💘 Nowe spotkanie';
@@ -3244,7 +3536,7 @@ function sdOpenAddMeeting() {
     <div class="sd-modal-form">
       <div>
         <div class="sd-input-label">Nick / imię</div>
-        <input class="sd-input" id="sd-new-nick" type="text" maxlength="40" placeholder="jak mają na imię">
+        <input class="sd-input" id="sd-new-nick" type="text" maxlength="40" placeholder="jak mają na imię" value="${escHtml(prefillNick||'')}">
       </div>
       <div>
         <div class="sd-input-label">Co mi się podobało / o czym rozmawialiśmy</div>
@@ -3259,7 +3551,8 @@ function sdOpenAddMeeting() {
   if (tagsEl) tagsEl.innerHTML = `
     <button class="btn btn-gold" onclick="sdConfirmAddMeeting()" style="width:100%;margin-top:0.5rem">Zapisz</button>`;
   modal.querySelector('.modal-overlay').classList.add('open');
-  setTimeout(() => document.getElementById('sd-new-nick')?.focus(), 100);
+  const nickInput = document.getElementById('sd-new-nick');
+  setTimeout(() => { if (prefillNick) nickInput?.select(); else nickInput?.focus(); }, 100);
 }
 
 function sdConfirmAddMeeting() {
@@ -3281,7 +3574,7 @@ function sdConfirmAddMeeting() {
           ${m.note ? `<div class="sd-meeting-note">${escHtml(m.note)}</div>` : ''}
         </div>
         <div class="sd-meeting-actions">
-          ${m.contact ? `<button class="sd-action-btn" onclick="sdContact('${escHtml(m.contact)}')" title="Kontakt">✉</button>` : ''}
+          ${m.contact ? `<button class="sd-action-btn" data-contact="${escHtml(m.contact)}" onclick="sdContact(this.dataset.contact)" title="Kontakt">✉</button>` : ''}
           <button class="sd-action-btn" onclick="sdDeleteMeeting(${i})" title="Usuń">✕</button>
         </div>
       </div>`).join('');
@@ -3656,7 +3949,7 @@ function _startCountdownTimer() {
 let _weatherData = null;
 async function _fetchWeather() {
   try {
-    const cached = sessionStorage.getItem('cien_weather_v3');
+    const cached = localStorage.getItem('cien_weather_v3');
     if (cached) {
       const { data, ts } = JSON.parse(cached);
       if (Date.now() - ts < 60 * 60 * 1000) {
@@ -3670,7 +3963,7 @@ async function _fetchWeather() {
     if (!res.ok) return;
     const json = await res.json();
     _weatherData = json;
-    sessionStorage.setItem('cien_weather_v3', JSON.stringify({ data: _weatherData, ts: Date.now() }));
+    localStorage.setItem('cien_weather_v3', JSON.stringify({ data: _weatherData, ts: Date.now() }));
     _updateWeatherWidget();
   } catch { /* offline */ }
 }
@@ -3749,7 +4042,10 @@ function initParticles() {
   resize();
   window.addEventListener('resize', resize);
 
-  const pts = Array.from({ length: 65 }, () => ({
+  // Reduced count + squared distance avoids sqrt on every pair
+  const COUNT = 38;
+  const DIST_SQ = 110 * 110;
+  const pts = Array.from({ length: COUNT }, () => ({
     x: Math.random() * canvas.width,
     y: Math.random() * canvas.height,
     r: Math.random() * 1.2 + 0.4,
@@ -3758,17 +4054,19 @@ function initParticles() {
     a: Math.random() * 0.5 + 0.25,
   }));
 
+  let _rafId = null;
   const draw = () => {
+    if (document.hidden) { _rafId = requestAnimationFrame(draw); return; }
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     for (let i = 0; i < pts.length; i++) {
       for (let j = i + 1; j < pts.length; j++) {
         const dx = pts[i].x - pts[j].x, dy = pts[i].y - pts[j].y;
-        const dist = Math.sqrt(dx*dx + dy*dy);
-        if (dist < 110) {
+        const dsq = dx*dx + dy*dy;
+        if (dsq < DIST_SQ) {
           ctx.beginPath();
           ctx.moveTo(pts[i].x, pts[i].y);
           ctx.lineTo(pts[j].x, pts[j].y);
-          ctx.strokeStyle = `rgba(201,168,76,${(1 - dist/110) * 0.12})`;
+          ctx.strokeStyle = `rgba(201,168,76,${(1 - Math.sqrt(dsq)/110) * 0.12})`;
           ctx.lineWidth = 0.5;
           ctx.stroke();
         }
@@ -3785,9 +4083,12 @@ function initParticles() {
       ctx.fillStyle = `rgba(201,168,76,${p.a})`;
       ctx.fill();
     });
-    requestAnimationFrame(draw);
+    _rafId = requestAnimationFrame(draw);
   };
-  requestAnimationFrame(draw);
+  _rafId = requestAnimationFrame(draw);
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && !_rafId) _rafId = requestAnimationFrame(draw);
+  });
 }
 
 // ============================================
@@ -3880,8 +4181,17 @@ function closeMatchModal() {
 }
 
 function goToMatchChat() {
+  const modal = document.getElementById('dating-match-modal');
+  const matchedNick = modal?.querySelector('.match-their-name')?.textContent?.trim() || '';
   closeMatchModal();
-  sdSetTab('dopasowania');
+  sdSetTab('karta');
+  setTimeout(() => {
+    sdOpenAddMeeting();
+    if (matchedNick) {
+      const nickInput = document.getElementById('sd-new-nick');
+      if (nickInput) nickInput.value = matchedNick;
+    }
+  }, 220);
 }
 
 // ============================================
@@ -3892,8 +4202,8 @@ Object.assign(window, {
   setActiveDay, setActiveZone, openEventModal, closeEventModal,
   setPoiType, highlightZone, openPoiModal,
   setJournalStage, autoSaveJournal, saveJournalEntry, emailJournalEntry, toggleEntry,
-  callHelp, triggerInstall, dismissInstall,
-  sdToggleTag, sdSaveProfile, sdUpdatePreview, sdOpenAddMeeting, sdConfirmAddMeeting, sdDeleteMeeting, sdContact,
+  callHelp, triggerInstall, dismissInstall, showInstallGuide, dismissInstallModal, _dismissAnnTeraz,
+  sdToggleTag, sdSaveProfile, sdUpdatePreview, sdSetPhotoPos, sdCropDone, sdCropCancel, sdShowPreview, sdShareCard, sdDeleteProfile, sdOpenAddMeeting, sdConfirmAddMeeting, sdDeleteMeeting, sdContact,
   toggleFavorite, setFavOnly, scheduleSearch,
   setKBCategory, openArticle, closeArticle,
   dismissOnboarding,
@@ -3902,8 +4212,10 @@ Object.assign(window, {
   toggleMoreMenu, openMoreMenu, closeMoreMenu,
   closeMatchModal, goToMatchChat,
   shareEvent, shareApp, addToCalendar,
+  generateAndShowPlan, togglePlanItem, sharePlan, aiCustomizePlan,
   _fetchWeather,
   updateApp,
+  annPost, annDelete, annSendPush, subscribePush, _annTapHeader,
 });
 
 // ============================================

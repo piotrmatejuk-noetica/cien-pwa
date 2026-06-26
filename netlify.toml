@@ -1,3 +1,14 @@
+[build]
+  publish = "."
+  functions = "netlify/functions"
+  command = "npm install"
+
+[[redirects]]
+  from = "/pb/*"
+  to = "https://klauzule.tail4676a1.ts.net/cien-pb/:splat"
+  status = 200
+  force = true
+
 [[redirects]]
   from = "/regulamin"
   to = "/regulamin.html"

@@ -28,6 +28,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=EB+Garamond:ital,wght@0,400;0,500;1,400&display=swap">
+  <link rel="stylesheet" href="cropper.min.css">
   <link rel="stylesheet" href="app.css">
 </head>
 <body>
@@ -40,6 +41,7 @@
 
 <!-- AUTH SCREEN -->
 <div id="auth-screen" style="display:none">
+  <button class="auth-skip-x" onclick="skipAuth()" title="Kontynuuj bez logowania">✕</button>
   <div class="auth-inner">
     <img src="icons/cien-logo.png" alt="CIEŃ" class="auth-logo">
     <div class="auth-title">CIEŃ FESTIWAL 2026</div>
@@ -85,13 +87,27 @@
 
 <div id="app">
 
-  <!-- INSTALL BANNER -->
+  <!-- INSTALL BANNER (Android beforeinstallprompt) -->
   <div id="install-banner">
     <div class="install-text">
       <strong>Dodaj CIEŃ do ekranu</strong> — działa offline
     </div>
     <button class="install-btn" onclick="triggerInstall()">Zainstaluj</button>
     <button class="install-dismiss" onclick="dismissInstall()">✕</button>
+  </div>
+
+  <!-- INSTALL GUIDE MODAL (iOS + Android manual) -->
+  <div id="install-guide" class="install-guide-overlay">
+    <div class="install-guide-backdrop" onclick="dismissInstallModal()"></div>
+    <div class="install-guide-sheet">
+      <div class="install-guide-handle"></div>
+      <div class="install-guide-logo">☽</div>
+      <h3 class="install-guide-title">Zainstaluj CIEŃ</h3>
+      <p class="install-guide-sub">Działa offline · bez App Store · jak prawdziwa apka</p>
+      <div id="install-guide-steps" class="install-guide-steps"></div>
+      <button id="install-guide-cta" class="install-guide-cta" onclick="triggerInstall()" style="display:none">Zainstaluj teraz</button>
+      <button class="install-guide-skip" onclick="dismissInstallModal()">Nie teraz</button>
+    </div>
   </div>
 
   <!-- HEADER -->
@@ -199,9 +215,9 @@
       <span class="nav-icon">💘</span>
       <span class="nav-label">Slow Dating</span>
     </button>
-    <button class="nav-btn" data-view="druzyna">
-      <span class="nav-icon">🛡</span>
-      <span class="nav-label">Drużyna</span>
+    <button class="nav-btn" data-view="dziennik">
+      <span class="nav-icon">☽</span>
+      <span class="nav-label">Dziennik</span>
     </button>
     <button class="nav-btn" id="nav-more-btn" onclick="toggleMoreMenu()">
       <span class="nav-icon">☰</span>
@@ -217,8 +233,8 @@
       <button class="more-item" onclick="closeMoreMenu();navigateTo('profil')">
         <span class="more-item-icon">👤</span><span>Mój Profil</span>
       </button>
-      <button class="more-item" onclick="closeMoreMenu();navigateTo('dziennik')">
-        <span class="more-item-icon">☽</span><span>Dziennik</span>
+      <button class="more-item" onclick="closeMoreMenu();navigateTo('druzyna')">
+        <span class="more-item-icon">🛡</span><span>Drużyna</span>
       </button>
       <button class="more-item" onclick="closeMoreMenu();navigateTo('sacrum')">
         <img src="icons/ksiezyc-slonce.jpg" class="more-item-sacrum-img" alt=""><span>Sacrum</span>
@@ -229,6 +245,9 @@
       <div class="more-sep"></div>
       <button class="more-item" onclick="closeMoreMenu();navigateTo('ustawienia')">
         <span class="more-item-icon">⚙️</span><span>Ustawienia</span>
+      </button>
+      <button class="more-item" onclick="closeMoreMenu();showInstallGuide()">
+        <span class="more-item-icon">📲</span><span>Zainstaluj na telefonie</span>
       </button>
       <button class="more-item" onclick="updateApp()">
         <span class="more-item-icon">↻</span><span>Aktualizuj aplikację</span>
@@ -241,8 +260,8 @@
 <!-- MATCH MODAL -->
 <div id="dating-match-modal">
   <div class="match-modal-inner">
-    <div class="match-title">TO MATCH!</div>
-    <div class="match-subtitle">Oboje chcecie porozmawiać 💘</div>
+    <div class="match-title">MATCH! 💘</div>
+    <div class="match-subtitle">Oboje chcecie porozmawiać</div>
     <div class="match-photos">
       <div class="match-own-photo match-photo"></div>
       <div class="match-heart">❤</div>
@@ -250,7 +269,7 @@
     </div>
     <div class="match-their-name"></div>
     <button class="dating-btn-gold" onclick="goToMatchChat()" style="width:100%;margin-top:1.5rem">
-      Napisz wiadomość →
+      Dodaj do Spotkań →
     </button>
     <button onclick="closeMatchModal()" class="dating-btn-text" style="margin-top:0.5rem">
       Może później
@@ -287,6 +306,23 @@
   </div>
 </div>
 
+<!-- Photo Crop Modal -->
+<div id="sd-crop-modal" style="display:none">
+  <div class="sdc-backdrop"></div>
+  <div class="sdc-sheet">
+    <div class="sdc-header">
+      <button class="sdc-btn-cancel" onclick="sdCropCancel()">Anuluj</button>
+      <span class="sdc-title">Dopasuj zdjęcie</span>
+      <button class="sdc-btn-done" onclick="sdCropDone()">Gotowe</button>
+    </div>
+    <div class="sdc-crop-area">
+      <img id="sdc-img" src="" alt="">
+    </div>
+    <div class="sdc-hint">Ściśnij palcami żeby zmienić zoom · Przeciągnij żeby ustawić kadr</div>
+  </div>
+</div>
+
+<script src="cropper.min.js"></script>
 <script src="app.js"></script>
 <script src="team.js"></script>
 </body>

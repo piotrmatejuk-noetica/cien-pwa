@@ -1,6 +1,6 @@
 /* ============================================
    CIEŃ FESTIWAL 2026 — Moja drużyna
-   Backend: PocketBase @ sacrum.life/cien-pb
+   Backend: PocketBase @ pb.cienfestiwal.com
    ============================================ */
 
 'use strict';
@@ -16,7 +16,7 @@ document.addEventListener('visibilitychange', () => {
   }
 });
 
-const PB = 'https://sacrum.life/cien-pb';
+const PB = '/pb';
 
 // ---- state ----
 let _team       = null;
