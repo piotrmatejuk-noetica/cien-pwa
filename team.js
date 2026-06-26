@@ -730,6 +730,7 @@ async function _fetchTeamLocsPB() {
 function _startLocSharing() {
   if (_locSharing) return;
   _locSharing = true;
+  localStorage.setItem('cien_loc_sharing', '1');
   _watchId = navigator.geolocation.watchPosition(
     pos => {
       _myPos = { lat: pos.coords.latitude, lng: pos.coords.longitude };
@@ -747,6 +748,7 @@ function _startLocSharing() {
 function _stopLocSharing() {
   if (!_locSharing && _watchId == null) return;
   _locSharing = false;
+  localStorage.removeItem('cien_loc_sharing');
   if (_watchId != null) { navigator.geolocation.clearWatch(_watchId); _watchId = null; }
   if (_locUnsub)         { _locUnsub(); _locUnsub = null; }
   if (_locWriteThrottle) { clearTimeout(_locWriteThrottle); _locWriteThrottle = null; }
@@ -1060,7 +1062,10 @@ async function initTeam() {
   const team = await teamLoad();
   if (team) {
     await _scheduleAllNotifs();
-    // Re-render if user already navigated to druzyna before fetch completed
+    if (localStorage.getItem('cien_loc_sharing') && navigator.geolocation) {
+      _startCompass();
+      _startLocSharing();
+    }
     if (document.getElementById('view-druzyna')?.classList.contains('active')) {
       renderTeamView();
     }
