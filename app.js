@@ -719,6 +719,10 @@ function navigateTo(view) {
     v.classList.toggle('active', v.id === `view-${view}`);
   });
 
+  // Start/stop SD match poller
+  if (view === 'slowdating') _sdStartMatchPoller();
+  else _sdStopMatchPoller();
+
   // Render
   renderView(view);
   updateHeader();
@@ -2899,10 +2903,12 @@ const SD_EMOJIS = ['💫','🌙','☀️','🌊','🔥','🌿','⚡','🦋','�
 const SD_PB = '/pb';
 const SD_COL_PROFILES = 'cien_sd_profiles';
 const SD_COL_LIKES    = 'cien_sd_likes';
+const _SD_MATCH_SECRET = 'cien2026sd';
 
 let _sdTab    = 'odkryj';
 let _sdDeck   = [];
 let _sdDeckOk = false;
+let _sdMatchPollerTimer = null;
 
 function getSDProfile() {
   try { return JSON.parse(localStorage.getItem('cien_sd_profile_2026') || '{}'); } catch { return {}; }
@@ -3164,8 +3170,91 @@ async function _sdSendLike(profile) {
     });
     const check = await fetch(`${SD_PB}/api/collections/${SD_COL_LIKES}/records?filter=${encodeURIComponent(`from_uid='${toUid}'&&to_uid='${myUid}'`)}&perPage=1`, { headers:{'Content-Type':'application/json'} });
     const cd    = await check.json();
-    if (cd.items && cd.items.length) showMatchModal(profileObj);
+    if (cd.items && cd.items.length) {
+      showMatchModal(profileObj);
+      _sdMarkMatchSeen(toUid);
+      _sdNotifyMatch(toUid);
+    }
   } catch { /* offline */ }
+}
+
+function _sdGetSeenMatches() {
+  try { return new Set(JSON.parse(localStorage.getItem('cien_shown_matches') || '[]')); } catch { return new Set(); }
+}
+
+function _sdMarkMatchSeen(uid) {
+  const s = _sdGetSeenMatches(); s.add(uid);
+  localStorage.setItem('cien_shown_matches', JSON.stringify([...s]));
+}
+
+async function _sdNotifyMatch(toUid) {
+  const myNick = getSDProfile().nick || '';
+  try {
+    await fetch('/.netlify/functions/send-push', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'match', targetUid: toUid, matchNick: myNick, matchSecret: _SD_MATCH_SECRET }),
+    });
+  } catch { /* offline */ }
+}
+
+function _sdStartMatchPoller() {
+  _sdStopMatchPoller();
+  _sdPollMatches();
+  _sdMatchPollerTimer = setInterval(_sdPollMatches, 30000);
+}
+
+function _sdStopMatchPoller() {
+  if (_sdMatchPollerTimer) { clearInterval(_sdMatchPollerTimer); _sdMatchPollerTimer = null; }
+}
+
+async function _sdPollMatches() {
+  const myUid = getSDUid();
+  if (!myUid || myUid.startsWith('guest_')) return;
+  try {
+    const [r1, r2] = await Promise.all([
+      fetch(`${SD_PB}/api/collections/${SD_COL_LIKES}/records?filter=${encodeURIComponent(`from_uid='${myUid}'`)}&perPage=200`, {headers:{'Content-Type':'application/json'}}),
+      fetch(`${SD_PB}/api/collections/${SD_COL_LIKES}/records?filter=${encodeURIComponent(`to_uid='${myUid}'`)}&perPage=200`,   {headers:{'Content-Type':'application/json'}}),
+    ]);
+    const iLiked   = new Set((await r1.json()).items?.map(l=>l.to_uid)   || []);
+    const likedMe  = new Set((await r2.json()).items?.map(l=>l.from_uid) || []);
+    const matchUids = [...iLiked].filter(uid => likedMe.has(uid));
+    const seen = _sdGetSeenMatches();
+    const newUids = matchUids.filter(uid => !seen.has(uid));
+    if (newUids.length) {
+      const filter = newUids.map(u=>`uid='${u}'`).join('||');
+      const pr = await fetch(`${SD_PB}/api/collections/${SD_COL_PROFILES}/records?filter=${encodeURIComponent(filter)}&perPage=20`, {headers:{'Content-Type':'application/json'}});
+      const profiles = (await pr.json()).items || [];
+      for (const p of profiles) {
+        _sdMarkMatchSeen(p.uid);
+        if (State.currentView === 'slowdating') {
+          showMatchModal(p);
+          break;
+        } else {
+          showToast(`💘 Match z ${p.nick || 'kimś'}! Wejdź w Slow Dating`, 5000);
+        }
+      }
+    }
+    _sdUpdateMatchBadge(matchUids.length);
+  } catch { /* offline */ }
+}
+
+function _sdUpdateMatchBadge(count) {
+  const btn = document.getElementById('sd-tab-match-btn');
+  if (!btn) return;
+  const existing = btn.querySelector('.dating-badge');
+  if (count > 0) {
+    if (!existing) {
+      const b = document.createElement('span');
+      b.className = 'dating-badge';
+      b.textContent = count;
+      btn.appendChild(b);
+    } else {
+      existing.textContent = count;
+    }
+  } else if (existing) {
+    existing.remove();
+  }
 }
 
 async function _sdPushProfile(photoBlob) {
