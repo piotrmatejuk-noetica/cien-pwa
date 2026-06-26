@@ -41,13 +41,33 @@ function skipAuth() {
   renderSchedule();
 }
 
-// Returning user — instant re-login using stored ghost record
+// Returning user re-login — requires password if one was set
 function authContinue() {
   const uid   = localStorage.getItem('cien_prev_uid');
   const email = localStorage.getItem('cien_prev_email');
   const name  = localStorage.getItem('cien_prev_name');
   if (!uid) { _authSwitchToFull(); return; }
-  _setUser(uid, email, name);
+  const stored = localStorage.getItem('cien_pass_hash');
+  if (!stored) { _setUser(uid, email, name); return; }
+  // Has password — show password field in returning panel
+  const retPanel = document.getElementById('auth-returning');
+  let passInput = retPanel?.querySelector('#auth-return-pass');
+  if (!passInput) {
+    passInput = document.createElement('input');
+    passInput.id = 'auth-return-pass';
+    passInput.type = 'password';
+    passInput.placeholder = 'Hasło';
+    passInput.className = 'auth-input';
+    passInput.style.cssText = 'margin-top:0.75rem;width:100%';
+    retPanel?.querySelector('.auth-returning-actions')?.prepend(passInput);
+  }
+  passInput.style.display = '';
+  const pass = passInput.value;
+  if (!pass) { passInput.focus(); return; }
+  _hashPass(pass).then(hash => {
+    if (hash !== stored) { _authError('Błędne hasło'); return; }
+    _setUser(uid, email, name);
+  });
 }
 
 function authSwitchUser() {
@@ -70,11 +90,37 @@ function authRegister() {
   const passEl  = document.getElementById('auth-password');
   if (!emailEl || !emailEl.value.trim()) { _authError('Wpisz adres email'); return; }
   if (!emailEl.validity.valid) { _authError('Wpisz poprawny adres email'); return; }
-  if (passEl && passEl.value && passEl.value.length < 6) { _authError('Hasło musi mieć co najmniej 6 znaków'); return; }
+  if (!passEl || !passEl.value || passEl.value.length < 6) { _authError('Hasło musi mieć co najmniej 6 znaków'); return; }
   const email = emailEl.value.trim().toLowerCase();
-  const uid   = 'email_' + btoa(email).replace(/[^a-zA-Z0-9]/g, '').slice(0, 20);
-  const name  = email.split('@')[0];
-  _setUser(uid, email, name);
+  // UID is random per device — not guessable from email
+  const existingUid = localStorage.getItem('cien_prev_uid');
+  const existingEmail = localStorage.getItem('cien_prev_email');
+  if (existingUid && existingEmail === email) {
+    // Same email on this device — verify password
+    _verifyPassAndLogin(existingUid, email, passEl.value);
+    return;
+  }
+  // New account on this device
+  const rand = Array.from(crypto.getRandomValues(new Uint8Array(8))).map(b => b.toString(16).padStart(2,'0')).join('');
+  const uid  = 'u_' + rand;
+  const name = email.split('@')[0];
+  _hashPass(passEl.value).then(hash => {
+    localStorage.setItem('cien_pass_hash', hash);
+    _setUser(uid, email, name);
+  });
+}
+
+async function _hashPass(pass) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pass));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+async function _verifyPassAndLogin(uid, email, pass) {
+  const stored = localStorage.getItem('cien_pass_hash');
+  if (!stored) { _setUser(uid, email, email.split('@')[0]); return; }
+  const hash = await _hashPass(pass);
+  if (hash !== stored) { _authError('Błędne hasło'); return; }
+  _setUser(uid, email, localStorage.getItem('cien_prev_name') || email.split('@')[0]);
 }
 
 function _authTermsOk() {
@@ -3101,9 +3147,12 @@ async function _sdPushProfile(photoBlob) {
       headers = {'Content-Type':'application/json'};
     }
     if (data.items && data.items.length) {
-      await fetch(`${SD_PB}/api/collections/${SD_COL_PROFILES}/records/${data.items[0].id}`, { method:'PATCH', headers, body });
+      const existingId = data.items[0].id;
+      await fetch(`${SD_PB}/api/collections/${SD_COL_PROFILES}/records/${existingId}`, { method:'PATCH', headers, body });
+      const p2 = getSDProfile(); p2.pbId = existingId; saveSDProfile(p2);
     } else {
-      await fetch(`${SD_PB}/api/collections/${SD_COL_PROFILES}/records`, { method:'POST', headers, body });
+      const res = await fetch(`${SD_PB}/api/collections/${SD_COL_PROFILES}/records`, { method:'POST', headers, body });
+      if (res.ok) { const created = await res.json(); const p2 = getSDProfile(); p2.pbId = created.id; saveSDProfile(p2); }
     }
     if (photoBlob) { window._sdPendingPhoto = null; localStorage.setItem('cien_sd_photo_pushed', 'true'); }
     _sdDeckOk = false;
@@ -3273,8 +3322,9 @@ function _sdRenderCardForm(el) {
 async function sdDeleteProfile() {
   if (!confirm('Czy na pewno chcesz usunąć profil? Ta operacja jest nieodwracalna.')) return;
   const profile = getSDProfile();
-  if (profile.id) {
-    await fetch(`${SD_PB}/api/collections/cien_sd_profiles/records/${profile.id}`, {
+  const pbId = profile.pbId || profile.id;
+  if (pbId) {
+    await fetch(`${SD_PB}/api/collections/cien_sd_profiles/records/${pbId}`, {
       method: 'DELETE',
     }).catch(() => {});
   }

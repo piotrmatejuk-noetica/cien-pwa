@@ -350,9 +350,7 @@ function _tmplTeam() {
     const isMe = m.uid === myUid;
     const displayName = m.nick || m.name || 'Uczestnik';
     const initials = displayName.trim().split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2);
-    const avatarHTML = m.photo
-      ? `<img src="${m.photo}" class="team-member-avatar team-member-avatar--photo" alt="">`
-      : `<div class="team-member-avatar">${_esc(initials)}</div>`;
+    const avatarHTML = `<div class="team-member-avatar">${_esc(initials)}</div>`;
     return `<div class="team-member-row" onclick="showMemberProfile('${_esc(m.uid)}')">
       ${avatarHTML}
       <div class="team-member-info">
@@ -1137,6 +1135,9 @@ async function _syncProfileToTeam() {
   const myUid = localStorage.getItem('cien_user_id') || '';
   if (!myUid) return;
   const p = (function() { try { return JSON.parse(localStorage.getItem('cien_sd_profile_2026') || '{}'); } catch { return {}; } })();
+  // Skip sync if nothing relevant changed — avoids GET+PATCH storm on app start
+  const syncKey = JSON.stringify({ nick: p.nick || '', about: p.about || '', tags: p.tags || [], shadows: p.shadows || [] });
+  if (localStorage.getItem('cien_team_sync_hash') === syncKey) return;
   const current = await _pb(`/api/collections/cien_teams/records/${_team.id}`);
   let members = current.members || [];
   if (typeof members === 'string') { try { members = JSON.parse(members); } catch { members = []; } }
@@ -1145,7 +1146,7 @@ async function _syncProfileToTeam() {
   if (p.nick)    entry.nick    = p.nick;
   if (p.about)   entry.about   = p.about;
   if (p.tags)    entry.tags    = p.tags;
-  if (p.photo)   entry.photo   = p.photo;
+  // photo intentionally NOT synced — base64 balloons the team record on every location poll
   if (p.shadows) entry.shadows = p.shadows;
   if (idx >= 0) members[idx] = entry; else members.push(entry);
   await _pb(`/api/collections/cien_teams/records/${_team.id}`, {
@@ -1154,6 +1155,7 @@ async function _syncProfileToTeam() {
     body: JSON.stringify({ members: JSON.stringify(members) }),
   });
   _team.members = JSON.stringify(members);
+  localStorage.setItem('cien_team_sync_hash', syncKey);
 }
 
 // ============================================
@@ -1168,9 +1170,8 @@ function showMemberProfile(uid) {
   const isMe = m.uid === myUid;
   const displayName = m.nick || m.name || 'Uczestnik';
   const initials = displayName.trim().split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2);
-  const avatarHTML = m.photo
-    ? `<img src="${m.photo}" class="member-modal-photo" alt="">`
-    : `<div class="member-modal-avatar">${_esc(initials)}</div>`;
+  // photo not stored in team JSON (would balloon with base64) — fetch from SD profiles async
+  const avatarHTML = `<div class="member-modal-avatar" id="mmp-avatar-${_esc(uid)}">${_esc(initials)}</div>`;
   const tagsHTML = (m.tags || []).map(t => `<span class="sd-tag">${_esc(t)}</span>`).join('');
 
   let modal = document.getElementById('member-profile-modal');
@@ -1198,6 +1199,23 @@ function showMemberProfile(uid) {
       ${isMe ? `<button class="btn btn-gold" style="margin:1rem 0 0;width:100%" onclick="closeMemberProfile();navigateTo('profil')">Edytuj profil</button>` : ''}
     </div>`;
   modal.style.display = 'flex';
+  // Async: fetch photo from SD profiles collection (not stored in team JSON)
+  const avatarEl = document.getElementById(`mmp-avatar-${uid}`);
+  if (avatarEl) {
+    _pb(`/api/collections/cien_sd_profiles/records?filter=${encodeURIComponent(`uid='${uid}'`)}&perPage=1`)
+      .then(data => {
+        const sp = data.items?.[0];
+        if (sp?.photo && sp?.collectionId && sp?.id) {
+          const photoUrl = `/pb/api/files/${sp.collectionId}/${sp.id}/${sp.photo}?thumb=200x200`;
+          const img = document.createElement('img');
+          img.className = 'member-modal-photo';
+          img.alt = '';
+          img.src = photoUrl;
+          img.onerror = () => {};
+          avatarEl.replaceWith(img);
+        }
+      }).catch(() => {});
+  }
 }
 
 function closeMemberProfile() {
