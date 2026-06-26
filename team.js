@@ -84,16 +84,32 @@ async function teamCreate(name) {
 async function teamJoin(code) {
   const uid   = localStorage.getItem('cien_user_id') || 'guest';
   const uname = localStorage.getItem('cien_user_name') || 'Uczestnik';
-  const list  = await _pb(`/api/collections/cien_teams/records?filter=${encodeURIComponent(`code='${code.toUpperCase()}'`)}&perPage=1`);
+
+  const list = await _pb(`/api/collections/cien_teams/records?filter=${encodeURIComponent(`code='${code.toUpperCase()}'`)}&perPage=1`);
   if (!list.items || !list.items.length) throw new Error('Nie znaleziono drużyny o tym kodzie');
-  const team    = list.items[0];
-  const members = _parseTeamMembers(team);
+  const team = list.items[0];
+
+  let members = _parseTeamMembers(team);
   if (!members.find(m => m.uid === uid)) {
     members.push({ uid, name: uname });
-    await _pb(`/api/collections/cien_teams/records/${team.id}`, {
-      method: 'PATCH',
-      body: JSON.stringify({ members: JSON.stringify(members) }),
-    });
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        await _pb(`/api/collections/cien_teams/records/${team.id}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ members: JSON.stringify(members) }),
+        });
+        break;
+      } catch (e) {
+        if (attempt === 2) throw e;
+        await new Promise(r => setTimeout(r, 200 + Math.random() * 300));
+        const fresh = await _pb(`/api/collections/cien_teams/records/${team.id}`);
+        const freshMembers = _parseTeamMembers(fresh);
+        if (!freshMembers.find(m => m.uid === uid)) {
+          freshMembers.push({ uid, name: uname });
+        }
+        members = freshMembers;
+      }
+    }
   }
   _persistTeam({ ...team, members });
   _syncProfileToTeam().catch(() => {});
@@ -218,6 +234,8 @@ const FESTIVAL_DAYS = {
   'Niedziela 5 VII':'2026-07-05',
 };
 
+const DAY_ORDER = { 'Piątek 3 VII': 0, 'Sobota 4 VII': 1, 'Niedziela 5 VII': 2 };
+
 async function createMeeting(title, zone, day, time) {
   const uid   = localStorage.getItem('cien_user_id') || 'guest';
   const uname = localStorage.getItem('cien_user_name') || 'Uczestnik';
@@ -316,7 +334,7 @@ function _tmplNoTeam() {
 
   <div class="team-card">
     <div class="team-card-title">Dołącz do drużyny</div>
-    <input id="team-join-code" class="team-input" placeholder="Kod drużyny (6 znaków)" maxlength="6" style="text-transform:uppercase;letter-spacing:0.2em;text-align:center">
+    <input id="team-join-code" class="team-input" placeholder="Kod drużyny (6 znaków)" maxlength="6" style="text-transform:uppercase;letter-spacing:0.2em;text-align:center" inputmode="text" autocapitalize="characters" autocorrect="off" spellcheck="false">
     <button class="team-btn team-btn-secondary" onclick="teamJoinUI()">Dołącz</button>
   </div>
 
@@ -558,7 +576,7 @@ function _tmplMeetingsList() {
   </select>
   <input id="mtg-time" class="team-input" type="time">
   <input id="mtg-zone" class="team-input" placeholder="Miejsce / strefa (np. Wieża, Dziedziniec)">
-  <div class="team-notif-hint">🔔 Dostaniesz powiadomienie 15 min przed spotkaniem</div>
+  <div class="team-notif-hint">🔔 Powiadomienie 15 min przed — tylko gdy appka jest otwarta</div>
   <div style="display:flex;gap:0.5rem">
     <button class="team-btn team-btn-primary" onclick="saveMeetingUI()" style="flex:1">Zaplanuj</button>
     <button class="team-btn team-btn-ghost"   onclick="hideAddMeetingUI()">Anuluj</button>
@@ -594,6 +612,10 @@ async function _loadMeetingsUI() {
   if (!el) return;
   try {
     const data = await _fetchMeetings();
+    data.sort((a, b) => {
+      const da = DAY_ORDER[a.day] ?? 99, db = DAY_ORDER[b.day] ?? 99;
+      return da !== db ? da - db : (a.time || '').localeCompare(b.time || '');
+    });
     _meetings = data;
     if (!data.length) {
       el.innerHTML = '<div class="team-empty">Brak spotkań. Umówcie pierwsze!</div>';
@@ -694,18 +716,19 @@ async function _writeMyLoc() {
   const uid   = localStorage.getItem('cien_user_id') || 'guest';
   const uname = localStorage.getItem('cien_user_name') || 'Uczestnik';
   try {
-    const current = await _pb(`/api/collections/cien_teams/records/${_team.id}`);
-    const members = _parseTeamMembers(current);
-    const me = members.find(m => m.uid === uid);
-    if (me) {
-      me.lat = _myPos.lat; me.lng = _myPos.lng; me.at = Date.now();
+    const existing = await _pb(`/api/collections/cien_locations/records?filter=${encodeURIComponent(`uid='${uid}'&&team_id='${_team.id}'`)}&perPage=1`);
+    const payload  = { lat: _myPos.lat, lon: _myPos.lng, loc_ts: new Date().toISOString(), sharing: true };
+    if (existing.items && existing.items.length) {
+      await _pb(`/api/collections/cien_locations/records/${existing.items[0].id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload),
+      });
     } else {
-      members.push({ uid, name: uname, lat: _myPos.lat, lng: _myPos.lng, at: Date.now() });
+      await _pb('/api/collections/cien_locations/records', {
+        method: 'POST',
+        body: JSON.stringify({ uid, nick: uname, team_id: _team.id, ...payload }),
+      });
     }
-    await _pb(`/api/collections/cien_teams/records/${_team.id}`, {
-      method: 'PATCH',
-      body: JSON.stringify({ members: JSON.stringify(members) }),
-    });
   } catch (_e) {}
 }
 
@@ -713,13 +736,12 @@ async function _fetchTeamLocsPB() {
   if (!_team) return;
   const uid = localStorage.getItem('cien_user_id') || 'guest';
   try {
-    const data = await _pb(`/api/collections/cien_teams/records/${_team.id}`);
-    const members = _parseTeamMembers(data);
-    const cutoff = Date.now() - 90000; // stale po 90s
+    const cutoff = new Date(Date.now() - 90000).toISOString();
+    const data = await _pb(`/api/collections/cien_locations/records?filter=${encodeURIComponent(`team_id='${_team.id}'&&sharing=true&&loc_ts>='${cutoff}'`)}&perPage=50`);
     _teamLocs = {};
-    members.forEach(m => {
-      if (m.uid !== uid && m.lat && m.lng && (!m.at || m.at > cutoff)) {
-        _teamLocs[m.uid] = m;
+    (data.items || []).forEach(m => {
+      if (m.uid !== uid) {
+        _teamLocs[m.uid] = { uid: m.uid, name: m.nick || 'Uczestnik', lat: m.lat, lng: m.lon };
       }
     });
     _updateLocationUI();
@@ -728,21 +750,31 @@ async function _fetchTeamLocsPB() {
 }
 
 function _startLocSharing() {
-  if (_locSharing) return;
-  _locSharing = true;
-  localStorage.setItem('cien_loc_sharing', '1');
+  if (_locSharing || _watchId != null) return;
   _watchId = navigator.geolocation.watchPosition(
     pos => {
       _myPos = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      if (!_locSharing) {
+        _locSharing = true;
+        localStorage.setItem('cien_loc_sharing', '1');
+        _listenTeamLocations();
+        _renderLocTab();
+      }
       if (_locWriteThrottle) clearTimeout(_locWriteThrottle);
       _locWriteThrottle = setTimeout(_writeMyLoc, 3000);
       _updateLocationArrows();
     },
-    () => {},
+    err => {
+      const msg = err.code === 1
+        ? 'GPS zablokowany — zezwól na lokalizację w ustawieniach przeglądarki'
+        : err.code === 2 ? 'Nie można ustalić lokalizacji' : 'Błąd GPS';
+      _showTeamError(msg);
+      if (_watchId != null) { navigator.geolocation.clearWatch(_watchId); _watchId = null; }
+      _locSharing = false;
+      _renderLocTab();
+    },
     { enableHighAccuracy: true, maximumAge: 5000 }
   );
-  _listenTeamLocations();
-  _renderLocTab();
 }
 
 function _stopLocSharing() {
@@ -1060,10 +1092,12 @@ function toggleLocSharing() {
 
 async function teamCreateUI() {
   const inp = document.getElementById('team-create-name');
+  const btn = document.querySelector('button[onclick="teamCreateUI()"]');
   const name = inp ? inp.value.trim() : '';
   if (!name) { _showTeamError('Podaj nazwę drużyny'); return; }
   _showTeamError('');
-  inp.disabled = true;
+  if (inp) inp.disabled = true;
+  if (btn) { btn.disabled = true; btn.textContent = 'Tworzę…'; }
   try {
     await teamCreate(name);
     await _scheduleAllNotifs();
@@ -1071,15 +1105,18 @@ async function teamCreateUI() {
   } catch (e) {
     _showTeamError('Błąd: ' + e.message);
     if (inp) inp.disabled = false;
+    if (btn) { btn.disabled = false; btn.textContent = 'Utwórz'; }
   }
 }
 
 async function teamJoinUI() {
   const inp  = document.getElementById('team-join-code');
+  const btn  = document.querySelector('button[onclick="teamJoinUI()"]');
   const code = inp ? inp.value.trim().toUpperCase() : '';
   if (code.length < 4) { _showTeamError('Wpisz kod drużyny'); return; }
   _showTeamError('');
-  inp.disabled = true;
+  if (inp) inp.disabled = true;
+  if (btn) { btn.disabled = true; btn.textContent = 'Dołączam…'; }
   try {
     await teamJoin(code);
     await _scheduleAllNotifs();
@@ -1087,6 +1124,7 @@ async function teamJoinUI() {
   } catch (e) {
     _showTeamError(e.message);
     if (inp) inp.disabled = false;
+    if (btn) { btn.disabled = false; btn.textContent = 'Dołącz'; }
   }
 }
 

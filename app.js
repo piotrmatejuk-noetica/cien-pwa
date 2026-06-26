@@ -20,6 +20,7 @@ function _setUser(uid, email, name) {
   if (uid)   localStorage.setItem('cien_prev_uid', uid);
   localStorage.setItem('cien_terms_accepted', '1');
   hideAuthScreen();
+  showToast('Witaj na Cieniu 🌙', 2000);
   if (typeof initTeam === 'function') initTeam();
 }
 
@@ -37,6 +38,7 @@ function skipAuth() {
   const guestId = 'guest_' + Math.random().toString(36).slice(2, 10);
   localStorage.setItem('cien_user_id', guestId);
   hideAuthScreen();
+  renderSchedule();
 }
 
 // Returning user — instant re-login using stored ghost record
@@ -576,16 +578,14 @@ async function init() {
   registerSW();
   navigateTo(location.hash.slice(1) || 'teraz');
   const splash = document.getElementById('splash-screen');
-  if (splash) setTimeout(() => splash.classList.add('hidden'), 400);
+  if (splash) splash.classList.add('hidden');
   initParticles();
   _fetchWeather();
 
   const loggedIn = localStorage.getItem('cien_user_id');
   if (!loggedIn) {
-    setTimeout(() => {
-      _prepareAuthScreen();
-      showAuthScreen();
-    }, 450);
+    _prepareAuthScreen();
+    showAuthScreen();
   }
   // Init team feature after auth check
   if (loggedIn && typeof initTeam === 'function') initTeam();
@@ -631,6 +631,15 @@ async function loadData() {
 const VIEWS = ['teraz', 'mapa', 'slowdating', 'dziennik', 'sacrum', 'druzyna', 'info', 'wiedza', 'profil', 'ustawienia'];
 
 function setupRouter() {
+  window.addEventListener('popstate', () => {
+    if (document.getElementById('article-overlay')?.classList.contains('open')) {
+      closeArticle(); return;
+    }
+    if (document.querySelector('.modal-overlay.open')) {
+      closeEventModal(); return;
+    }
+  });
+
   window.addEventListener('hashchange', () => {
     const view = location.hash.slice(1) || 'teraz';
     if (VIEWS.includes(view)) navigateTo(view);
@@ -673,7 +682,7 @@ function renderView(view) {
   switch (view) {
     case 'teraz':       renderSchedule(); break;
     case 'mapa':        renderMap(); break;
-    case 'slowdating':  _sdTab = 'odkryj'; _sdDeckOk = false; renderSlowDating(); document.getElementById('content')?.scrollTo({top:0}); break;
+    case 'slowdating':  renderSlowDating(); document.getElementById('content')?.scrollTo({top:0}); break;
     case 'dziennik':    renderJournal(); break;
     case 'sacrum':      renderSacrum(); break;
     case 'druzyna':     renderTeamView(); break;
@@ -690,7 +699,10 @@ function renderView(view) {
 
 function setupClock() {
   updateClock();
-  setInterval(updateClock, 60000);
+  setInterval(() => {
+    updateClock();
+    if (State.currentView === 'teraz') renderSchedule();
+  }, 60000);
 }
 
 function updateClock() {
@@ -975,9 +987,10 @@ function renderTuITeraz(allEvents) {
         </div>`;
     }).join('');
   } else {
-    // Za chwilę — kolejne 2-3 wydarzenia ze wszystkich stref
+    // Za chwilę — kolejne 2-3 wydarzenia ze wszystkich stref, tylko dzisiaj
+    const todayStr = now.toISOString().slice(0, 10);
     const upcoming = allEvents
-      .filter(ev => new Date(ev.start) > now)
+      .filter(ev => new Date(ev.start) > now && ev.start.startsWith(todayStr))
       .sort((a, b) => new Date(a.start) - new Date(b.start))
       .slice(0, 3);
 
@@ -1014,58 +1027,6 @@ function renderTuITeraz(allEvents) {
   `;
 }
 
-function renderNowBanner(events) {
-  const now = new Date();
-  const nowEvents = events.filter(ev => {
-    const start = new Date(ev.start);
-    const end = new Date(ev.end);
-    return now >= start && now <= end;
-  });
-
-  if (nowEvents.length === 0) {
-    const nextUp = events.filter(ev => new Date(ev.start) > now)
-                         .sort((a,b) => a.start.localeCompare(b.start))
-                         .slice(0, 2);
-    if (nextUp.length === 0) return '';
-    return `
-      <div class="now-banner">
-        <div class="now-banner-label">
-          <span class="now-dot"></span>
-          ZA CHWILĘ
-        </div>
-        <div class="now-events">
-          ${nextUp.map(ev => renderMiniEventCard(ev, false, true)).join('')}
-        </div>
-      </div>`;
-  }
-
-  return `
-    <div class="now-banner">
-      <div class="now-banner-label">
-        <span class="now-dot"></span>
-        TERAZ
-      </div>
-      <div class="now-events">
-        ${nowEvents.map(ev => renderMiniEventCard(ev, true, false)).join('')}
-      </div>
-    </div>`;
-}
-
-function renderMiniEventCard(ev, isNow, isSoon) {
-  const zone = (State.data?.festival?.zones || []).find(z => z.id === ev.zone) || ZONES_MAP[ev.zone] || {};
-  const color = zone.color || ZONES_MAP[ev.zone]?.color || '#888';
-  const icon = zone.icon || ZONES_MAP[ev.zone]?.icon || '●';
-  const timeStr = formatTime(ev.start);
-  return `
-    <div class="event-card ${isNow ? 'is-now' : ''}" style="border-left-color:${color}" onclick="openEventModal('${ev.id}')">
-      <div class="event-time">
-        ${timeStr} <span class="event-duration">→ ${formatTime(ev.end)}</span>
-      </div>
-      <div class="event-title">${ev.title}</div>
-      ${ev.artist ? `<div class="event-artist">${ev.artist}</div>` : ''}
-      <div class="event-zone-tag" style="color:${color}">${icon} ${zone.shortName || zone.name || ev.zone}</div>
-    </div>`;
-}
 
 function renderEventsList(events) {
   if (events.length === 0) {
@@ -1122,8 +1083,6 @@ function renderEventsList(events) {
 
 function setActiveDay(day) {
   State.schedule.activeDay = day;
-  State.schedule.activeZone = 'all';
-  State.schedule.searchQuery = '';
   renderSchedule();
   updateHeader();
   document.getElementById('schedule-content')?.scrollTo({ top: 0 });
@@ -1142,9 +1101,11 @@ function setFavOnly(val) {
   renderSchedule();
 }
 
+let _scheduleSearchTimer = null;
 function scheduleSearch(q) {
   State.schedule.searchQuery = q;
-  renderSchedule();
+  clearTimeout(_scheduleSearchTimer);
+  _scheduleSearchTimer = setTimeout(renderSchedule, 250);
 }
 
 // ============================================
@@ -1154,6 +1115,7 @@ function scheduleSearch(q) {
 function openEventModal(eventId) {
   const ev = (State.data?.events || []).find(e => e.id === eventId);
   if (!ev) return;
+  history.pushState({ overlay: 'event' }, '');
 
   const zone = (State.data?.festival?.zones || []).find(z => z.id === ev.zone) || {};
   const color = zone.color || ZONES_MAP[ev.zone]?.color || '#888';
@@ -1504,6 +1466,8 @@ function openPoiModal(poiId) {
   modal.querySelector('.modal-description').innerHTML = poi.description || '';
   const tagsEl = modal.querySelector('.modal-tags');
   if (tagsEl) tagsEl.innerHTML = '';
+  const actionsEl = document.getElementById('modal-actions');
+  if (actionsEl) actionsEl.innerHTML = '';
   modal.querySelector('.modal-overlay').classList.add('open');
 }
 
@@ -2688,6 +2652,7 @@ function setKBCategory(cat) {
 function openArticle(id) {
   const art = ARTICLES_DATA.find(a => a.id === id);
   if (!art) return;
+  history.pushState({ overlay: 'article' }, '');
 
   const catColor = KB_CAT_COLORS[art.category] || '#C9A84C';
   const catLabel = KB_CATEGORIES.find(c => c.id === art.category)?.label || '';
@@ -2739,9 +2704,6 @@ function setupInstallPrompt() {
   const isIOS = /iP(hone|ad|od)/i.test(navigator.userAgent) && !window.MSStream;
 
   if (isIOS) {
-    if (!localStorage.getItem('cien_install_dismissed')) {
-      setTimeout(() => showInstallGuide('ios'), 2500);
-    }
     return;
   }
 
@@ -3102,6 +3064,7 @@ function _sdHandleSwipe(dir) {
 
 async function _sdSendLike(profile) {
   const toUid = typeof profile === 'string' ? profile : profile.uid;
+  if (toUid.startsWith('_demo')) return;
   const profileObj = typeof profile === 'object' ? profile : { uid: toUid };
   const myUid = getSDUid();
   try {
