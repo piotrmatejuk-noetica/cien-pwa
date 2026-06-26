@@ -1,18 +1,22 @@
-const CACHE_NAME = 'cien-2026-v71';
+const CACHE_NAME = 'cien-2026-v72';
 
-// Only cache truly static assets — NOT app.js / app.css (they change frequently)
 const STATIC_ASSETS = [
+  '/',
+  '/index.html',
+  '/app.css',
+  '/team.js',
+  '/cropper.min.js',
+  '/cropper.min.css',
   '/manifest.json',
   '/icons/icon.svg',
+  '/icons/cien-logo.png',
+  '/icons/sacrum-logo.png',
   '/data/schedule.json',
   '/data/speakers.json',
   '/data/pois.json',
   '/regulamin.html',
   '/polityka-prywatnosci.html',
 ];
-
-// Never cache these — always fetch from network
-const NO_CACHE = ['/app.js', '/app.css', '/team.js', '/sw.js'];
 
 self.addEventListener('install', e => {
   e.waitUntil(
@@ -55,7 +59,7 @@ self.addEventListener('fetch', e => {
 
   const url = new URL(e.request.url);
 
-  // Always network for: HTML, JS, CSS — never serve stale code
+  // Network-first for HTML/JS/CSS on same origin — always fresh, cache as fallback
   if (
     url.hostname === self.location.hostname &&
     (url.pathname === '/' || url.pathname.endsWith('.html') ||
@@ -63,8 +67,7 @@ self.addEventListener('fetch', e => {
   ) {
     e.respondWith(
       fetch(e.request).then(res => {
-        // Cache maps/zamek.html for offline since it's large
-        if (url.pathname.includes('zamek.html')) {
+        if (res && res.status === 200) {
           const clone = res.clone();
           caches.open(CACHE_NAME).then(cache => cache.put(e.request, clone));
         }
