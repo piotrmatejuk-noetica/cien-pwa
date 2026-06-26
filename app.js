@@ -1680,6 +1680,28 @@ function saveWheelData(data) {
   localStorage.setItem('cien_wheel_2026', JSON.stringify(data));
 }
 
+function _getWheelHistory() {
+  try { return JSON.parse(localStorage.getItem('cien_wheel_history') || '[]'); } catch { return []; }
+}
+
+function _saveWheelSnapshot() {
+  const data = getWheelData();
+  const answers = data.answers || {};
+  const allDone = WHEEL_AREAS.every(a => (answers[a.id] || []).some(v => v > 0));
+  if (!allDone) return;
+  const history = _getWheelHistory();
+  const today = new Date().toLocaleDateString('pl-PL');
+  if (history.length && history[history.length - 1].date === today) return;
+  const snapshot = { date: today, scores: {} };
+  WHEEL_AREAS.forEach(a => {
+    const ans = (answers[a.id] || []).filter(v => v > 0);
+    snapshot.scores[a.id] = ans.length ? Math.round(ans.reduce((s,v)=>s+v,0)/ans.length * 2 * 10)/10 : 0;
+  });
+  history.push(snapshot);
+  if (history.length > 10) history.shift();
+  localStorage.setItem('cien_wheel_history', JSON.stringify(history));
+}
+
 function setWheelAnswer(areaId, qi, val) {
   const wd = getWheelData();
   if (!wd.answers) wd.answers = {};
@@ -1735,6 +1757,7 @@ function showWheelResults() {
   const wd = getWheelData();
   wd.showResults = true;
   saveWheelData(wd);
+  _saveWheelSnapshot();
   renderJournal();
 }
 
@@ -2050,7 +2073,19 @@ function buildWheelResultsHTML(answers) {
   <div class="wheel-chart-wrap"><canvas id="wheel-chart"></canvas></div>
   ${areasHTML}
   <button class="btn btn-outline" style="width:100%;margin:0.5rem 0" onclick="emailWheelResults()">✉ Wyślij sobie wyniki</button>
-  <button class="btn btn-outline" style="width:100%;margin-bottom:1.5rem" onclick="resetWheel()">Wypełnij ponownie</button>`;
+  <button class="btn btn-outline" style="width:100%;margin-bottom:1.5rem" onclick="resetWheel()">Wypełnij ponownie</button>
+  ${(() => {
+    const hist = _getWheelHistory();
+    if (hist.length < 2) return '';
+    return `<div style="margin-top:1.5rem;padding-top:1rem;border-top:1px solid rgba(245,230,200,0.1)">
+      <div style="font-family:var(--font-display);color:var(--pergamin);margin-bottom:0.75rem;font-size:0.9rem">Historia koła</div>
+      ${hist.slice().reverse().map(s => `
+        <div style="display:flex;gap:0.4rem;align-items:center;margin:0.35rem 0;font-size:0.78rem;color:var(--szary)">
+          <span style="min-width:5.5rem">${s.date}</span>
+          ${WHEEL_AREAS.map(a => `<span title="${a.name}" style="background:rgba(201,168,76,0.12);border-radius:4px;padding:0.1rem 0.3rem;color:${a.color}">${s.scores[a.id] ?? '–'}</span>`).join('')}
+        </div>`).join('')}
+    </div>`;
+  })()}`;
 }
 
 function _getWheelScores(answers) {
@@ -3984,6 +4019,14 @@ function _startCountdownTimer() {
     const sEl = document.getElementById('cd-s'); if (sEl) sEl.textContent = String(s).padStart(2,'0');
   }, 1000);
 }
+
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    if (_cdTimer) { clearInterval(_cdTimer); _cdTimer = null; }
+  } else {
+    if (document.getElementById('cien-countdown')) _startCountdownTimer();
+  }
+});
 
 // ============================================
 // WEATHER WIDGET
