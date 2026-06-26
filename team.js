@@ -29,6 +29,8 @@ let _meetings   = [];
 let _notifTimers = [];
 let _teamInitialized      = false;
 let _chatInputListenerAdded = false;
+let _chatPage    = 1;
+let _chatHasMore = false;
 
 // ---- radar state ----
 let _myPos           = null;   // {lat, lng}
@@ -170,11 +172,13 @@ async function sendMessage(text) {
   });
 }
 
-async function _fetchMessages() {
-  // Note: cien_messages has no 'created' system field exposed — sort by id
+async function _fetchMessages(page = 1) {
+  const perPage = 30;
   const filterExpr = `team_id='${_team.id}'`;
-  const data = await _pb(`/api/collections/cien_messages/records?filter=${encodeURIComponent(filterExpr)}&sort=id&perPage=100`);
-  return (data.items || []).filter(m => !_seenMsgIds.has(m.id));
+  const data = await _pb(`/api/collections/cien_messages/records?filter=${encodeURIComponent(filterExpr)}&sort=-id&perPage=${perPage}&page=${page}`);
+  _chatHasMore = (data.totalItems || 0) > page * perPage;
+  const items = (data.items || []).reverse();
+  return items.filter(m => !_seenMsgIds.has(m.id));
 }
 
 function _startPoll() {
@@ -185,6 +189,7 @@ function _startPoll() {
 
 function _stopPoll() {
   if (_pollTimer) { clearInterval(_pollTimer); _pollTimer = null; }
+  _chatPage = 1;
 }
 
 async function _pollMessages() {
@@ -420,15 +425,19 @@ function _renderChatTab() {
 // ============================================
 
 function _tmplChat() {
+  const loadMoreBtn = _chatHasMore
+    ? `<div id="chat-load-more" onclick="loadOlderMessages()" style="text-align:center;padding:0.75rem;cursor:pointer;color:var(--szary);font-size:0.85rem;border-bottom:1px solid rgba(255,255,255,0.06)">↑ Wczytaj starsze wiadomości</div>`
+    : '';
   const msgsHtml = _messages.length
     ? _messages.map(_msgHtml).join('')
     : '<div class="team-chat-empty">Brak wiadomości — zacznijcie rozmowę!</div>';
   return `
 <div id="team-messages" class="team-messages">
+  ${loadMoreBtn}
   ${msgsHtml}
   <div id="team-msgs-end"></div>
 </div>
-<div class="team-chat-input-wrap">
+<div class="team-chat-input-wrap" id="team-chat-input-wrap">
   <textarea id="team-msg-input" class="team-msg-input" placeholder="Napisz wiadomość…" rows="1" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessageUI();}"></textarea>
   <button class="team-send-btn" onclick="sendMessageUI()">➤</button>
 </div>`;
@@ -458,6 +467,36 @@ function _scrollChat() {
   if (end) end.scrollIntoView({ behavior: 'smooth' });
 }
 
+function _renderAllMessages() {
+  const container = document.getElementById('team-messages');
+  if (!container) return;
+  const loadMoreBtn = _chatHasMore
+    ? `<div id="chat-load-more" onclick="loadOlderMessages()" style="text-align:center;padding:0.75rem;cursor:pointer;color:var(--szary);font-size:0.85rem;border-bottom:1px solid rgba(255,255,255,0.06)">↑ Wczytaj starsze wiadomości</div>`
+    : '';
+  const msgsHtml = _messages.length ? _messages.map(_msgHtml).join('') : '';
+  container.innerHTML = loadMoreBtn + msgsHtml + '<div id="team-msgs-end"></div>';
+}
+
+async function loadOlderMessages() {
+  if (!_chatHasMore || !_team) return;
+  const btn = document.getElementById('chat-load-more');
+  if (btn) btn.textContent = 'Ładowanie…';
+  _chatPage++;
+  try {
+    const older = await _fetchMessages(_chatPage);
+    if (older.length) {
+      older.forEach(m => _seenMsgIds.add(m.id));
+      _messages.unshift(...older);
+    }
+    _renderAllMessages();
+    // Scroll to first new message (approx top of visible area after prepend)
+    const container = document.getElementById('team-messages');
+    if (container) container.scrollTop = 80;
+  } catch (_e) {
+    if (btn) btn.textContent = '↑ Wczytaj starsze wiadomości';
+  }
+}
+
 function _setupChatInput() {
   if (_chatInputListenerAdded) return;
   _chatInputListenerAdded = true;
@@ -467,6 +506,15 @@ function _setupChatInput() {
       e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
     }
   });
+  // iOS: when soft keyboard opens, push chat input wrap above it
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', () => {
+      const wrap = document.getElementById('team-chat-input-wrap');
+      if (!wrap) return;
+      const offset = window.innerHeight - window.visualViewport.height - window.visualViewport.offsetTop;
+      wrap.style.transform = offset > 50 ? `translateY(-${Math.round(offset)}px)` : '';
+    });
+  }
 }
 
 async function sendMessageUI() {
