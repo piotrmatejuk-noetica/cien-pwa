@@ -705,7 +705,7 @@ function navigateTo(view) {
   State.currentView = view;
 
   // Update nav — "Więcej" btn highlights for secondary views
-  const moreViews = ['profil', 'dziennik', 'sacrum', 'wiedza', 'ustawienia'];
+  const moreViews = ['profil', 'sacrum', 'wiedza', 'ustawienia'];
   document.querySelectorAll('.nav-btn').forEach(btn => {
     if (btn.id === 'nav-more-btn') {
       btn.classList.toggle('active', moreViews.includes(view));
@@ -1298,8 +1298,8 @@ function renderMap() {
 
   const pois = State.data.pois || [];
 
-  const poiTypes  = ['all', 'food', 'water', 'toilet', 'help', 'info'];
-  const poiLabels = { all:'Wszystko', food:'🍲 GastroPhase', water:'💧 Woda', toilet:'🚻 Toalety', help:'🛡 Pomoc', info:'ℹ Info' };
+  const poiTypes  = ['all', 'destination', 'food', 'water', 'toilet', 'help', 'info'];
+  const poiLabels = { all:'Wszystko', destination:'📍 Miejsca', food:'🍲 GastroPhase', water:'💧 Woda', toilet:'🚻 Toalety', help:'🛡 Pomoc', info:'ℹ Info' };
 
   const poiTabsHTML = poiTypes.map(t =>
     `<button class="poi-tab ${State.map.activePOIType===t?'active':''}" onclick="setPoiType('${t}')">${poiLabels[t]}</button>`
@@ -1565,10 +1565,11 @@ function renderJournal() {
   const savedEntries = getJournalEntries();
   const currentEntry = savedEntries.find(e => e.stage === stage) || {};
   const pastEntriesHTML = savedEntries.filter(e => e.text && e.stage !== stage).map(e => `
-    <div class="past-entry" onclick="toggleEntry(this)">
-      <div class="past-entry-header">
+    <div class="past-entry" style="position:relative">
+      <div class="past-entry-header" onclick="toggleEntry(this.closest('.past-entry'))">
         <span class="past-entry-stage" style="color:${stageColors[e.stage]}">${stageSymbols[e.stage]} ${e.stage}</span>
         <span class="past-entry-date">${e.savedAt || ''}</span>
+        <button onclick="event.stopPropagation();deleteJournalEntry('${e.stage}')" style="background:none;border:none;color:var(--szary);cursor:pointer;font-size:1rem;padding:0 0.25rem;float:right;line-height:1" title="Usuń wpis">✕</button>
       </div>
       <div class="past-entry-preview">${e.text}</div>
     </div>`).join('');
@@ -1625,6 +1626,13 @@ function saveJournalEntry(stage) {
   if (!textarea) return;
   autoSaveJournal(stage, textarea.value);
   showToast('Wpis zapisany lokalnie na urządzeniu');
+}
+
+function deleteJournalEntry(stage) {
+  if (!confirm('Usunąć ten wpis?')) return;
+  const updated = getJournalEntries().filter(e => e.stage !== stage);
+  localStorage.setItem('cien_journal_2026', JSON.stringify(updated));
+  renderJournal();
 }
 
 function emailJournalEntry(stage) {
@@ -4236,7 +4244,7 @@ function goToMatchChat() {
 Object.assign(window, {
   setActiveDay, setActiveZone, openEventModal, closeEventModal,
   setPoiType, highlightZone, openPoiModal,
-  setJournalStage, autoSaveJournal, saveJournalEntry, emailJournalEntry, emailAllJournalEntries, toggleEntry,
+  setJournalStage, autoSaveJournal, saveJournalEntry, deleteJournalEntry, emailJournalEntry, emailAllJournalEntries, toggleEntry,
   callHelp, triggerInstall, dismissInstall, showInstallGuide, dismissInstallModal, _dismissAnnTeraz,
   sdToggleTag, sdSaveProfile, sdUpdatePreview, sdSetPhotoPos, sdCropDone, sdCropCancel, sdShowPreview, sdShareCard, sdDeleteProfile, sdOpenAddMeeting, sdConfirmAddMeeting, sdDeleteMeeting, sdContact,
   toggleFavorite, setFavOnly, scheduleSearch,

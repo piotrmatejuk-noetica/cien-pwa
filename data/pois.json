@@ -1,5 +1,9 @@
 {
   "pois": [
+    { "id": "dest1", "type": "destination", "label": "Scena główna", "description": "Główna scena festiwalu — koncerty, rytuały, performanse. Centrum zamkowego dziedzińca.", "location": "Dziedziniec główny", "icon": "🎭", "hours": "18:00–04:00" },
+    { "id": "dest2", "type": "destination", "label": "Brama wejściowa", "description": "Główne wejście na teren festiwalu. Odbiór opaski, rejestracja, pierwsza pomoc wejściowa.", "location": "Brama zamkowa od strony Bolkowa", "icon": "🚪", "hours": "12:00–02:00" },
+    { "id": "dest3", "type": "destination", "label": "Parking festiwalowy", "description": "Parking przy zamku — 300 miejsc. Szlaban od 23:00, odbiór kluczyków od ochrony.", "location": "Parking przy murach wschodnich", "icon": "🅿️", "hours": "24h" },
+    { "id": "dest4", "type": "destination", "label": "Namiotowisko", "description": "Strefa campingu. Namioty, śpiwory, ładowanie telefonów (stacja ładowania co 50m).", "location": "Łąka za zamkiem, wejście przez bramę wschodnią", "icon": "⛺", "hours": "24h" },
     { "id": "food1", "type": "food", "label": "GastroPhase — Kuchnia główna", "description": "Wegetariańskie i wegańskie dania. Otwarte 12:00–22:00.", "location": "Skrzydło zachodnie, parter", "icon": "🍲", "hours": "12:00–22:00" },
     { "id": "food2", "type": "food", "label": "Bar u Alchemików", "description": "Przekąski, herbata, napoje. Otwarte przez całą noc.", "location": "Przy bramie głównej", "icon": "☕", "hours": "22:00–08:00" },
     { "id": "water1", "type": "water", "label": "Punkt wody pitnej — Dziedziniec", "description": "Bezpłatna woda pitna z beczki filtrowanej. Uzupełniaj bidon.", "location": "Centrum dziedzińca", "icon": "💧", "hours": "24h" },
