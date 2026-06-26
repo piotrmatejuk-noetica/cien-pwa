@@ -140,7 +140,8 @@ const State = {
   },
   journal: {
     activeStage: 'nigredo',
-    activeTab: 'journal'
+    activeTab: 'journal',
+    cachedPrompts: {}
   },
   modalEvent: null,
   kb: { activeCategory: 'all' }
@@ -1322,9 +1323,9 @@ function renderMap() {
      <div class="map-legend">${legendHTML}</div>`;
 
   container.innerHTML = `
-    <div class="map-view-toggle">
-      <button class="map-toggle-btn active">🗺 Mapa stref</button>
-      <button class="map-toggle-btn" onclick="openMap3D()">🏰 Widok 3D ↗</button>
+    <div class="map-view-toggle" id="map-view-toggle">
+      <button class="map-toggle-btn active" id="map-btn-svg">🗺 Mapa stref</button>
+      <button class="map-toggle-btn" id="map-btn-3d" onclick="openMap3D()">🏰 Widok 3D ↗</button>
     </div>
     ${mapAreaHTML}
     <div class="divider" style="margin:0 1rem"></div>
@@ -1348,12 +1349,16 @@ function openMap3D() {
   }
   overlay.classList.add('open');
   document.body.style.overflow = 'hidden';
+  document.getElementById('map-btn-svg')?.classList.remove('active');
+  document.getElementById('map-btn-3d')?.classList.add('active');
 }
 
 function closeMap3D() {
   const overlay = document.getElementById('map3d-overlay');
   if (overlay) overlay.classList.remove('open');
   document.body.style.overflow = '';
+  document.getElementById('map-btn-svg')?.classList.add('active');
+  document.getElementById('map-btn-3d')?.classList.remove('active');
 }
 
 function _buildCastleSVG() {
@@ -1530,7 +1535,10 @@ function renderJournal() {
 
   const stage = State.journal.activeStage;
   const prompts = JOURNAL_PROMPTS[stage] || [];
-  const prompt = prompts[Math.floor(Math.random() * prompts.length)] || '';
+  if (!State.journal.cachedPrompts[stage]) {
+    State.journal.cachedPrompts[stage] = prompts[Math.floor(Math.random() * prompts.length)] || '';
+  }
+  const prompt = State.journal.cachedPrompts[stage];
 
   const stageColors = { nigredo: '#6B6BFF', albedo: '#E8E0D0', rubedo: '#8B2B2B' };
   const stageSymbols = { nigredo: '☽', albedo: '○', rubedo: '☀' };
@@ -1569,7 +1577,8 @@ function renderJournal() {
     </div>
     <div class="journal-actions">
       <button class="btn btn-gold" onclick="saveJournalEntry('${stage}')">Zapisz</button>
-      <button class="btn btn-outline" onclick="emailJournalEntry('${stage}')">✉ Wyślij sobie</button>
+      <button class="btn btn-outline" onclick="emailJournalEntry('${stage}')">✉ Ten wpis</button>
+      <button class="btn btn-outline" onclick="emailAllJournalEntries()">✉ Wszystkie</button>
     </div>
     ${savedEntries.filter(e => e.text && e.stage !== stage).length > 0 ? `
       <div class="section-sep"></div>
@@ -1616,6 +1625,16 @@ function emailJournalEntry(stage) {
   const subject = encodeURIComponent(`CIEŃ Festiwal 2026 — Dziennik ${stage}`);
   const body = encodeURIComponent(`CIEŃ Festiwal 2026 — Dziennik przemiany\nEtap: ${stage}\nData: ${entry.savedAt}\n\n${entry.text}`);
   window.location.href = `mailto:?subject=${subject}&body=${body}`;
+}
+
+function emailAllJournalEntries() {
+  const entries = getJournalEntries().filter(e => e.text);
+  if (!entries.length) { showToast('Brak wpisów do wysłania'); return; }
+  const stageOrder = ['nigredo', 'albedo', 'rubedo'];
+  const sorted = [...entries].sort((a, b) => stageOrder.indexOf(a.stage) - stageOrder.indexOf(b.stage));
+  const body = sorted.map(e => `=== ${e.stage.toUpperCase()} (${e.savedAt}) ===\n\n${e.text}`).join('\n\n\n');
+  const subject = encodeURIComponent('CIEŃ Festiwal 2026 — Dziennik przemiany');
+  window.location.href = `mailto:?subject=${subject}&body=${encodeURIComponent(body)}`;
 }
 
 function getJournalEntries() {
@@ -2247,13 +2266,6 @@ function renderSacrum() {
         </div>
       </div>
 
-      <div class="sacrum-card">
-        <div class="sacrum-card-title">🎁 Darmowe konsultacje terapeutyczne</div>
-        <div class="sacrum-card-body">
-          Strefa SACRUM i Podświadomości oferuje bezpłatne konsultacje indywidualne przez cały czas trwania festiwalu — bez zapisu, bez oceniania.<br><br>
-          Przyjdź na Śródzamcze i porozmawiaj z terapeutą kiedy czujesz potrzebę.
-        </div>
-      </div>
     </div>
 
     <div class="section-sep"></div>
@@ -2309,7 +2321,7 @@ function callHelp() {
   modal.querySelector('.modal-zone-badge').innerHTML = '🚨 POMOC';
   modal.querySelector('.modal-title').textContent = 'Potrzebujesz pomocy?';
   modal.querySelector('.modal-artist').style.display = 'none';
-  modal.querySelector('.modal-time').innerHTML = '📍 Cicha sala — I piętro, skrzydło wschodnie · Otwarte 24h';
+  modal.querySelector('.modal-time').innerHTML = '📍 Strefa SACRUM — Śródzamcze · Pt–Sb 19:00–04:00';
   modal.querySelector('.modal-description').innerHTML = `
     <strong style="color:#FF6B6B">Idź do punktu pomocy lub poproś kogoś w pobliżu.</strong><br><br>
     Powiedz obsłudze: <em>"Potrzebuję trip sittera"</em>. Nie musisz nic tłumaczyć.<br><br>
@@ -3826,8 +3838,11 @@ function renderUstawienia() {
 
 function togglePushNotifs(enabled) {
   localStorage.setItem('cien_push_enabled', enabled ? '1' : '0');
-  if (enabled && 'Notification' in window) Notification.requestPermission();
-  showToast(enabled ? 'Powiadomienia włączone' : 'Powiadomienia wyłączone');
+  if (enabled) {
+    subscribePush();
+  } else {
+    showToast('Powiadomienia wyłączone');
+  }
 }
 
 function deleteAccount() {
@@ -4208,7 +4223,7 @@ function goToMatchChat() {
 Object.assign(window, {
   setActiveDay, setActiveZone, openEventModal, closeEventModal,
   setPoiType, highlightZone, openPoiModal,
-  setJournalStage, autoSaveJournal, saveJournalEntry, emailJournalEntry, toggleEntry,
+  setJournalStage, autoSaveJournal, saveJournalEntry, emailJournalEntry, emailAllJournalEntries, toggleEntry,
   callHelp, triggerInstall, dismissInstall, showInstallGuide, dismissInstallModal, _dismissAnnTeraz,
   sdToggleTag, sdSaveProfile, sdUpdatePreview, sdSetPhotoPos, sdCropDone, sdCropCancel, sdShowPreview, sdShareCard, sdDeleteProfile, sdOpenAddMeeting, sdConfirmAddMeeting, sdDeleteMeeting, sdContact,
   toggleFavorite, setFavOnly, scheduleSearch,
