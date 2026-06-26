@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cien-2026-v69';
+const CACHE_NAME = 'cien-2026-v70';
 
 // Only cache truly static assets — NOT app.js / app.css (they change frequently)
 const STATIC_ASSETS = [
@@ -75,6 +75,8 @@ self.addEventListener('fetch', e => {
   }
 
   // Cache-first for static assets (icons, JSON data, fonts)
+  // JSON/data files must NEVER fall back to index.html — that would break JSON.parse
+  const isData = url.pathname.startsWith('/data/') || url.pathname.endsWith('.json');
   e.respondWith(
     caches.match(e.request).then(cached => {
       if (cached) return cached;
@@ -83,7 +85,7 @@ self.addEventListener('fetch', e => {
         const clone = res.clone();
         caches.open(CACHE_NAME).then(cache => cache.put(e.request, clone));
         return res;
-      }).catch(() => caches.match('/index.html'));
+      }).catch(() => isData ? Promise.reject(new Error('offline')) : caches.match('/index.html'));
     })
   );
 });

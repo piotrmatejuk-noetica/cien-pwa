@@ -598,22 +598,29 @@ async function init() {
 }
 
 async function loadData() {
-  try {
-    const [scheduleRes, poisRes, speakersRes] = await Promise.all([
-      fetch('data/schedule.json'),
-      fetch('data/pois.json'),
-      fetch('data/speakers.json').catch(() => null)
-    ]);
-    const schedule = await scheduleRes.json();
-    const pois = await poisRes.json();
-    const speakers = speakersRes ? await speakersRes.json().catch(() => ({})) : {};
-    State.data = { ...schedule, ...pois, speakers };
-    State.dataLoadError = false;
-  } catch (e) {
-    console.error('Failed to load data:', e);
-    State.data = { events: [], zones: [], pois: [], festival: { zones: [] }, speakers: {} };
-    State.dataLoadError = true;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const [scheduleRes, poisRes, speakersRes] = await Promise.all([
+        fetch('data/schedule.json'),
+        fetch('data/pois.json'),
+        fetch('data/speakers.json').catch(() => null)
+      ]);
+      // Guard: SW may return index.html as offline fallback — detect and retry
+      const ct = scheduleRes.headers.get('content-type') || '';
+      if (ct.includes('html')) throw new Error('SW returned HTML for JSON');
+      const schedule = await scheduleRes.json();
+      const pois = await poisRes.json();
+      const speakers = speakersRes ? await speakersRes.json().catch(() => ({})) : {};
+      State.data = { ...schedule, ...pois, speakers };
+      State.dataLoadError = false;
+      return;
+    } catch (e) {
+      console.warn('loadData attempt', attempt + 1, e.message);
+      if (attempt < 2) await new Promise(r => setTimeout(r, 1500 * (attempt + 1)));
+    }
   }
+  State.data = { events: [], zones: [], pois: [], festival: { zones: [] }, speakers: {} };
+  State.dataLoadError = true;
 }
 
 // ============================================
