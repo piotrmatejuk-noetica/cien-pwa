@@ -4134,7 +4134,7 @@ async function _fetchWeather() {
       }
     }
     // Fetch current + 3-day daily for festival dates
-    const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=50.8561&longitude=16.0464&current=temperature_2m,weathercode&daily=temperature_2m_max,temperature_2m_min,weathercode,precipitation_sum&timezone=Europe%2FWarsaw&forecast_days=14');
+    const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=50.9388&longitude=16.1125&current=temperature_2m,weathercode&daily=temperature_2m_max,temperature_2m_min,weathercode,precipitation_sum&timezone=Europe%2FWarsaw&forecast_days=14');
     if (!res.ok) return;
     const json = await res.json();
     _weatherData = json;
