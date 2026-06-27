@@ -845,29 +845,11 @@ function _listenTeamLocations() {
 
 function _updateLocationUI() {
   if (_chatTab !== 'lokalizacja') return;
-  _drawRadar();
-  const el = document.getElementById('loc-teammates');
-  if (!el) return;
-  const active = Object.values(_teamLocs);
-  if (!active.length) {
-    el.innerHTML = '<div class="loc-empty">Nikt z drużyny nie udostępnia lokalizacji</div>';
-    return;
-  }
-  el.innerHTML = active.map(m => {
-    const dist = _myPos ? _haversine(_myPos.lat, _myPos.lng, m.lat, m.lng) : null;
-    const isSelected = _navTarget?.isTeammate && _navTarget.uid === m.uid;
-    return `<div class="loc-member-card ${dist != null ? _heatClass(dist) : ''} ${isSelected ? 'loc-selected' : ''}"
-                 onclick="setNavTarget('teammate','${m.uid}',decodeURIComponent('${encodeURIComponent(m.name || 'Uczestnik')}'),${m.lat},${m.lng})">
-      <div class="loc-member-name">${_esc(m.name || 'Uczestnik')}</div>
-      ${dist != null ? `<div class="loc-dist-value">${_distLabel(dist)}</div><div class="loc-heat-label">${_heatLabel(dist)}</div>` : '<div class="loc-heat-label">Pozycja znana</div>'}
-    </div>`;
-  }).join('');
+  _updateLocationArrows();
 }
 
 function _updateLocationArrows() {
   if (_chatTab !== 'lokalizacja') return;
-  _drawRadar();
-  _updateLocationUI();
   const arrowEl = document.getElementById('loc-nav-arrow');
   const distEl  = document.getElementById('loc-nav-dist');
   const heatEl  = document.getElementById('loc-nav-heat');
@@ -1048,20 +1030,19 @@ async function setCustomAddress() {
 
 function _tmplLocTab() {
   return `
+${!_myPos ? `
 <div class="loc-section">
   <div class="loc-share-wrap">
     <div class="loc-share-info">
-      <div class="loc-share-title">Moja lokalizacja</div>
-      <div class="loc-share-sub">${_locSharing ? '📡 Udostępniasz lokalizację drużynie' : 'Ukryta — drużyna Cię nie widzi'}</div>
+      <div class="loc-share-title">📡 Nawigacja</div>
+      <div class="loc-share-sub">GPS potrzebny do wskazania kierunku i odległości</div>
     </div>
     ${navigator.geolocation
-      ? `<button class="loc-share-btn ${_locSharing ? 'loc-share-active' : ''}" onclick="toggleLocSharing()">
-           ${_locSharing ? 'Wyłącz' : 'Włącz'}
-         </button>`
+      ? `<button class="loc-share-btn" onclick="_startNavGPS()">Włącz GPS</button>`
       : `<span class="loc-no-gps">GPS niedostępny</span>`
     }
   </div>
-</div>
+</div>` : ''}
 
 ${_navTarget ? `
 <div class="loc-section loc-nav-display">
@@ -1069,7 +1050,7 @@ ${_navTarget ? `
   <div class="loc-nav-arrow-wrap">
     <div id="loc-nav-arrow" class="loc-nav-big-arrow" style="transform:rotate(0deg)"><svg viewBox="0 0 60 70" width="64" height="74" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M30 4 L56 46 H40 V66 H20 V46 H4 Z" fill="#C9A84C" filter="url(#glow)"/><defs><filter id="glow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs></svg></div>
   </div>
-  <div id="loc-nav-dist" class="loc-nav-dist-val">${_myPos ? '…' : 'Włącz lokalizację'}</div>
+  <div id="loc-nav-dist" class="loc-nav-dist-val">${_myPos ? '…' : 'Włącz GPS'}</div>
   <div id="loc-nav-heat" class="loc-nav-heat">${!_myPos ? '' : _compassHeading == null ? 'Skieruj telefon w górę dla strzałki' : ''}</div>
   <button class="loc-back-btn" onclick="clearNavTarget()">← Zmień cel</button>
 </div>` : ''}
@@ -1092,20 +1073,6 @@ ${_navTarget ? `
     <input id="loc-custom-addr" class="team-input" placeholder="np. ul. Zamkowa 1, Bolków">
     <button class="team-btn team-btn-primary" style="margin-top:0.5rem;width:100%" onclick="setCustomAddress()">Nawiguj</button>
   </div>
-</div>
-
-<div class="loc-section">
-  <div class="loc-section-title">Radar drużyny</div>
-  <div class="loc-radar-wrap">
-    <canvas id="loc-radar-canvas" class="loc-radar-canvas"></canvas>
-  </div>
-  ${!_locSharing ? '<div class="loc-radar-hint">Włącz lokalizację żeby zobaczyć ziomków na radarze</div>' : ''}
-  <div id="loc-teammates" class="loc-teammates-list">
-    ${!_locSharing
-      ? ''
-      : '<div class="loc-empty">Ładowanie…</div>'
-    }
-  </div>
 </div>`;
 }
 
@@ -1114,12 +1081,28 @@ function _renderLocTab() {
   const body = document.getElementById('team-tab-body');
   if (!body) return;
   body.innerHTML = _tmplLocTab();
-  const canvas = document.getElementById('loc-radar-canvas');
-  if (canvas) canvas.addEventListener('click', _radarClick);
-  setTimeout(() => {
-    _drawRadar();
-    if (_myPos) _updateLocationArrows();
-  }, 30);
+  setTimeout(() => { if (_myPos) _updateLocationArrows(); }, 30);
+}
+
+function _startNavGPS() {
+  if (_watchId != null) return;
+  if (!navigator.geolocation) return;
+  _startCompass();
+  _watchId = navigator.geolocation.watchPosition(
+    pos => {
+      _myPos = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      _renderLocTab();
+      _updateLocationArrows();
+    },
+    err => {
+      const msg = err.code === 1
+        ? 'GPS zablokowany — zezwól na lokalizację w ustawieniach'
+        : 'Nie można ustalić lokalizacji';
+      _showTeamError(msg);
+      if (_watchId != null) { navigator.geolocation.clearWatch(_watchId); _watchId = null; }
+    },
+    { enableHighAccuracy: true, maximumAge: 5000 }
+  );
 }
 
 function toggleLocSharing() {
@@ -1299,10 +1282,7 @@ async function initTeam() {
   const team = await teamLoad();
   if (team) {
     await _scheduleAllNotifs();
-    if (localStorage.getItem('cien_loc_sharing') && navigator.geolocation) {
-      _startCompass();
-      _startLocSharing();
-    }
+    localStorage.removeItem('cien_loc_sharing');
     if (document.getElementById('view-druzyna')?.classList.contains('active')) {
       renderTeamView();
     }
