@@ -397,13 +397,14 @@ const WHEEL_AREA_FORMS = {
 // ============================================
 
 const KB_CATEGORIES = [
-  { id: 'all',        label: 'Wszystko', color: '#C9A84C' },
+  { id: 'all',        label: 'Wszystko',  color: '#C9A84C' },
   { id: 'historia',   label: 'Historia',  color: '#C9A84C' },
   { id: 'psychologia',label: 'Psychologia', color: '#7B3F82' },
   { id: 'nauka',      label: 'Nauka',     color: '#4A6FA5' },
+  { id: 'kultura',    label: 'Kultura',   color: '#2E7D5E' },
 ];
 
-const KB_CAT_COLORS = { historia:'#C9A84C', psychologia:'#7B3F82', nauka:'#4A6FA5' };
+const KB_CAT_COLORS = { historia:'#C9A84C', psychologia:'#7B3F82', nauka:'#4A6FA5', kultura:'#2E7D5E' };
 
 const ARTICLES_DATA = [
   {
@@ -572,6 +573,158 @@ const ARTICLES_DATA = [
     sources: [
       {n:1, text:'Frontiers in Psychology — What is psychedelic integration? (2022)', url:'https://www.frontiersin.org/journals/psychology/articles/10.3389/fpsyg.2022.824077/full'},
       {n:2, text:'MAPS.org — Integration Resources', url:'https://maps.org/resources/'},
+    ]
+  },
+  {
+    id: 'psilocybin-fmri-2012',
+    title: 'Psylocybina pod skanem — pierwsze badanie fMRI',
+    category: 'nauka', emoji: '🔬', readTime: '5 min',
+    teaser: 'W 2012 roku Robin Carhart-Harris wsunął pierwszych badanych pod skaner fMRI po podaniu psylocybiny. Wyniki zmieniły neuronaukę: domyślna sieć mózgu wyciszyła się. Ego zrobiło to samo.',
+    content: `<p class="kb-disclaimer">ℹ️ CIEŃ Festiwal nie zachęca do przyjmowania substancji psychoaktywnych. Artykuł ma wyłącznie charakter informacyjny. Zachęcamy do przeżywania festiwalu w uważności.</p><p>W 2012 roku <em>Proceedings of the National Academy of Sciences</em> opublikowało pierwsze badanie fMRI mózgu pod wpływem psylocybiny<sup>[1]</sup>. Zespół Robina Carhart-Harrisa z Imperial College London podał 30 zdrowym ochotnikom psylocybinę dożylnie i obserwował, co się dzieje.</p><p>Wynik był odwrotny do oczekiwań. Zamiast wzrostu aktywności — <strong>wytłumienie</strong> w dwóch kluczowych obszarach: <em>default mode network</em> (DMN) i korze przedczołowej. Im silniejsze wytłumienie DMN, tym głębsze subiektywne poczucie rozpuszczenia ego<sup>[1]</sup>.</p><p>DMN to sieć aktywna w spoczynku: planowanie, wspominanie, ocenianie siebie. Biologiczne podłoże ego. Psylocybina ją wycisza. Znika granica między „ja" a resztą świata. Teoria łącząca ego z DMN istniała od lat — psylocybina ją potwierdziła empirycznie.</p><p>Badanie PNAS 2012 zapoczątkowało erę neuronauki psychodelicznej. Dziś mamy setki badań fMRI, EEG i PET. Ale to było pierwsze.</p>`,
+    sources: [
+      {n:1, text:'Carhart-Harris et al. — Neural correlates of the psychedelic state (PNAS, 2012)', url:'https://www.pnas.org/doi/10.1073/pnas.1119598109'},
+    ]
+  },
+  {
+    id: 'rebus-anarchiczny',
+    title: 'Model REBUS — jak psychodeliki zmieniają mózg',
+    category: 'nauka', emoji: '🌐', readTime: '5 min',
+    teaser: 'REBUS: Relaxed Beliefs Under Psychedelics. W 2019 roku Carhart-Harris i Friston wyjaśnili mechanizm działania psychodelików przez pryzmat bayesowskiego modelu mózgu. Sztywne przekonania topnieją.',
+    content: `<p class="kb-disclaimer">ℹ️ CIEŃ Festiwal nie zachęca do przyjmowania substancji psychoaktywnych. Artykuł ma wyłącznie charakter informacyjny. Zachęcamy do przeżywania festiwalu w uważności.</p><p>W 2019 roku Robin Carhart-Harris i Karl Friston opublikowali w <em>Pharmacological Reviews</em> model REBUS — <strong>Relaxed Beliefs Under Psychedelics</strong><sup>[1]</sup>. Próba ujednoliconego wyjaśnienia, dlaczego psychodeliki działają terapeutycznie.</p><p>Punkt wyjścia: bayesowski model mózgu. Mózg to maszyna do przewidywania — nieustannie buduje modele rzeczywistości i weryfikuje je bodźcami. Depresja, lęk, OCD: mózg ma zbyt sztywne, zbyt pewne siebie modele wysokiego poziomu. Sygnały z ciała i zmysłów są przez nie tłumione.</p><p>Psychodeliki — według REBUS — <strong>spłaszczają hierarchię</strong>. Zmniejszają pewność modeli wysokiego poziomu, pozwalając informacjom z niższych warstw dotrzeć do świadomości. Efekt: zanika pewność co do „ja", a sztywne depresyjne narracje stają się podatne na zmianę<sup>[1]</sup>.</p><p>Model REBUS wyjaśnia zarówno dlaczego doświadczenie mistyczne bywa opisywane jako „bardziej realne niż rzeczywistość", jak i dlaczego te substancje mają potencjał kliniczny.</p>`,
+    sources: [
+      {n:1, text:'Carhart-Harris & Friston — REBUS and the Anarchic Brain (Pharmacol Rev, 2019)', url:'https://pharmrev.aspetjournals.org/content/71/3/316'},
+    ]
+  },
+  {
+    id: 'johnson-bezpieczenstwo',
+    title: 'Protokoły bezpieczeństwa w badaniach z halucynogenami',
+    category: 'nauka', emoji: '📋', readTime: '4 min',
+    teaser: 'Hopkins 2008: wytyczne bezpieczeństwa dla badań z psylocybiną. 250 uczestników, 380 sesji, 16 lat — zero poważnych incydentów psychiatrycznych. Struktury, które działają.',
+    content: `<p class="kb-disclaimer">ℹ️ CIEŃ Festiwal nie zachęca do przyjmowania substancji psychoaktywnych. Artykuł ma wyłącznie charakter informacyjny. Zachęcamy do przeżywania festiwalu w uważności.</p><p>W 2008 roku Matthew Johnson, William Richards i Roland Griffiths z Johns Hopkins opublikowali w <em>Journal of Psychopharmacology</em> wytyczne bezpieczeństwa dla badań z halucynogenami<sup>[1]</sup>. Odpowiedź na praktyczne pytanie: jak prowadzić sesje bezpiecznie — dla uczestników i dla instytucji.</p><p>Wytyczne obejmują: dobór uczestników (wykluczenie historii psychozy), strukturę sesji (6–8 godzin, dwóch przewodników, dobrana muzyka), protokoły reakcji na trudne stany (praca werbalna i relacyjna przed interwencją farmakologiczną), kryteria przerwania sesji.</p><p>Dane z 16 lat: 250 uczestników, 380 sesji, zero hospitalizacji psychiatrycznych. Poniżej 1% uczestników wymagało więcej uwagi przewodników<sup>[1]</sup>. Te liczby kontrastują z powszechnymi przekonaniami o ryzyku.</p><p>Punkt SACRUM na Cieniu działa w tym samym paradygmacie: struktura, czas, zaufanie i relacja jako kontener terapeutyczny — dla każdego, niezależnie od powodu, dla którego go potrzebuje.</p>`,
+    sources: [
+      {n:1, text:'Johnson, Richards, Griffiths — Human hallucinogen research: guidelines for safety (JPP, 2008)', url:'https://pubmed.ncbi.nlm.nih.gov/18593734/'},
+    ]
+  },
+  {
+    id: 'set-and-setting',
+    title: 'Set and Setting — intencja, nastawienie, kontekst',
+    category: 'nauka', emoji: '🎯', readTime: '4 min',
+    teaser: 'Timothy Leary, Alpert i Metzner w 1964 roku opisali, że o przebiegu doświadczenia psychodelicznego decydują nastawienie (set) i otoczenie (setting). Pół wieku później nauka to potwierdza — i rozszerza na każde doświadczenie graniczne.',
+    content: `<p class="kb-disclaimer">ℹ️ CIEŃ Festiwal nie zachęca do przyjmowania substancji psychoaktywnych. Artykuł ma wyłącznie charakter informacyjny. Zachęcamy do przeżywania festiwalu w uważności.</p><p>W 1964 roku Timothy Leary, Richard Alpert (późniejszy Ram Dass) i Ralph Metzner opublikowali <em>The Psychedelic Experience</em><sup>[1]</sup>. Wprowadzili pojęcie które na trwałe weszło do języka nauki i kultury: <strong>set and setting</strong>.</p><p><strong>Set</strong> — stan psychiczny, intencja, historia i oczekiwania osoby wchodzącej w doświadczenie. <strong>Setting</strong> — fizyczne i społeczne otoczenie: przestrzeń, muzyka, osoby obecne, stopień bezpieczeństwa. Leary argumentował, że te dwa czynniki — bardziej niż dawka — decydują o przebiegu doświadczenia.</p><p>Badania empiryczne potwierdzają tę intuicję. Analiza danych Hopkins wykazała, że subiektywne oczekiwania przed sesją były jednym z silniejszych predyktorów wyniku terapeutycznego<sup>[2]</sup>.</p><p>Kontener festiwalowy — intencja, rytuał otwarcia, zaproszenie do pracy z Cieniem — to praca nad set and setting dla całości doświadczenia. Nie tylko dla sesji z substancjami. Dla każdego tu obecnego.</p>`,
+    sources: [
+      {n:1, text:'Wikipedia EN — Set and setting', url:'https://en.wikipedia.org/wiki/Set_and_setting'},
+      {n:2, text:'Barrett & Griffiths — Expectancies and subjective experience during psilocybin sessions (2017)', url:'https://pubmed.ncbi.nlm.nih.gov/27864955/'},
+    ]
+  },
+  {
+    id: 'timmermann-dmt-nde',
+    title: 'DMT i doświadczenia graniczne — Imperial College',
+    category: 'nauka', emoji: '✨', readTime: '4 min',
+    teaser: 'Timmermann z Imperial College porównał relacje z doświadczeń DMT z relacjami osób po klinicznej śmierci. Nakładanie się tych dwóch map sugeruje wspólny mechanizm — i pyta o naturę granic świadomości.',
+    content: `<p class="kb-disclaimer">ℹ️ CIEŃ Festiwal nie zachęca do przyjmowania substancji psychoaktywnych. Artykuł ma wyłącznie charakter informacyjny. Zachęcamy do przeżywania festiwalu w uważności.</p><p>W 2018 roku Christopher Timmermann i współpracownicy z Imperial College London opublikowali w <em>Frontiers in Psychology</em> analizę porównawczą doświadczeń DMT z fenomenologią klinicznych doświadczeń bliskich śmierci (NDE)<sup>[1]</sup>. Badani po DMT i relacje osób po resuscytacji były oceniane tą samą standaryzowaną skalą.</p><p>Wyniki: doświadczenia DMT punktowały wyżej na każdej podskali NDE niż inne odmienione stany świadomości — i na poziomie zbliżonym do rzeczywistych NDE. Wspólne elementy: wychodzenie z ciała, spotkania z bytami, uczucie przekraczania progu, poczucie ostatecznej wiedzy<sup>[1]</sup>.</p><p>Autorzy nie twierdzą, że DMT powoduje NDE. Twierdzą, że oba stany angażują podobne procesy neuronalne. Hipoteza o roli endogennego DMT w doświadczeniach granicznych pozostaje nieudowodniona — ale jest aktywnym obszarem badań.</p><p>To jedno z badań, które pokazuje, że mapy stanów granicznych — mistycznych, terapeutycznych, umierania — mogą opisywać podobny kraj. Cień Festiwal pyta: co z tych map możemy przynieść z powrotem do życia?</p>`,
+    sources: [
+      {n:1, text:'Timmermann et al. — DMT Models the Near-Death Experience (Front. Psychol., 2018)', url:'https://www.frontiersin.org/articles/10.3389/fpsyg.2018.01424/full'},
+    ]
+  },
+  {
+    id: 'pollan-zmiana-umyslu',
+    title: '"Jak zmienić umysł" — Pollan i renesans psychodeliczny',
+    category: 'nauka', emoji: '📖', readTime: '4 min',
+    teaser: 'W 2018 roku Michael Pollan — dziennikarz, nie terapeuta — opisał własne doświadczenia z psylocybiną i LSD oraz przeprowadził wywiady z naukowcami. Efekt: masowe zainteresowanie badaniami, które istniały od dekad.',
+    content: `<p class="kb-disclaimer">ℹ️ CIEŃ Festiwal nie zachęca do przyjmowania substancji psychoaktywnych. Artykuł ma wyłącznie charakter informacyjny. Zachęcamy do przeżywania festiwalu w uważności.</p><p>W 2018 roku Michael Pollan — autor bestsellerów o jedzeniu, niespecjalista od psychodelików — opublikował <em>How to Change Your Mind</em><sup>[1]</sup>. Książka dotarła na szczyt list NYT i wywołała falę zainteresowania, której badania naukowe z lat 2006–2018 nie zdołały samodzielnie wygenerować.</p><p>Pollan przeprowadził wywiady z Rolandem Griffithsem, Rickiem Dobline'em i innymi pionierami. Opisał własne doświadczenia — z perspektywy sceptycznego, racjonalnego pięćdziesięciolatka. Ten wybór narratora był kluczowy: nie pisał do przekonanych.</p><p>Efekt kulturowy: wzrost zainteresowania badaniami klinicznymi, fala finansowania prywatnego, przyspieszenie dyskusji regulacyjnej w USA i Europie. Pollan zrobił dla neuronauki psychodelicznej to, co Rachel Carson zrobiła dla ekologii — przełożył laboratorium na ludzki głos.</p><p>Krytyka jest zasadna: selekcyjne relacjonowanie doświadczeń, niewystarczająca analiza ryzyk. Ale jako wprowadzenie dla nieprzekonanych — do dziś najskuteczniejsze narzędzie komunikacji.</p>`,
+    sources: [
+      {n:1, text:'Pollan, Michael — How to Change Your Mind (Penguin Press, 2018)', url:'https://michaelpollan.com/books/how-to-change-your-mind/'},
+    ]
+  },
+  {
+    id: 'hofmann-problem-child',
+    title: 'Albert Hofmann i odkrycie LSD — 19 kwietnia 1943',
+    category: 'historia', emoji: '🧪', readTime: '4 min',
+    teaser: 'W piątek 16 kwietnia 1943 roku Hofmann przypadkowo wchłonął śladową ilość nowej substancji. W poniedziałek 19 kwietnia celowo wziął 250 mikrogramów i popedałował do domu. Bicycle Day.',
+    content: `<p class="kb-disclaimer">ℹ️ CIEŃ Festiwal nie zachęca do przyjmowania substancji psychoaktywnych. Artykuł ma wyłącznie charakter informacyjny. Zachęcamy do przeżywania festiwalu w uważności.</p><p>Albert Hofmann (1906–2008) pracował w laboratoriach Sandoz w Bazylei nad alkaloidami sporyszu. 16 kwietnia 1943 roku, podczas syntezy LSD-25, poczuł się dziwnie — zawroty głowy, łagodne halucynacje. Podejrzewał, że przez skórę wchłonął śladową ilość substancji<sup>[1]</sup>.</p><p>Trzy dni później, 19 kwietnia (dziś obchodzony jako <em>Bicycle Day</em>), Hofmann celowo przyjął 250 mikrogramów — dawkę, którą uznał za śladową. Po 40 minutach zrozumiał, że jest pod silnym wpływem. Popedałował do domu na rowerze (samochody zarekwirowane przez wojsko). Przeżył na przemian przerażenie i euforię, potem — świt przez okno i najpiękniejsze przeżycie w życiu.</p><p>Sandoz opatentował LSD w 1948 roku jako potencjalny lek psychiatryczny. Do 1966 roku przeprowadzono tysiące badań klinicznych. Potem delegalizacja. Potem milczenie przez 30 lat. Potem Hopkins 2006.</p><p>Hofmann żył 102 lata. Do końca uważał LSD za dar — i za substancję, którą społeczeństwu zabrało zbyt szybko. Jego autobiografia <em>LSD: Mein Sorgenkind</em> (1979) pozostaje kanonicznym źródłem<sup>[1]</sup>.</p>`,
+    sources: [
+      {n:1, text:'Hofmann, Albert — LSD: My Problem Child (McGraw-Hill, 1980)', url:'https://maps.org/research-archive/books/lsd-my-problem-child/'},
+      {n:2, text:'Wikipedia EN — Albert Hofmann', url:'https://en.wikipedia.org/wiki/Albert_Hofmann'},
+    ]
+  },
+  {
+    id: 'zendo-wsparcie-psychodeliczne',
+    title: 'Zendo Project — psychodeliczne wsparcie rówieśnicze',
+    category: 'nauka', emoji: '🫂', readTime: '4 min',
+    teaser: 'MAPS/Zendo od 2012 roku szkoli wolontariuszy na festiwalach do pracy z osobami przeżywającymi trudne stany zmienionej świadomości. Cztery zasady: bezpieczna przestrzeń, ufaj procesowi, towarzysz — nie prowadź.',
+    content: `<p class="kb-disclaimer">ℹ️ CIEŃ Festiwal nie zachęca do przyjmowania substancji psychoaktywnych. Artykuł ma wyłącznie charakter informacyjny. Zachęcamy do przeżywania festiwalu w uważności.</p><p>Zendo Project to inicjatywa MAPS działająca od 2012 roku na festiwalach transformacyjnych<sup>[1]</sup>. Cel: profesjonalne wsparcie dla osób przeżywających trudne stany zmienionej świadomości — bez ich patologizowania.</p><p>Model czterech zasad: <strong>1. Bezpieczna przestrzeń</strong> — fizyczna i relacyjna: cisza, mała intensywność, obecność bez oceniania. <strong>2. Zaufaj procesowi</strong> — trudne doświadczenie nie jest złym doświadczeniem; opór pogarsza. <strong>3. Towarzysz, nie prowadź</strong> — wolontariusz jest obecny, nie „leczy". <strong>4. Z trudnego zrób twórcze</strong> — relacja jako kontener transformacji<sup>[1]</sup>.</p><p>Dane: 98% przypadków kończy się pozytywnie bez interwencji medycznej. Kluczowe czynniki: wczesna identyfikacja, spokojne środowisko, cierpliwa obecność. Benzodiazepiny jako ostateczność, nie pierwsza odpowiedź.</p><p>Punkt SACRUM na Cieniu działa w tym paradygmacie: nie jako ambulatorium, ale jako przestrzeń przejścia — dla kogokolwiek, niezależnie od powodu, dla którego jej potrzebuje.</p>`,
+    sources: [
+      {n:1, text:'MAPS — Zendo Project Psychedelic Peer Support', url:'https://maps.org/zendo-project/'},
+    ]
+  },
+  {
+    id: 'dancesafe-festiwal',
+    title: 'DanceSafe — redukcja szkód na parkiecie',
+    category: 'nauka', emoji: '💊', readTime: '3 min',
+    teaser: 'DanceSafe założono w 1998 roku po serii tragedii na festiwalach rave. Model: wolontariusze na parkiecie, testowanie substancji, edukacja bez osądzania. Nie pytają co wziąłeś — pytają jak się czujesz.',
+    content: `<p class="kb-disclaimer">ℹ️ CIEŃ Festiwal nie zachęca do przyjmowania substancji psychoaktywnych. Artykuł ma wyłącznie charakter informacyjny. Zachęcamy do przeżywania festiwalu w uważności.</p><p>DanceSafe to amerykańska organizacja non-profit założona w 1998 roku po serii śmierci na festiwalach rave — związanych z odwodnieniem, hiperhydracją i nieznanym składem substancji<sup>[1]</sup>. Misja: redukcja szkód w środowiskach nocnego życia, bez moralizowania.</p><p>Model: wyszkoleni wolontariusze obecni na parkiecie. Oferują testowanie substancji odczynnikami chemicznymi, informacje o interakcjach i ryzykach, zatyczki do uszu, wodę. Nie pytają co ktoś wziął — pytają jak się czuje i jak mogą pomóc<sup>[1]</sup>.</p><p>Drug checking nie legalizuje substancji ani ich nie promuje. Jest odpowiedzią na fakt, że substancje są przyjmowane — z wiedzą lub bez niej — i że śmierć z powodu zanieczyszczonej tabletki jest możliwa do uniknięcia. W Europie podobne modele działają w Holandii (Unity), Czechach i Szwajcarii.</p>`,
+    sources: [
+      {n:1, text:'DanceSafe — harm reduction in nightlife communities', url:'https://dancesafe.org/'},
+    ]
+  },
+  {
+    id: 'drug-checking-europa',
+    title: 'Drug checking w Europie — przegląd EMCDDA',
+    category: 'nauka', emoji: '🔭', readTime: '3 min',
+    teaser: 'EMCDDA monitoruje programy testowania substancji w krajach UE. Holandia uruchomiła pierwszy legalny serwis w 1992 roku. Dane są jednoznaczne: serwisy drug checking zmieniają zachowanie i ratują życie.',
+    content: `<p class="kb-disclaimer">ℹ️ CIEŃ Festiwal nie zachęca do przyjmowania substancji psychoaktywnych. Artykuł ma wyłącznie charakter informacyjny. Zachęcamy do przeżywania festiwalu w uważności.</p><p>Europejskie Centrum Monitorowania Narkotyków i Uzależnień (EMCDDA) opublikowało przegląd serwisów drug checking w Europie<sup>[1]</sup>. Działają oficjalnie w co najmniej 13 krajach: mobilne punkty na festiwalach, stacjonarne laboratoria (Holandia od 1992), usługi przy centrach leczenia.</p><p>Kluczowy argument: serwisy testowania zmieniają zachowanie. W badaniach europejskich 60–80% osób, które dowiedziały się o nieoczekiwanym składzie substancji, zrezygnowało z jej użycia lub zmieniło dawkę<sup>[1]</sup>. W dobie fentanylu w Europie ta liczba przekłada się bezpośrednio na śmiertelność.</p><p>Holandia: legalna sieć testowania działa od dekad, wskaźniki śmiertelności na festiwalach wśród najniższych w Europie. Polska: serwisy działają w szarej strefie, prowadzone przez organizacje wolontariackie. Harm reduction nie jest ideologią — jest zdrowiem publicznym.</p>`,
+    sources: [
+      {n:1, text:'EMCDDA — Drug checking services in Europe (2022)', url:'https://www.emcdda.europa.eu/publications/drug-checking_en'},
+    ]
+  },
+  {
+    id: 'hollis-dlaczego-dobrzy',
+    title: '"Dlaczego dobrzy ludzie robią złe rzeczy" — James Hollis',
+    category: 'psychologia', emoji: '🪞', readTime: '4 min',
+    teaser: 'James Hollis, jungiański analityk, stawia pytanie które Jung zostawił bez pełnej odpowiedzi: skąd bierze się zło u ludzi, którzy naprawdę nie chcą być źli? Odpowiedź prowadzi do Cienia.',
+    content: `<p>James Hollis — analityk jungiański, autor dwunastu książek, przez lata dyrektor Jung Center w Houston — opublikował w 2007 roku <em>Why Good People Do Bad Things: Understanding Our Darker Selves</em><sup>[1]</sup>. Punkt wyjścia: dlaczego ludzie, którzy naprawdę nie chcą krzywdzić, krzywdzą?</p><p>Hollis nie szuka odpowiedzi w moralności — szuka w strukturze psychiki. Cień jest koniecznym elementem: suma treści odrzuconych przez ego jako „nie-moje". Nikt nie ma Jaźni bez Cienia. Pytanie nie brzmi „czy mam Cień", ale „ile mojego Cienia działam, nie wiedząc o tym".</p><p>Kluczowe rozróżnienie: Cień złoty (wyparty potencjał, talent, siła) i Cień mroczny (impulsy, destrukcja, lęk). Cień mroczny przejawiany nieświadomie czyni z nas tyranów. Cień złoty nieujawniony czyni z nas kogoś znacznie mniejszego niż jesteśmy<sup>[1]</sup>.</p><p>Hollis pisze dostępnie — nie akademicka rozprawa, ale zapis rozmów z pacjentami i z własnym Cieniem. Jedna z najlepszych współczesnych introdukcji do pracy z nieświadomością dla nieanalityków.</p>`,
+    sources: [
+      {n:1, text:'Hollis, James — Why Good People Do Bad Things (Gotham Books, 2007)', url:'https://www.jameshollis.net/books/'},
+    ]
+  },
+  {
+    id: 'spotkanie-z-cieniem',
+    title: '"Spotkanie z Cieniem" — antologia jungiańska',
+    category: 'psychologia', emoji: '📚', readTime: '3 min',
+    teaser: 'Connie Zweig i Jeremiah Abrams zebrali w 1990 roku 65 esejów od psychologów, poetów i filozofów o ciemnej stronie ludzkiej natury. Jung, Hillman, Campbell, von Franz. Kanon pracy z Cieniem.',
+    content: `<p><em>Meeting the Shadow: The Hidden Power of the Dark Side of Human Nature</em> (1990) pod redakcją Connie Zweig i Jeremiah Abramsa to antologia 65 esejów<sup>[1]</sup>. Cel: kompletna mapa ciemnej strony ludzkiej natury z wielu perspektyw jednocześnie.</p><p>Wśród autorów: Carl Jung, Marie-Louise von Franz, James Hillman, Rollo May, Ken Wilber, Joseph Campbell, Robert Bly. Nie jest to monografia — to mozaika: od klinicznej przez poetycką po mitologiczną. Właśnie ta różnorodność jest jej siłą. Cień jest pojęciem zbyt szerokim, by zamknąć je w jednym podejściu.</p><p>Robert Bly opisuje Cień jako „niewidoczny worek, który człowiek ciągnie za sobą przez całe życie" — jeden z najsilniejszych obrazów w psychologii głębi. Zweig i Abrams dodają kluczowy wątek: Cień zbiorowy, Cień instytucji, Cień narodu. Projekcja Cienia na Innych jest mechanizmem napędzającym nie tylko konflikty w związkach — ale i historię<sup>[1]</sup>.</p><p>Polskie wydanie: <em>Spotkanie z Cieniem</em>. Lektura sprzed lub po festiwalu — nie w trakcie.</p>`,
+    sources: [
+      {n:1, text:'Zweig & Abrams (red.) — Meeting the Shadow (Tarcher/Penguin, 1990)', url:'https://www.goodreads.com/book/show/1266497.Meeting_the_Shadow'},
+    ]
+  },
+  {
+    id: 'transformational-festivals',
+    title: 'Festiwale transformacyjne jako rytuały przejścia',
+    category: 'kultura', emoji: '🌀', readTime: '4 min',
+    teaser: 'Antropolog Graham St John badał festiwale transformacyjne przez dekadę. Wniosek: to nie rozrywka — to neotrybalne rytuały przejścia dla populacji, która utraciła dostęp do tradycyjnych inicjacji.',
+    content: `<p>Graham St John — australijski antropolog — spędził dekadę badając festiwale transformacyjne na pięciu kontynentach. Jego synteza <em>Global Tribe: Technology, Spirituality and Psytrance</em> (2012)<sup>[1]</sup> proponuje tezę jednocześnie oczywistą i nieoczekiwaną: festiwale transformacyjne są neotribalnymi rytuałami przejścia dla populacji bez tradycyjnych rytuałów.</p><p>Pojęcie Victora Turnera — <em>liminality</em> — opisuje stan zawieszenia między tym, kim byliśmy, a tym, kim się stajemy. Tradycyjnie pełniły tę rolę inicjacje i obrzędy przejścia. Nowoczesność je usuwa bez zamiennika. Festiwal transformacyjny wypełnia tę lukę: wyjście z codzienności, zawieszenie ról, tymczasowa wspólnota (<em>communitas</em>), powrót z nową tożsamością<sup>[1]</sup>.</p><p>St John jest badaczem, nie ewangelistą — opisuje też patologie: komercjalizację rytuału, fałszywą autentyczność. Ale fundamentalna teza pozostaje: zapotrzebowanie na rytuały przejścia jest biologiczne i kulturowe. Festiwale transformacyjne odpowiadają na to lepiej niż cokolwiek w kulturze głównego nurtu.</p><p>Cień Festiwal: trzy dni, trzy etapy alchemiczne, zamek poza zasięgiem codzienności. Liminalność nie jest metaforą — jest strukturą.</p>`,
+    sources: [
+      {n:1, text:'St John, Graham — Global Tribe: Technology, Spirituality and Psytrance (Equinox, 2012)', url:'https://www.equinoxpub.com/home/global-tribe/'},
+    ]
+  },
+  {
+    id: 'turino-muzyka-wspolnota',
+    title: 'Muzyka jako życie społeczne — Thomas Turino',
+    category: 'kultura', emoji: '🎵', readTime: '3 min',
+    teaser: 'Turino rozróżnia muzykę participatory i presentational. Koncert: ty słuchasz, artysta gra. Ale moment, gdy wszyscy tańczą razem, jest czymś innym — i zmienia coś w mózgu.',
+    content: `<p>Thomas Turino — etnomuzykolog z University of Illinois — opublikował w 2008 roku <em>Music as Social Life: The Politics of Participation</em><sup>[1]</sup>. Centralne rozróżnienie: <strong>muzyka participatory</strong> (każdy gra/śpiewa, brak podziału wykonawca–publiczność) versus <strong>muzyka presentational</strong> (artysta gra, publiczność słucha). Większość muzyki zachodniej to presentational.</p><p>Turino argumentuje, że participatory music tworzy inną jakość więzi społecznej — neurologicznie, nie tylko emocjonalnie. Synchronizacja ruchów i rytmów aktywuje mechanizmy spójności grupowej ewolucyjnie starsze niż język. Wspólny taniec to nie metafora jedności — to jedność w fizjologicznym sensie.</p><p>Aplikacja do festiwalu: jam session, wspólny śpiew, taniec plemienny — participatory. Koncert główny — presentational. Wartość obu jest różna, ale niepodmienialna. Najważniejsze momenty Cienia będą prawdopodobnie tam, gdzie granica między nimi zniknie.</p>`,
+    sources: [
+      {n:1, text:'Turino, Thomas — Music as Social Life (University of Chicago Press, 2008)', url:'https://press.uchicago.edu/ucp/books/book/chicago/M/bo5388056.html'},
+    ]
+  },
+  {
+    id: 'milliare-swiadomosc',
+    title: 'Psychodeliki, medytacja i poczucie siebie — Millière et al.',
+    category: 'nauka', emoji: '🧘', readTime: '4 min',
+    teaser: 'Frontiers in Psychology 2018: analiza porównawcza fenomenologii psychodelicznej i głębokiej medytacji. Wspólny mianownik — brak granicy między sobą a światem — angażuje identyczne obszary sieci domyślnej.',
+    content: `<p class="kb-disclaimer">ℹ️ CIEŃ Festiwal nie zachęca do przyjmowania substancji psychoaktywnych. Artykuł ma wyłącznie charakter informacyjny. Zachęcamy do przeżywania festiwalu w uważności.</p><p>W 2018 roku Raphaël Millière i współpracownicy (w tym Carhart-Harris i Berkovich-Ohana) opublikowali w <em>Frontiers in Psychology</em> analizę porównawczą stanów psychodelicznych i głębokich stanów medytacyjnych<sup>[1]</sup>.</p><p>Kluczowe pytanie: czy „brak granicy między mną a światem" opisywany przez medytatorów i badanych po psylocybinie — to to samo? Odpowiedź: podobny profil aktywności sieci domyślnej, podobna korelacja z subiektywnymi przeżyciami<sup>[1]</sup>.</p><p>Implikacje: różne drogi prowadzą do podobnych krain. Doświadczenie „dissolution of self" — uznawane za patologię w klinice (depersonalizacja) — może być integratywne w odpowiednim kontenerze. Medytacja jako ścieżka do tych stanów jest bezpieczna, stopniowa i niewymagająca substancji.</p><p>Festiwal Cień programuje obie ścieżki bez hierarchii. Wybór należy do uczestnika. Kontener jest ten sam.</p>`,
+    sources: [
+      {n:1, text:'Millière et al. — Psychedelics, Meditation, and Self-Consciousness (Front. Psychol., 2018)', url:'https://www.frontiersin.org/articles/10.3389/fpsyg.2018.01475/full'},
     ]
   },
 ];
@@ -1267,7 +1420,7 @@ function addToCalendar(eventId) {
     `SUMMARY:${ev.title}${ev.artist ? ` — ${ev.artist}` : ''}`,
     `DESCRIPTION:${(ev.description || '').replace(/[\n\r]/g, '\\n')}`,
     'LOCATION:Zamek Świny\\, Świny\\, Bolków\\, Polska',
-    'GEO:50.8561;16.0464',
+    'GEO:50.9388;16.1125',
     'END:VEVENT', 'END:VCALENDAR'
   ].join('\r\n');
   const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
