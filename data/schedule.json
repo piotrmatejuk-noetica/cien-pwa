@@ -377,7 +377,7 @@
     {
       "id": "e079",
       "zone": "umbra",
-      "title": "PiotrekMate & Team CIEŃ",
+      "title": "Opening Warm Up — DJ SET",
       "artist": "PiotrekMate & Team CIEŃ",
       "description": "minimal, deep, organic",
       "start": "2026-07-03T17:00:00",
@@ -393,9 +393,9 @@
     {
       "id": "e021",
       "zone": "umbra",
-      "title": "Anna Sulejewicz",
+      "title": "Taniec Butoh «Lucy»",
       "artist": "Anna Sulejewicz",
-      "description": "show",
+      "description": "Pokaz tańca Butoh.",
       "start": "2026-07-03T18:00:00",
       "end": "2026-07-03T19:00:00",
       "tags": [
@@ -421,16 +421,16 @@
     {
       "id": "e023",
       "zone": "umbra",
-      "title": "The Saint",
-      "artist": "The Saint",
-      "description": "organic house, afro house",
+      "title": "Joana",
+      "artist": "Joana",
+      "description": "organic house, melodic",
       "start": "2026-07-03T20:00:00",
       "end": "2026-07-03T21:30:00",
       "tags": [
         "muzyka",
-        "live",
+        "dj",
         "organic-house",
-        "afro"
+        "melodic"
       ]
     },
     {
@@ -885,9 +885,9 @@
     {
       "id": "e055",
       "zone": "umbra",
-      "title": "Hipno Joga",
-      "artist": "Henryk Grygian",
-      "description": "Poranny warsztat łączący hipnozę i jogę — wejście w dzień przez ruch i oddech.",
+      "title": "Hipnojoga Cieni — spotkania z wypartymi emocjami",
+      "artist": "Henryk & Kasia Grygian",
+      "description": "Poranny warsztat łączący hipnozę i jogę — wejście w dzień przez ruch, oddech i spotkanie z wypartymi emocjami.",
       "start": "2026-07-04T10:00:00",
       "end": "2026-07-04T11:30:00",
       "tags": [
@@ -899,7 +899,7 @@
     {
       "id": "e056",
       "zone": "umbra",
-      "title": "Kamil Mross — ucieleśniona podróż w Nieświadomość",
+      "title": "Taniec Cieni — ucieleśniona podróż w Nieświadomość",
       "artist": "Kamil Mross",
       "description": "Warsztat 1,5h. Ruch Spontaniczny jako brama do spotkania z Cieniem — nieświadomy ruch, muzyka, oddech, eksploracja wewnętrznych «krain». Oparte na Psychologii Procesu i IFS. Bez oceniania, bez formy, tylko improwizacja i to, co chce się przez Ciebie wyrazić.",
       "start": "2026-07-04T13:00:00",
@@ -913,7 +913,7 @@
     {
       "id": "e057",
       "zone": "umbra",
-      "title": "Artur Makieła — show hipnozy scenicznej",
+      "title": "Mentalny Teatr Cienia — show hipnozy scenicznej",
       "artist": "Artur Makieła",
       "description": "Spektakularny pokaz hipnozy scenicznej — edukacja przez rozrywkę.",
       "start": "2026-07-04T15:00:00",
@@ -1186,6 +1186,20 @@
         "kolaż",
         "twórczość",
         "rubedo"
+      ]
+    },
+    {
+      "id": "e081",
+      "zone": "gnoza",
+      "title": "Czy życie na własnych zasadach jest możliwe i ile to kosztuje?",
+      "artist": "Zdzich Rabenda",
+      "description": "Prelekcja o życiu poza schematami — koszty, zyski i to, czego nikt ci nie powie zanim zdecydujesz.",
+      "start": "2026-07-05T13:00:00",
+      "end": "2026-07-05T14:30:00",
+      "tags": [
+        "prelekcja",
+        "wolność",
+        "życie"
       ]
     },
     {

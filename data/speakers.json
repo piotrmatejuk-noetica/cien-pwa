@@ -232,9 +232,16 @@
   },
   "Henryk Grygian": {
     "photo": "https://henrykgrygian.com/wp-content/uploads/2025/09/2-1-min-1013x1024.png",
-    "bio": "Hipnoterapeuta i nauczyciel jogi — łączy techniki hipnotyczne z pracą ciałem. Hipno Joga to wejście w dzień przez ruch, oddech i stan lekkiego transu.",
-    "lecture": "Hipno Joga",
+    "bio": "Hipnoterapeuta i nauczyciel jogi — łączy techniki hipnotyczne z pracą ciałem. Hipnojoga Cieni to wejście w dzień przez ruch, oddech i stan lekkiego transu.",
+    "lecture": "Hipnojoga Cieni — spotkania z wypartymi emocjami",
     "role": "Hipnoterapeuta, nauczyciel jogi",
+    "zone": "umbra"
+  },
+  "Henryk & Kasia Grygian": {
+    "photo": "https://henrykgrygian.com/wp-content/uploads/2025/09/2-1-min-1013x1024.png",
+    "bio": "Henryk Grygian — hipnoterapeuta i nauczyciel jogi. Kasia Grygian — współprowadząca. Razem prowadzą Hipnojogę Cieni — pracę z wypartymi emocjami przez ruch, oddech i stan lekkiego transu.",
+    "lecture": "Hipnojoga Cieni — spotkania z wypartymi emocjami",
+    "role": "Hipnoterapeuta i nauczyciel jogi",
     "zone": "umbra"
   },
   "Pete Fish Orchestra": {
@@ -258,11 +265,11 @@
     "role": "Artysta muzyczny",
     "zone": "umbra"
   },
-  "The Saint": {
+  "Joana": {
     "photo": "",
-    "bio": "organic house, afro house",
+    "bio": "organic house, melodic",
     "lecture": "",
-    "role": "Artysta muzyczny",
+    "role": "Artysta muzyczny / DJ",
     "zone": "umbra"
   },
   "Aftersunday": {
@@ -391,10 +398,17 @@
     "role": "Raper, przedsiębiorca",
     "zone": "anima"
   },
+  "Zdzich Rabenda": {
+    "photo": "",
+    "bio": "Prelegent CIEŃ Festiwalu. Opowiada o życiu na własnych zasadach — co to naprawdę kosztuje i czy jest możliwe.",
+    "lecture": "Czy życie na własnych zasadach jest możliwe i ile to kosztuje?",
+    "role": "Prelegent",
+    "zone": "gnoza"
+  },
   "Piotr Matejuk": {
     "photo": "speakers/piotr-matejuk.jpg",
     "bio": "Praktyk terapii wspieranej psychodelikami, hipnoterapeuta, psychotraumatolog, interwent kryzysowy. Założyciel SACRUM, absolwent Integrative Psychiatry Institute (Boulder), współpracuje z Center for Medicinal Mindfulness. Doktorant Instytutu Psychologii PAN. Współzałożyciel PSH. Autor «Hipnozy bez czarów» i «Autohipnozy».",
-    "lecture": "Światło i Cień w świecie psychodelików",
+    "lecture": "Retreaty psycho(log/del)iczne w praktyce",
     "role": "Hipnoterapeuta, założyciel SACRUM",
     "zone": "sacrum"
   }
