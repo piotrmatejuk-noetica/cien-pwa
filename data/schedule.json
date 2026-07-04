@@ -641,7 +641,7 @@
     },
     {
       "id": "e039",
-      "zone": "sacrum",
+      "zone": "gnoza",
       "title": "Mapowanie odmiennych stanów świadomości",
       "artist": "dr Paweł Motyka",
       "description": "Systematyka odmiennych stanów — od transu przez psychodelikę po granicę świadomości.",
@@ -798,15 +798,16 @@
       ]
     },
     {
-      "id": "e050",
+      "id": "e082",
       "zone": "gnoza",
-      "title": "Pokaz filmu «Kontrakt»",
+      "title": "Pokaz filmu «Dream On: Hipnoza»",
       "artist": "reż. Bruno Brejt",
-      "description": "Pokaz filmowy. Reżyseria: Bruno Brejt.",
-      "start": "2026-07-04T16:00:00",
-      "end": "2026-07-04T17:30:00",
+      "description": "Dokument eksplorujący hipnozę jako narzędzie terapeutyczne i artystyczne. Reżyseria: Bruno Brejt.",
+      "start": "2026-07-04T20:30:00",
+      "end": "2026-07-04T22:00:00",
       "tags": [
         "film",
+        "hipnoza",
         "pokaz"
       ]
     },
@@ -815,9 +816,9 @@
       "zone": "gnoza",
       "title": "Spotkanie z twórcami filmów",
       "artist": "Everet Papa, Bruno Brejt, Anna Dąbrowska, Team PSH",
-      "description": "Psychologiczne mechanizmy wybaczania — kiedy pomaga, a kiedy jest retraumatyzacją. Kulturowy przymus przebaczenia a realne możliwości psychiki. Granica między zdrowym uwalnianiem a racjonalizowaniem skrzywdzenia.",
-      "start": "2026-07-04T17:30:00",
-      "end": "2026-07-04T19:00:00",
+      "description": "Spotkanie z twórcami po pokazie — rozmowa o filmach, hipnozie i procesie twórczym.",
+      "start": "2026-07-04T22:00:00",
+      "end": "2026-07-04T22:45:00",
       "tags": [
         "spotkanie",
         "film",
@@ -1146,12 +1147,12 @@
     },
     {
       "id": "e073",
-      "zone": "anima",
+      "zone": "gnoza",
       "title": "Jak nie zarządzać kryzysem? — opowieść o 25 latach w rapie i biznesie",
       "artist": "Wini",
       "description": "Szczera prelekcja o fuck-upach: złe zarządzanie zespołem, megalomaniа, kryzys wizerunkowy, toksyczność świata rapu. Kulisy Stoprocent bez cenzury. Dla każdego, kto buduje coś własnego — jakich błędów unikać i po co w ogóle je popełniać.",
-      "start": "2026-07-05T11:30:00",
-      "end": "2026-07-05T13:00:00",
+      "start": "2026-07-04T14:30:00",
+      "end": "2026-07-04T16:00:00",
       "tags": [
         "prelekcja",
         "kryzys",
