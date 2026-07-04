@@ -800,14 +800,13 @@
     {
       "id": "e082",
       "zone": "gnoza",
-      "title": "Pokaz filmu «Dream On: Hipnoza»",
+      "title": "Pokaz filmu «Kontrakt»",
       "artist": "reż. Bruno Brejt",
-      "description": "Dokument eksplorujący hipnozę jako narzędzie terapeutyczne i artystyczne. Reżyseria: Bruno Brejt.",
+      "description": "Film dokumentalny o kontrakcie z własnym umysłem. Reżyseria: Bruno Brejt.",
       "start": "2026-07-04T20:30:00",
       "end": "2026-07-04T22:00:00",
       "tags": [
         "film",
-        "hipnoza",
         "pokaz"
       ]
     },
