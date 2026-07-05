@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cien-2026-v82';
+const CACHE_NAME = 'cien-2026-v83';
 
 const STATIC_ASSETS = [
   '/',

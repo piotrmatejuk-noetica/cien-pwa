@@ -1116,7 +1116,7 @@
     },
     {
       "id": "e071",
-      "zone": "sacrum",
+      "zone": "anima",
       "title": "Retreaty psycho(log/del)iczne w praktyce",
       "artist": "Piotr Matejuk",
       "description": "Jak psychodeliki ujawniają ukryte wzorce i aspekty Cienia. Jak świadomie integrować te doświadczenia w ramy terapeutyczne. Jak rozpoznawać granice i Cienie środowiska psychodelicznego — od strony klinicysty z certyfikatami MAPS i IPI.",
@@ -1247,21 +1247,6 @@
         "dj",
         "deep-house",
         "organic"
-      ]
-    },
-    {
-      "id": "e078",
-      "zone": "umbra",
-      "title": "Agamu Agora & Monika",
-      "artist": "Agamu Agora & Monika",
-      "description": "world music — zamknięcie festiwalu",
-      "start": "2026-07-05T13:00:00",
-      "end": "2026-07-05T17:00:00",
-      "tags": [
-        "muzyka",
-        "live",
-        "world-music",
-        "finał"
       ]
     }
   ]
