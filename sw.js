@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cien-2026-v83';
+const CACHE_NAME = 'cien-2026-v84';
 
 const STATIC_ASSETS = [
   '/',
@@ -11,6 +11,7 @@ const STATIC_ASSETS = [
   '/icons/icon.svg',
   '/icons/cien-logo.png',
   '/icons/sacrum-logo.png',
+  '/icons/ckb_bolkow.png',
   '/data/schedule.json',
   '/data/speakers.json',
   '/data/pois.json',

@@ -5028,6 +5028,34 @@ img { display: block; max-width: 100%; }
 .more-item-sacrum-img { width: 1.5rem; height: 1.5rem; border-radius: 50%; object-fit: cover; }
 .more-sep { height: 1px; background: rgba(245,240,232,0.08); margin: 0.25rem 0; }
 
+.more-partners {
+  width: 100%;
+  text-align: center;
+  border-top: 1px solid rgba(245,240,232,0.08);
+  padding: 1rem 1rem 0.5rem;
+  margin-top: 0.25rem;
+}
+.more-partners-label {
+  font-size: 0.6rem;
+  letter-spacing: 0.18em;
+  color: rgba(245,240,232,0.22);
+  text-transform: uppercase;
+  margin-bottom: 0.75rem;
+}
+.more-partners-logos {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+.more-partner-logo {
+  height: 28px;
+  opacity: 0.45;
+  filter: grayscale(100%) brightness(1.8);
+  object-fit: contain;
+}
+
 /* ========== PROFIL VIEW ========== */
 .profil-hero {
   display: flex; flex-direction: column; align-items: center;
