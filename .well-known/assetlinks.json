@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.cienfestiwal.app",
+      "sha256_cert_fingerprints": [
+        "4E:E4:36:E8:3B:44:04:9E:63:4C:B7:95:35:18:77:2F:64:E4:98:B0:D7:48:30:62:99:57:1A:B5:DC:3C:41:C3"
+      ]
+    }
+  }
+]
