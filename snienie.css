@@ -1,0 +1,330 @@
+/* ============================================
+   CIEŃ — skórka „Śnienie” (styl strony CIEŃ 2027)
+   Ładowana po app.css: tokeny kolorów są już przemapowane w app.css,
+   tutaj tylko warstwa wyglądu (niebo, typografia, przyciski, karty).
+   ============================================ */
+
+:root {
+  --noir-2: rgba(16, 22, 38, 0.62);
+  --noir-3: rgba(26, 33, 52, 0.62);
+  --noir-4: rgba(239, 235, 226, 0.08);
+  --glass: rgba(14, 19, 33, 0.58);
+  --glass-strong: rgba(10, 14, 26, 0.86);
+  --hair: rgba(239, 235, 226, 0.08);
+  --radius: 14px;
+  --radius-lg: 22px;
+  --nav-h: 74px;
+  --header-h: 58px;
+}
+
+html, body { background: #070B14; }
+body { font-family: var(--font-body); letter-spacing: 0.005em; }
+
+/* ---------- Niebo: senne pastelowe chmury pod gwiazdami ---------- */
+body::before {
+  content: '';
+  position: fixed;
+  inset: -20vmax;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(38vmax 30vmax at 18% 22%, rgba(165, 156, 211, 0.20), transparent 70%),
+    radial-gradient(34vmax 26vmax at 82% 30%, rgba(213, 132, 138, 0.13), transparent 70%),
+    radial-gradient(44vmax 32vmax at 70% 78%, rgba(125, 162, 201, 0.16), transparent 70%),
+    radial-gradient(30vmax 24vmax at 22% 82%, rgba(237, 213, 163, 0.10), transparent 70%),
+    linear-gradient(180deg, #0A0F1C 0%, #070B14 55%, #0B0A1A 100%);
+  filter: blur(8px);
+  animation: snClouds 60s ease-in-out infinite alternate;
+}
+@keyframes snClouds {
+  0%   { transform: translate3d(0, 0, 0) scale(1); }
+  50%  { transform: translate3d(3vmax, -2vmax, 0) scale(1.06); }
+  100% { transform: translate3d(-2vmax, 2vmax, 0) scale(1.02); }
+}
+#particle-bg { z-index: 0; }
+#app { position: relative; z-index: 1; }
+
+/* ---------- Typografia ---------- */
+h1, h2, h3, h4 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: 0.01em;
+}
+em, i:not([class*="ph-"]) { font-family: var(--font-serif); }
+
+.view-header {
+  position: relative;
+  padding: 1.9rem 1.25rem 3.6rem;
+  border-bottom: 0;
+}
+.view-header::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 0.7rem;
+  width: min(62%, 270px);
+  aspect-ratio: 1600 / 250;
+  transform: translateX(-50%);
+  background: url('icons/ksiezyce.webp') center / contain no-repeat;
+  opacity: 0.55;
+  pointer-events: none;
+}
+.view-title {
+  font-family: var(--font-display);
+  font-weight: 300;
+  font-size: clamp(2rem, 9vw, 2.6rem);
+  line-height: 1.02;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--pergamin);
+}
+.view-subtitle {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 1.12rem;
+  color: var(--zloto);
+  margin-top: 0.45rem;
+}
+
+/* ---------- Nagłówek ---------- */
+#app-header {
+  background: linear-gradient(180deg, rgba(7, 11, 20, 0.92), rgba(7, 11, 20, 0.55));
+  backdrop-filter: blur(18px) saturate(1.2);
+  -webkit-backdrop-filter: blur(18px) saturate(1.2);
+  border-bottom: 1px solid var(--hair);
+  padding: 0 1.15rem;
+}
+.sn-wordmark {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 1.55rem;
+  letter-spacing: 0.06em;
+  color: var(--pergamin);
+  line-height: 1;
+}
+#app-header .stage-badge {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 1rem;
+  color: var(--zloto);
+  letter-spacing: 0;
+}
+#app-header .now-time {
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: var(--pergamin-2);
+  letter-spacing: 0.06em;
+}
+
+/* ---------- Uroboros (malowany) ---------- */
+.sn-emblem { position: relative; display: grid; place-items: center; }
+.sn-emblem img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  animation: snSpin 90s linear infinite;
+  filter: drop-shadow(0 0 28px rgba(237, 213, 163, 0.18));
+}
+.sn-emblem--splash { width: min(70vw, 300px); aspect-ratio: 1; }
+.sn-emblem--auth { width: 132px; aspect-ratio: 1; margin: 0 auto 0.9rem; }
+@keyframes snSpin { to { transform: rotate(360deg); } }
+
+/* ---------- Ekran startowy ---------- */
+#splash-screen { background: #070B14; gap: 0; }
+#splash-screen .sn-emblem { animation: snRise 1.4s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.sn-wordmark--splash {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -62%);
+  font-size: clamp(2.6rem, 13vw, 3.6rem);
+  font-weight: 300;
+  text-align: center;
+  animation: snFade 1.6s 0.3s ease both;
+}
+.sn-wordmark--splash span {
+  display: block;
+  margin-top: 0.15rem;
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 0.42em;
+  letter-spacing: 0.02em;
+  color: var(--zloto);
+}
+.splash-tagline {
+  margin-top: 1.6rem;
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: rgba(239, 235, 226, 0.62);
+  animation: snFade 1.6s 0.6s ease both;
+}
+@keyframes snRise { from { opacity: 0; transform: scale(0.92); } to { opacity: 1; transform: none; } }
+@keyframes snFade { from { opacity: 0; } to { opacity: 1; } }
+
+/* ---------- Logowanie ---------- */
+#auth-screen { background: transparent; }
+#auth-screen::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(60vmax 40vmax at 20% 10%, rgba(165, 156, 211, 0.18), transparent 70%),
+    radial-gradient(60vmax 40vmax at 90% 90%, rgba(125, 162, 201, 0.14), transparent 70%),
+    #070B14;
+}
+.auth-title {
+  font-family: var(--font-display);
+  font-weight: 300;
+  font-size: 2.3rem;
+  letter-spacing: 0.04em;
+  color: var(--pergamin);
+  margin-bottom: 0.5rem;
+}
+.auth-title em { font-style: italic; color: var(--zloto); letter-spacing: 0; }
+.auth-sub { color: rgba(239, 235, 226, 0.66); font-size: 0.86rem; }
+.auth-input {
+  border-radius: 999px;
+  padding: 0.95rem 1.25rem;
+  background: rgba(239, 235, 226, 0.05);
+  border-color: rgba(239, 235, 226, 0.12);
+}
+.auth-input:focus { border-color: rgba(216, 185, 130, 0.6); background: rgba(239, 235, 226, 0.08); }
+.auth-guest-btn { font-family: var(--font-serif); font-style: italic; font-size: 1.08rem; color: var(--zloto); }
+
+/* ---------- Przyciski główne: pomarańczowa pigułka jak „Kup bilet” ---------- */
+.btn-gold,
+.auth-btn-cta,
+.dating-btn-gold,
+.team-btn-primary,
+.install-btn,
+.install-guide-cta {
+  background: var(--cta) !important;
+  border-color: var(--cta) !important;
+  color: #0A0F1C !important;
+  border-radius: 999px !important;
+  font-family: var(--font-body) !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.01em;
+  text-transform: none;
+  min-height: 50px;
+  box-shadow: 0 10px 30px -12px rgba(239, 132, 72, 0.65);
+  transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+}
+.btn-gold:active,
+.auth-btn-cta:active,
+.dating-btn-gold:active,
+.team-btn-primary:active,
+.install-btn:active,
+.install-guide-cta:active { transform: scale(0.98); }
+@media (hover: hover) {
+  .btn-gold:hover, .auth-btn-cta:hover, .dating-btn-gold:hover,
+  .team-btn-primary:hover, .install-btn:hover, .install-guide-cta:hover { background: var(--cta-2) !important; }
+}
+.team-send-btn { background: var(--cta) !important; color: #0A0F1C !important; border-radius: 999px; }
+.btn, .btn-outline, .dating-btn, .team-btn { border-radius: 999px; }
+
+/* ---------- Karty: szkło nad niebem ---------- */
+.event-card,
+.info-card,
+.kb-card,
+.team-card,
+.sacrum-card,
+.dating-card,
+.profil-card,
+.settings-item,
+.countdown-block {
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-radius: var(--radius-lg);
+}
+.event-card { border-left-width: 2px; border-radius: 16px; }
+
+/* ---------- Dolne menu ---------- */
+#bottom-nav {
+  background: linear-gradient(180deg, rgba(7, 11, 20, 0.62), rgba(7, 11, 20, 0.94));
+  backdrop-filter: blur(22px) saturate(1.2);
+  -webkit-backdrop-filter: blur(22px) saturate(1.2);
+  border-top: 1px solid var(--hair);
+}
+.nav-btn { color: rgba(239, 235, 226, 0.52); gap: 4px; }
+.nav-btn .nav-icon { font-size: 1.55rem; line-height: 1; transition: transform 0.25s, color 0.25s, text-shadow 0.25s; }
+.nav-btn .nav-label {
+  font-family: var(--font-body);
+  font-size: 0.66rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: none;
+}
+.nav-btn.active { background: none; color: var(--zloto-3); }
+.nav-btn.active .nav-icon { transform: translateY(-1px); text-shadow: 0 0 18px rgba(237, 213, 163, 0.65); }
+.nav-btn--highlight .nav-icon { color: var(--roz); }
+.nav-btn--highlight.active .nav-icon { text-shadow: 0 0 18px rgba(213, 132, 138, 0.7); }
+
+/* ---------- Panel „Więcej” i arkusze ---------- */
+.more-panel-sheet,
+.install-guide-sheet {
+  background: var(--glass-strong);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-top: 1px solid var(--hair);
+  border-radius: 26px 26px 0 0;
+}
+.more-item { font-family: var(--font-display); font-size: 1.3rem; font-weight: 400; padding: 0.75rem 1.6rem; }
+.more-item-icon { font-size: 1.35rem; color: var(--zloto); }
+.install-guide-logo { font-size: 2.4rem; color: var(--zloto); }
+
+/* ---------- Zdjęcia osób: poświata zamiast cienkich obwódek ---------- */
+.dating-photo-preview, .dating-user-avatar, .dating-match-avatar, .chat-header-avatar,
+.match-photo, .modal-speaker-photo, .team-member-avatar, .team-member-avatar--photo,
+.profil-photo, .profil-photo-placeholder, .member-modal-photo, .member-modal-avatar {
+  border: 0 !important;
+  box-shadow: 0 0 0 1px rgba(239, 235, 226, 0.06), 0 0 34px rgba(237, 213, 163, 0.20), 0 18px 40px -18px rgba(0, 0, 0, 0.7);
+}
+.profil-photo-placeholder {
+  background: radial-gradient(circle at 35% 30%, rgba(165, 156, 211, 0.35), rgba(16, 22, 38, 0.9) 70%);
+  color: var(--zloto-3);
+  font-size: 2.4rem;
+}
+.profil-photo-edit { background: var(--cta); color: #0A0F1C; }
+.sd-photo-upload, .sd-photo-add-btn {
+  border: 0 !important;
+  background: radial-gradient(120% 90% at 50% 0%, rgba(165, 156, 211, 0.16), rgba(16, 22, 38, 0.6)) !important;
+  box-shadow: inset 0 0 0 1px rgba(239, 235, 226, 0.06);
+}
+.team-logo-sm { opacity: 0.9; animation: snSpin 90s linear infinite; filter: drop-shadow(0 0 22px rgba(237, 213, 163, 0.18)); }
+
+/* ---------- Ikony w treści ---------- */
+.sn-ico { font-size: 1.12em; line-height: 1; vertical-align: -0.14em; }
+.info-card-icon .sn-ico, .poi-icon .sn-ico, .em-icon .sn-ico { color: var(--zloto); font-size: 1.35rem; }
+.kb-card-emoji .sn-ico, .art-emoji .sn-ico, .sd-hero-icon .sn-ico { color: var(--zloto-3); font-size: 2rem; }
+.sacrum-card-title .sn-ico { color: var(--zloto); margin-right: 0.15rem; }
+.weather-fday-icon .sn-ico { font-size: 1.5rem; color: var(--zloto-3); }
+
+/* ---------- Kursywy: Cormorant jak na stronie (grotesk nie ma kursywy) ---------- */
+.now-empty, .event-artist, .modal-artist, .prompt-text, .journal-textarea::placeholder, .sacrum-hero-sub,
+.italic, .sd-hero-sub, .sd-card-nick.placeholder, .sd-card-about.placeholder, .sd-input::placeholder,
+.sd-empty-state, .dating-hero-sub, .dating-deck-info, .dating-empty, .dating-loading, .chat-start-msg,
+.sd-anima-label, .modal-speaker-bio, .plan-vision, .team-member-you, .loc-member-offline, .onb-sub,
+.art-content em, .weather-loading, .alchemic-quote-text {
+  font-family: var(--font-serif);
+  font-weight: 400;
+}
+.event-artist, .modal-artist { font-size: 1.08em; color: var(--zloto); }
+.prompt-text, .alchemic-quote-text { font-size: 1.15em; }
+
+/* ---------- Okna i arkusze: nieprzezroczyste szkło ---------- */
+.modal-sheet, .member-modal-sheet {
+  background: var(--glass-strong);
+  backdrop-filter: blur(26px) saturate(1.15);
+  -webkit-backdrop-filter: blur(26px) saturate(1.15);
+  border-top: 1px solid var(--hair);
+  border-radius: 26px 26px 0 0;
+}
+.modal-close { background: rgba(239, 235, 226, 0.06); border-radius: 999px; }
+.modal-title, .art-title { font-family: var(--font-display); font-weight: 400; }
+
+input, textarea, select, button { font-family: inherit; }

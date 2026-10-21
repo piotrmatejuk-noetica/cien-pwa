@@ -324,7 +324,7 @@ function _tmplNoTeam() {
   return `
 <div class="team-no-team">
   <div class="team-logo-wrap">
-    <img src="icons/cien-logo.png" alt="" class="team-logo-sm">
+    <img src="icons/slonce-cien.webp" alt="" class="team-logo-sm">
   </div>
   <h2 class="team-heading">Moja drużyna</h2>
   <p class="team-sub">Łączcie się w grupy — wymieniajcie notatki, umawiajcie spotkania, gadajcie w czasie rzeczywistym.</p>
@@ -378,10 +378,10 @@ function _tmplTeam() {
 </div>
 
 <div class="team-tabs">
-  <button class="team-tab ${at('chat')}"        data-tab="chat"        onclick="switchTeamTab('chat')">💬 Chat</button>
-  <button class="team-tab ${at('notes')}"        data-tab="notes"       onclick="switchTeamTab('notes')">📝 Notatki</button>
-  <button class="team-tab ${at('meetings')}"     data-tab="meetings"    onclick="switchTeamTab('meetings')">📅 Spotkania</button>
-  <button class="team-tab ${at('lokalizacja')}"  data-tab="lokalizacja" onclick="switchTeamTab('lokalizacja')">📡 Radar</button>
+  <button class="team-tab ${at('chat')}"        data-tab="chat"        onclick="switchTeamTab('chat')"><i class="ph-light ph-chat-circle sn-ico" aria-hidden="true"></i> Chat</button>
+  <button class="team-tab ${at('notes')}"        data-tab="notes"       onclick="switchTeamTab('notes')"><i class="ph-light ph-note-pencil sn-ico" aria-hidden="true"></i> Notatki</button>
+  <button class="team-tab ${at('meetings')}"     data-tab="meetings"    onclick="switchTeamTab('meetings')"><i class="ph-light ph-calendar-dots sn-ico" aria-hidden="true"></i> Spotkania</button>
+  <button class="team-tab ${at('lokalizacja')}"  data-tab="lokalizacja" onclick="switchTeamTab('lokalizacja')"><i class="ph-light ph-broadcast sn-ico" aria-hidden="true"></i> Radar</button>
 </div>
 
 <div id="team-tab-body"></div>`;
@@ -591,7 +591,7 @@ async function _loadNotesUI() {
     el.innerHTML = data.map(n => `
 <div class="team-note-card">
   <div class="team-note-title">${_esc(n.title || 'Notatka')}</div>
-  ${n.lecture ? `<div class="team-note-lecture">📍 ${_esc(n.lecture)}</div>` : ''}
+  ${n.lecture ? `<div class="team-note-lecture"><i class="ph-light ph-map-pin sn-ico" aria-hidden="true"></i> ${_esc(n.lecture)}</div>` : ''}
   <div class="team-note-author">${_esc(n.author_name || '')}</div>
   <div class="team-note-content">${_esc(n.content).replace(/\n/g,'<br>')}</div>
 </div>`).join('');
@@ -622,7 +622,7 @@ function _tmplMeetingsList() {
   </select>
   <input id="mtg-time" class="team-input" type="time">
   <input id="mtg-zone" class="team-input" placeholder="Miejsce / strefa (np. Wieża, Dziedziniec)">
-  <div class="team-notif-hint">🔔 Powiadomienie 15 min przed — tylko gdy appka jest otwarta</div>
+  <div class="team-notif-hint"><i class="ph-light ph-bell sn-ico" aria-hidden="true"></i> Powiadomienie 15 min przed — tylko gdy appka jest otwarta</div>
   <div style="display:flex;gap:0.5rem">
     <button class="team-btn team-btn-primary" onclick="saveMeetingUI()" style="flex:1">Zaplanuj</button>
     <button class="team-btn team-btn-ghost"   onclick="hideAddMeetingUI()">Anuluj</button>
@@ -672,7 +672,7 @@ async function _loadMeetingsUI() {
   <div class="team-meeting-day">${_esc(m.day)}</div>
   <div class="team-meeting-time">${_esc(m.time)}</div>
   <div class="team-meeting-title">${_esc(m.title || 'Spotkanie')}</div>
-  ${m.zone ? `<div class="team-meeting-zone">📍 ${_esc(m.zone)}</div>` : ''}
+  ${m.zone ? `<div class="team-meeting-zone"><i class="ph-light ph-map-pin sn-ico" aria-hidden="true"></i> ${_esc(m.zone)}</div>` : ''}
   <div class="team-meeting-by">Dodał/a: ${_esc(m.creator_name || '')}</div>
 </div>`).join('');
   } catch (e) {
@@ -891,7 +891,7 @@ function _drawRadar() {
 
   const cx = SIZE / 2, cy = SIZE / 2;
   const R  = SIZE / 2 - 18;
-  const GOLD = '#C9A84C';
+  const GOLD = '#D8B982';
 
   // Background circle
   ctx.beginPath(); ctx.arc(cx, cy, R + 2, 0, Math.PI * 2);
@@ -900,15 +900,15 @@ function _drawRadar() {
   // Rings: 100m / 250m / 500m
   [[0.2, '100m'], [0.5, '250m'], [1.0, '500m']].forEach(([frac, lbl], i) => {
     ctx.beginPath(); ctx.arc(cx, cy, R * frac, 0, Math.PI * 2);
-    ctx.strokeStyle = `rgba(201,168,76,${0.13 + i * 0.07})`; ctx.lineWidth = 1; ctx.stroke();
-    ctx.fillStyle = 'rgba(201,168,76,0.3)';
+    ctx.strokeStyle = `rgba(216,185,130,${0.13 + i * 0.07})`; ctx.lineWidth = 1; ctx.stroke();
+    ctx.fillStyle = 'rgba(216,185,130,0.3)';
     ctx.font = `${Math.round(SIZE * 0.033)}px sans-serif`;
     ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
     ctx.fillText(lbl, cx + R * frac * 0.71 + 2, cy - 2);
   });
 
   // Crosshairs
-  ctx.strokeStyle = 'rgba(201,168,76,0.1)'; ctx.lineWidth = 1;
+  ctx.strokeStyle = 'rgba(216,185,130,0.1)'; ctx.lineWidth = 1;
   ctx.beginPath();
   ctx.moveTo(cx - R, cy); ctx.lineTo(cx + R, cy);
   ctx.moveTo(cx, cy - R); ctx.lineTo(cx, cy + R);
@@ -916,7 +916,7 @@ function _drawRadar() {
 
   // Border ring
   ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2);
-  ctx.strokeStyle = 'rgba(201,168,76,0.4)'; ctx.lineWidth = 1.5; ctx.stroke();
+  ctx.strokeStyle = 'rgba(216,185,130,0.4)'; ctx.lineWidth = 1.5; ctx.stroke();
 
   // North marker — rotates with compass
   const northBear = _compassHeading != null ? (360 - _compassHeading) % 360 : 0;
@@ -1034,7 +1034,7 @@ ${!_myPos ? `
 <div class="loc-section">
   <div class="loc-share-wrap">
     <div class="loc-share-info">
-      <div class="loc-share-title">📡 Nawigacja</div>
+      <div class="loc-share-title"><i class="ph-light ph-broadcast sn-ico" aria-hidden="true"></i> Nawigacja</div>
       <div class="loc-share-sub">GPS potrzebny do wskazania kierunku i odległości</div>
     </div>
     ${navigator.geolocation
@@ -1048,7 +1048,7 @@ ${_navTarget ? `
 <div class="loc-section loc-nav-display">
   <div class="loc-nav-label">${_esc(_navTarget.label)}</div>
   <div class="loc-nav-arrow-wrap">
-    <div id="loc-nav-arrow" class="loc-nav-big-arrow" style="transform:rotate(0deg)"><svg viewBox="0 0 60 70" width="64" height="74" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M30 4 L56 46 H40 V66 H20 V46 H4 Z" fill="#C9A84C" filter="url(#glow)"/><defs><filter id="glow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs></svg></div>
+    <div id="loc-nav-arrow" class="loc-nav-big-arrow" style="transform:rotate(0deg)"><svg viewBox="0 0 60 70" width="64" height="74" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M30 4 L56 46 H40 V66 H20 V46 H4 Z" fill="#D8B982" filter="url(#glow)"/><defs><filter id="glow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs></svg></div>
   </div>
   <div id="loc-nav-dist" class="loc-nav-dist-val">${_myPos ? '…' : 'Włącz GPS'}</div>
   <div id="loc-nav-heat" class="loc-nav-heat">${!_myPos ? '' : _compassHeading == null ? 'Skieruj telefon w górę dla strzałki' : ''}</div>
@@ -1061,11 +1061,11 @@ ${_navTarget ? `
     ${LOC_DESTINATIONS.map(d => `
       <button class="loc-dest-btn ${_navTarget && !_navTarget.isTeammate && _navTarget.label === d.label ? 'loc-dest-active' : ''}"
               onclick="setNavTarget('destination','',decodeURIComponent('${encodeURIComponent(d.label)}'),${d.lat},${d.lng})">
-        <span class="loc-dest-emoji">${d.emoji}</span>
+        <span class="loc-dest-emoji">${snIco(d.emoji)}</span>
         <span class="loc-dest-label">${_esc(d.label)}</span>
       </button>`).join('')}
     <button class="loc-dest-btn" onclick="document.getElementById('loc-custom-wrap').style.display='block';this.style.display='none'">
-      <span class="loc-dest-emoji">🏠</span>
+      <span class="loc-dest-emoji"><i class="ph-light ph-house sn-ico" aria-hidden="true"></i></span>
       <span class="loc-dest-label">Własny adres</span>
     </button>
   </div>
@@ -1224,7 +1224,7 @@ function showMemberProfile(uid) {
       ${tagsHTML ? `<div class="member-modal-tags">${tagsHTML}</div>` : ''}
       ${m.shadows ? `
         <div class="member-modal-section">
-          <div class="member-modal-section-title">🌑 Moje Cienie</div>
+          <div class="member-modal-section-title"><i class="ph-light ph-moon sn-ico" aria-hidden="true"></i> Moje Cienie</div>
           <div class="member-modal-section-body">${_esc(m.shadows)}</div>
         </div>` : ''}
       ${isMe ? `<button class="btn btn-gold" style="margin:1rem 0 0;width:100%" onclick="closeMemberProfile();navigateTo('profil')">Edytuj profil</button>` : ''}

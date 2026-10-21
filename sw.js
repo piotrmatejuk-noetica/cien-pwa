@@ -1,9 +1,23 @@
-const CACHE_NAME = 'cien-2026-v84';
+const CACHE_NAME = 'cien-2026-v85';
 
 const STATIC_ASSETS = [
   '/',
   '/index.html',
   '/app.css',
+  '/app.js',
+  '/snienie.css',
+  '/vendor/fonts/fonts.css',
+  '/vendor/phosphor/light.css',
+  '/vendor/phosphor/Phosphor-Light.woff2',
+  '/icons/uroboros.webp',
+  '/icons/slonce-cien.webp',
+  '/icons/ksiezyce.webp',
+  '/vendor/fonts/CormorantGaramond-italic-latin-1.woff2',
+  '/vendor/fonts/CormorantGaramond-italic-latin-ext-0.woff2',
+  '/vendor/fonts/CormorantGaramond-normal-latin-3.woff2',
+  '/vendor/fonts/CormorantGaramond-normal-latin-ext-2.woff2',
+  '/vendor/fonts/FamiljenGrotesk-normal-latin-5.woff2',
+  '/vendor/fonts/FamiljenGrotesk-normal-latin-ext-4.woff2',
   '/team.js',
   '/cropper.min.js',
   '/cropper.min.css',

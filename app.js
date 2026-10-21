@@ -195,13 +195,23 @@ const State = {
   kb: { activeCategory: 'all' }
 };
 
+
+// Ikony w stylu CIEŃ 2027 (Phosphor Light) zamiast emoji; nieznane znaki zostają bez zmian
+const SN_ICON = { '🌀': 'spiral', '🔥': 'fire', '☯': 'yin-yang', '⚡': 'lightning', '🎬': 'film-slate', '🕯': 'flame', '🏰': 'castle-turret', '🔮': 'eye', '⚗️': 'flask', '⚗': 'flask', '🔬': 'microscope', '🌑': 'moon', '🗡': 'sword', '👻': 'ghost', '🕵': 'detective', '🧠': 'brain', '🍄': 'plant', '🛡': 'shield-check', '🌱': 'plant', '🌐': 'globe-hemisphere-west', '📋': 'clipboard-text', '🎯': 'target', '✨': 'sparkle', '📖': 'book-open', '🧪': 'flask', '🫂': 'hands-praying', '💊': 'pill', '🔭': 'binoculars', '🪞': 'circle-half', '📚': 'books', '🎵': 'music-note', '🧘': 'person-simple-tai-chi', '🤝': 'handshake', '📸': 'camera', '🌙': 'moon-stars', '📡': 'broadcast', '🔍': 'magnifying-glass', '🚨': 'siren', '⚠️': 'warning', '⚠': 'warning', '📢': 'megaphone', '🕐': 'clock', '📅': 'calendar-dots', '📍': 'map-pin', '🍲': 'bowl-food', '💧': 'drop', '🚻': 'toilet', 'ℹ': 'info', '🔒': 'lock', '✉': 'envelope-simple', '🔄': 'arrows-clockwise', '🌟': 'star', '📤': 'export', '🤖': 'robot', '🗺': 'map-trifold', '📧': 'envelope-simple', '🌿': 'leaf', '👥': 'users', '🌡': 'thermometer', '🛌': 'bed', '⏳': 'hourglass', '🎓': 'graduation-cap', '🔔': 'bell', '⚙️': 'gear-six', '🚗': 'car', '🎒': 'backpack', '🚫': 'prohibit', '☀️': 'sun', '🌤': 'cloud-sun', '☁️': 'cloud', '🌫': 'cloud-fog', '🌦': 'cloud-rain', '🌧': 'cloud-rain', '❄️': 'snowflake', '⛈': 'cloud-lightning', '☕': 'coffee', '⚕️': 'first-aid', '⛺': 'tent', '🅿️': 'letter-circle-p', '🎭': 'mask-happy', '🚪': 'door', '📷': 'camera', '👤': 'user', '🗑': 'trash', '💘': 'heart', '💬': 'chat-circle', '📝': 'note-pencil', '🏕️': 'campfire', '🏠': 'house' };
+function snIco(e) {
+  if (!e) return '';
+  const k = String(e).trim();
+  const n = SN_ICON[k] || SN_ICON[k.replace(/\uFE0F/g, '')];
+  return n ? `<i class="ph-light ph-${n} sn-ico" aria-hidden="true"></i>` : e;
+}
+
 const ZONES_MAP = {
-  podswiadomosci: { color: '#7B3F82', icon: '🌀' },
-  sacrum:         { color: '#C9A84C', icon: '🔥' },
-  anima:          { color: '#4A6FA5', icon: '☯' },
-  umbra:          { color: '#E05C1A', icon: '⚡' },
-  gnoza:          { color: '#2D7D46', icon: '🎬' },
-  lochy:          { color: '#8B4513', icon: '🕯' }
+  podswiadomosci: { color: '#A59CD3', icon: '🌀' },
+  sacrum:         { color: '#D8B982', icon: '🔥' },
+  anima:          { color: '#7DA2C9', icon: '☯' },
+  umbra:          { color: '#EF8448', icon: '⚡' },
+  gnoza:          { color: '#7FB59A', icon: '🎬' },
+  lochy:          { color: '#C48A6A', icon: '🕯' }
 };
 
 const DAY_STAGES = {
@@ -255,7 +265,7 @@ const JOURNAL_PROMPTS = {
 
 const WHEEL_AREAS = [
   {
-    id: 'finanse', name: 'Finanse i praca', shortName: 'Praca', color: '#C9A84C',
+    id: 'finanse', name: 'Finanse i praca', shortName: 'Praca', color: '#D8B982',
     questions: [
       'Czuję satysfakcję z poziomu swoich zarobków',
       'Czuję entuzjazm i sens myśląc o swojej pracy',
@@ -397,14 +407,14 @@ const WHEEL_AREA_FORMS = {
 // ============================================
 
 const KB_CATEGORIES = [
-  { id: 'all',        label: 'Wszystko',  color: '#C9A84C' },
-  { id: 'historia',   label: 'Historia',  color: '#C9A84C' },
-  { id: 'psychologia',label: 'Psychologia', color: '#7B3F82' },
-  { id: 'nauka',      label: 'Nauka',     color: '#4A6FA5' },
+  { id: 'all',        label: 'Wszystko',  color: '#D8B982' },
+  { id: 'historia',   label: 'Historia',  color: '#D8B982' },
+  { id: 'psychologia',label: 'Psychologia', color: '#A59CD3' },
+  { id: 'nauka',      label: 'Nauka',     color: '#7DA2C9' },
   { id: 'kultura',    label: 'Kultura',   color: '#2E7D5E' },
 ];
 
-const KB_CAT_COLORS = { historia:'#C9A84C', psychologia:'#7B3F82', nauka:'#4A6FA5', kultura:'#2E7D5E' };
+const KB_CAT_COLORS = { historia:'#D8B982', psychologia:'#A59CD3', nauka:'#7DA2C9', kultura:'#2E7D5E' };
 
 const ARTICLES_DATA = [
   {
@@ -981,10 +991,10 @@ function _onboardingCard() {
   <div class="onb-rules">
     <div class="onb-section-title">Zasady Cienia</div>
     <ul class="onb-rules-list">
-      <li><span>🤝</span><span>Szanuj granice innych. Pytaj zanim dotkniesz.</span></li>
-      <li><span>📸</span><span>Zdjęcia i nagrania tylko za wyraźną zgodą osoby.</span></li>
-<li><span>🛡</span><span>Coś się dzieje? PsyCare SACRUM, konsultacje poranne, punkt medyczny lub kamizelka/koszulka Strażników CIEŃa.</span></li>
-      <li><span>🌙</span><span>Cisza w strefach nocnych i namiotowych po 4:00.</span></li>
+      <li><span><i class="ph-light ph-handshake sn-ico" aria-hidden="true"></i></span><span>Szanuj granice innych. Pytaj zanim dotkniesz.</span></li>
+      <li><span><i class="ph-light ph-camera sn-ico" aria-hidden="true"></i></span><span>Zdjęcia i nagrania tylko za wyraźną zgodą osoby.</span></li>
+<li><span><i class="ph-light ph-shield-check sn-ico" aria-hidden="true"></i></span><span>Coś się dzieje? PsyCare SACRUM, konsultacje poranne, punkt medyczny lub kamizelka/koszulka Strażników CIEŃa.</span></li>
+      <li><span><i class="ph-light ph-moon-stars sn-ico" aria-hidden="true"></i></span><span>Cisza w strefach nocnych i namiotowych po 4:00.</span></li>
     </ul>
   </div>
 
@@ -997,7 +1007,7 @@ function renderSchedule() {
   if (!container || !State.data) return;
   if (State.dataLoadError) {
     container.innerHTML = `<div style="padding:3rem 2rem;text-align:center">
-      <div style="font-size:2rem;margin-bottom:0.75rem">📡</div>
+      <div style="font-size:2rem;margin-bottom:0.75rem"><i class="ph-light ph-broadcast sn-ico" aria-hidden="true"></i></div>
       <div style="color:var(--pergamin);margin-bottom:0.5rem;font-family:var(--font-display)">Brak połączenia</div>
       <div style="color:var(--szary);font-size:0.9rem;line-height:1.5;margin-bottom:1.25rem">Program nie mógł się załadować. Sprawdź połączenie i spróbuj ponownie.</div>
       <button class="btn-burgund" onclick="loadData().then(renderSchedule)">Spróbuj ponownie</button>
@@ -1041,7 +1051,7 @@ function renderSchedule() {
       <button class="zone-chip ${!State.schedule.showFavOnly && State.schedule.activeZone === z.id ? 'active' : ''}"
               data-zone="${z.id}"
               onclick="setActiveZone('${z.id}')">
-        ${z.icon} ${z.shortName}
+        ${snIco(z.icon)} ${z.shortName}
       </button>`)
   ].join('');
 
@@ -1097,7 +1107,7 @@ function renderSchedule() {
     <div class="day-tabs">${dayTabsHTML}</div>
     <div class="zone-filter">${zoneChipsHTML}</div>
     <div class="schedule-search-wrap">
-      <span class="schedule-search-icon">🔍</span>
+      <span class="schedule-search-icon"><i class="ph-light ph-magnifying-glass sn-ico" aria-hidden="true"></i></span>
       <input class="schedule-search" type="search" placeholder="Szukaj — wykład, strefa, prowadzący..."
              value="${searchVal}"
              oninput="scheduleSearch(this.value)">
@@ -1122,8 +1132,8 @@ async function _loadAnnTeraz() {
 
     const TYPE_META = {
       urgent:  { border: '#E05C5C', bg: 'rgba(224,92,92,0.1)',        icon: '🚨', label: 'PILNE' },
-      warning: { border: '#C9A84C', bg: 'rgba(201,168,76,0.1)',        icon: '⚠️', label: 'UWAGA' },
-      info:    { border: 'rgba(201,168,76,0.35)', bg: 'rgba(201,168,76,0.06)', icon: '📢', label: 'INFO' },
+      warning: { border: '#D8B982', bg: 'rgba(216,185,130,0.1)',        icon: '⚠️', label: 'UWAGA' },
+      info:    { border: 'rgba(216,185,130,0.35)', bg: 'rgba(216,185,130,0.06)', icon: '📢', label: 'INFO' },
     };
     const m  = TYPE_META[ann.type] || TYPE_META.info;
     const ts = new Date(ann.created).toLocaleString('pl-PL', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
@@ -1134,7 +1144,7 @@ async function _loadAnnTeraz() {
     slot.innerHTML = `
       <div class="ann-teraz-card" style="border-left-color:${m.border};background:${m.bg}" id="ann-teraz-${annId}">
         <div class="ann-teraz-top">
-          <span class="ann-teraz-badge" style="background:${m.border}">${m.icon} ${m.label}</span>
+          <span class="ann-teraz-badge" style="background:${m.border}">${snIco(m.icon)} ${m.label}</span>
           ${isNew ? '<span class="ann-teraz-new">NOWE</span>' : ''}
           <button class="ann-teraz-dismiss" data-ann-id="${annId}" onclick="_dismissAnnTeraz(this.dataset.annId)">✕</button>
         </div>
@@ -1174,13 +1184,13 @@ function renderTuITeraz(allEvents) {
     content = nowEvents.map(ev => {
       const zone = (State.data?.festival?.zones || []).find(z => z.id === ev.zone) || {};
       const color = zone.color || ZONES_MAP[ev.zone]?.color || '#888';
-      const icon = zone.icon || ZONES_MAP[ev.zone]?.icon || '●';
+      const icon = snIco(zone.icon || ZONES_MAP[ev.zone]?.icon || '●');
       const isMainStage = ev.zone === 'umbra';
       return `
         <div class="tu-i-teraz-card ${isMainStage ? 'tu-i-teraz-main' : ''}"
              style="border-left-color:${color}"
              onclick="openEventModal('${ev.id}')">
-          ${isMainStage ? `<div class="tu-i-teraz-main-label">🎵 SCENA GŁÓWNA — TERAZ</div>` : ''}
+          ${isMainStage ? `<div class="tu-i-teraz-main-label"><i class="ph-light ph-music-note sn-ico" aria-hidden="true"></i> SCENA GŁÓWNA — TERAZ</div>` : ''}
           <div class="event-time">
             ${formatTime(ev.start)} <span class="event-duration">→ ${formatTime(ev.end)}</span>
           </div>
@@ -1203,7 +1213,7 @@ function renderTuITeraz(allEvents) {
     content = upcoming.map(ev => {
       const zone = (State.data?.festival?.zones || []).find(z => z.id === ev.zone) || {};
       const color = zone.color || ZONES_MAP[ev.zone]?.color || '#888';
-      const icon = zone.icon || ZONES_MAP[ev.zone]?.icon || '●';
+      const icon = snIco(zone.icon || ZONES_MAP[ev.zone]?.icon || '●');
       return `
         <div class="tu-i-teraz-card"
              style="border-left-color:${color}"
@@ -1252,7 +1262,7 @@ function renderEventsList(events) {
     const isFav = getFavorites().includes(ev.id);
     const zone = (State.data?.festival?.zones || []).find(z => z.id === ev.zone) || {};
     const color = zone.color || ZONES_MAP[ev.zone]?.color || '#888';
-    const icon = zone.icon || ZONES_MAP[ev.zone]?.icon || '●';
+    const icon = snIco(zone.icon || ZONES_MAP[ev.zone]?.icon || '●');
 
     let progressBar = '';
     if (isNow) {
@@ -1322,7 +1332,7 @@ function openEventModal(eventId) {
 
   const zone = (State.data?.festival?.zones || []).find(z => z.id === ev.zone) || {};
   const color = zone.color || ZONES_MAP[ev.zone]?.color || '#888';
-  const icon = zone.icon || ZONES_MAP[ev.zone]?.icon || '●';
+  const icon = snIco(zone.icon || ZONES_MAP[ev.zone]?.icon || '●');
 
   const modal = document.getElementById('event-modal');
   modal.querySelector('.modal-zone-badge').style.color = color;
@@ -1330,7 +1340,7 @@ function openEventModal(eventId) {
   modal.querySelector('.modal-title').textContent = ev.title;
   modal.querySelector('.modal-artist').style.display = 'none';
   modal.querySelector('.modal-time').innerHTML = `
-    🕐 ${formatTime(ev.start)} – ${formatTime(ev.end)}
+    <i class="ph-light ph-clock sn-ico" aria-hidden="true"></i> ${formatTime(ev.start)} – ${formatTime(ev.end)}
     <span class="event-duration">(${getDuration(ev.start, ev.end)})</span>
     <span style="color:var(--szary);margin-left:0.5rem">· ${zone.location || ''}</span>
   `;
@@ -1377,7 +1387,7 @@ function openEventModal(eventId) {
       </button>
       <div class="modal-action-row">
         <button class="modal-action-sm" onclick="shareEvent('${ev.id}')">↗ Udostępnij</button>
-        <button class="modal-action-sm" onclick="addToCalendar('${ev.id}')">📅 Kalendarze</button>
+        <button class="modal-action-sm" onclick="addToCalendar('${ev.id}')"><i class="ph-light ph-calendar-dots sn-ico" aria-hidden="true"></i> Kalendarze</button>
       </div>`;
   }
 
@@ -1441,12 +1451,12 @@ function closeEventModal() {
 // ============================================
 
 const MAP_LEGEND = [
-  { color: '#E05C1A', icon: '⚡', name: 'Scena UMBRA' },
-  { color: '#4A6FA5', icon: '☯',  name: 'Wieża Anima / Animus' },
-  { color: '#7B3F82', icon: '🌀', name: 'Wieża Podświadomości' },
-  { color: '#C9A84C', icon: '🔥', name: 'Pawilon SACRUM' },
-  { color: '#2D7D46', icon: '🎬', name: 'Kino Gnoza' },
-  { color: '#8B4513', icon: '🕯',  name: 'Lochy' },
+  { color: '#EF8448', icon: '⚡', name: 'Scena UMBRA' },
+  { color: '#7DA2C9', icon: '☯',  name: 'Wieża Anima / Animus' },
+  { color: '#A59CD3', icon: '🌀', name: 'Wieża Podświadomości' },
+  { color: '#D8B982', icon: '🔥', name: 'Pawilon SACRUM' },
+  { color: '#7FB59A', icon: '🎬', name: 'Kino Gnoza' },
+  { color: '#C48A6A', icon: '🕯',  name: 'Lochy' },
 ];
 
 function renderMap() {
@@ -1456,7 +1466,7 @@ function renderMap() {
   const pois = State.data.pois || [];
 
   const poiTypes  = ['all', 'destination', 'food', 'water', 'toilet', 'help', 'info'];
-  const poiLabels = { all:'Wszystko', destination:'📍 Miejsca', food:'🍲 GastroPhase', water:'💧 Woda', toilet:'🚻 Toalety', help:'🛡 Pomoc', info:'ℹ Info' };
+  const poiLabels = { all:'Wszystko', destination:'<i class="ph-light ph-map-pin sn-ico" aria-hidden="true"></i> Miejsca', food:'<i class="ph-light ph-bowl-food sn-ico" aria-hidden="true"></i> GastroPhase', water:'<i class="ph-light ph-drop sn-ico" aria-hidden="true"></i> Woda', toilet:'<i class="ph-light ph-toilet sn-ico" aria-hidden="true"></i> Toalety', help:'<i class="ph-light ph-shield-check sn-ico" aria-hidden="true"></i> Pomoc', info:'<i class="ph-light ph-info sn-ico" aria-hidden="true"></i> Info' };
 
   const poiTabsHTML = poiTypes.map(t =>
     `<button class="poi-tab ${State.map.activePOIType===t?'active':''}" onclick="setPoiType('${t}')">${poiLabels[t]}</button>`
@@ -1466,10 +1476,10 @@ function renderMap() {
 
   const poiListHTML = filteredPois.map(poi =>
     `<div class="poi-card" onclick="openPoiModal('${poi.id}')">
-      <div class="poi-icon">${poi.icon}</div>
+      <div class="poi-icon">${snIco(poi.icon)}</div>
       <div>
         <div class="poi-name">${poi.label}</div>
-        <div class="poi-location">📍 ${poi.location}</div>
+        <div class="poi-location"><i class="ph-light ph-map-pin sn-ico" aria-hidden="true"></i> ${poi.location}</div>
         <div class="poi-hours">${poi.hours}</div>
       </div>
     </div>`
@@ -1478,7 +1488,7 @@ function renderMap() {
   const legendHTML = MAP_LEGEND.map(z =>
     `<div class="map-legend-item">
       <div class="map-legend-dot" style="background:${z.color}"></div>
-      <span class="map-legend-name">${z.icon} ${z.name}</span>
+      <span class="map-legend-name">${snIco(z.icon)} ${z.name}</span>
     </div>`
   ).join('');
 
@@ -1488,10 +1498,6 @@ function renderMap() {
      <div class="map-legend">${legendHTML}</div>`;
 
   container.innerHTML = `
-    <div class="map-view-toggle" id="map-view-toggle">
-      <button class="map-toggle-btn active" id="map-btn-svg">🗺 Mapa stref</button>
-      <button class="map-toggle-btn" id="map-btn-3d" onclick="openMap3D()">🏰 Widok 3D ↗</button>
-    </div>
     ${mapAreaHTML}
     <div class="divider" style="margin:0 1rem"></div>
     <div class="poi-section-title">PUNKTY NA MAPIE</div>
@@ -1500,40 +1506,14 @@ function renderMap() {
   `;
 }
 
-function openMap3D() {
-  let overlay = document.getElementById('map3d-overlay');
-  if (!overlay) {
-    overlay = document.createElement('div');
-    overlay.id = 'map3d-overlay';
-    overlay.innerHTML = `
-      <button class="map3d-close" onclick="closeMap3D()">✕</button>
-      <iframe src="maps/zamek.html" class="map3d-frame"
-              sandbox="allow-scripts allow-same-origin"
-              allow="fullscreen"></iframe>`;
-    document.body.appendChild(overlay);
-  }
-  overlay.classList.add('open');
-  document.body.style.overflow = 'hidden';
-  document.getElementById('map-btn-svg')?.classList.remove('active');
-  document.getElementById('map-btn-3d')?.classList.add('active');
-}
-
-function closeMap3D() {
-  const overlay = document.getElementById('map3d-overlay');
-  if (overlay) overlay.classList.remove('open');
-  document.body.style.overflow = '';
-  document.getElementById('map-btn-svg')?.classList.add('active');
-  document.getElementById('map-btn-3d')?.classList.remove('active');
-}
-
 function _buildCastleSVG() {
   const Z = {
-    umbra:  '#E05C1A',
-    sacrum: '#C9A84C',
-    anima:  '#4A6FA5',
-    podsw:  '#7B3F82',
-    gnoza:  '#2D7D46',
-    lochy:  '#8B4513',
+    umbra:  '#EF8448',
+    sacrum: '#D8B982',
+    anima:  '#7DA2C9',
+    podsw:  '#A59CD3',
+    gnoza:  '#7FB59A',
+    lochy:  '#C48A6A',
   };
 
   function zLabel(x, y, text, color, size) {
@@ -1542,9 +1522,9 @@ function _buildCastleSVG() {
     const lh    = size * 1.4;
     const maxW  = Math.max(...lines.map(l => l.length)) * size * 0.6 + 10;
     const bgH   = lines.length * lh + 6;
-    const bg    = `<rect x="${+(x - maxW / 2).toFixed(1)}" y="${+(y - bgH / 2).toFixed(1)}" width="${+maxW.toFixed(1)}" height="${+bgH.toFixed(1)}" rx="2.5" fill="rgba(10,9,8,0.82)"/>`;
+    const bg    = `<rect x="${+(x - maxW / 2).toFixed(1)}" y="${+(y - bgH / 2).toFixed(1)}" width="${+maxW.toFixed(1)}" height="${+bgH.toFixed(1)}" rx="2.5" fill="rgba(7,11,20,0.82)"/>`;
     const txts  = lines.map((l, i) =>
-      `<text x="${x}" y="${+(y + (i - (lines.length - 1) / 2) * lh + size * 0.38).toFixed(1)}" text-anchor="middle" fill="${color}" font-size="${size}" font-family="'EB Garamond',serif" font-weight="bold" letter-spacing="0.04em">${l}</text>`
+      `<text x="${x}" y="${+(y + (i - (lines.length - 1) / 2) * lh + size * 0.38).toFixed(1)}" text-anchor="middle" fill="${color}" font-size="${size}" font-family="'Familjen Grotesk',sans-serif" font-weight="600" letter-spacing="0.04em">${l}</text>`
     ).join('');
     return bg + txts;
   }
@@ -1554,94 +1534,96 @@ function _buildCastleSVG() {
 
   return `<svg class="castle-map-svg" viewBox="0 0 340 385" width="100%" overflow="hidden" xmlns="http://www.w3.org/2000/svg">
 <defs>
-  <pattern id="fp" x="0" y="0" width="9" height="9" patternUnits="userSpaceOnUse" patternTransform="rotate(38)">
-    <line x1="0" y1="0" x2="0" y2="9" stroke="#182313" stroke-width="1.4"/>
-  </pattern>
-  <clipPath id="tc"><ellipse cx="170" cy="192" rx="163" ry="178"/></clipPath>
+  <radialGradient id="snTeren" cx="50%" cy="45%" r="55%">
+    <stop offset="0%" stop-color="#1B2340" stop-opacity="0.95"/>
+    <stop offset="60%" stop-color="#141B33" stop-opacity="0.7"/>
+    <stop offset="100%" stop-color="#0B1020" stop-opacity="0"/>
+  </radialGradient>
+  <radialGradient id="snMgla" cx="30%" cy="25%" r="60%">
+    <stop offset="0%" stop-color="#A59CD3" stop-opacity="0.16"/>
+    <stop offset="100%" stop-color="#A59CD3" stop-opacity="0"/>
+  </radialGradient>
 </defs>
 
-<!-- Background -->
-<rect width="340" height="385" fill="#0a0908"/>
-<!-- Forest terrain -->
-<ellipse cx="170" cy="192" rx="163" ry="178" fill="#0e1509"/>
-<rect width="340" height="385" fill="url(#fp)" clip-path="url(#tc)" opacity="0.8"/>
-<ellipse cx="170" cy="192" rx="163" ry="178" fill="#0e1509" fill-opacity="0.5"/>
+<!-- Teren nocą (styl Śnienie) -->
+<ellipse cx="170" cy="192" rx="168" ry="186" fill="url(#snTeren)"/>
+<ellipse cx="170" cy="192" rx="168" ry="186" fill="url(#snMgla)"/>
 
 <!-- Castle grounds fill -->
-<path d="${walls}" fill="#14120f"/>
+<path d="${walls}" fill="#10162A" fill-opacity="0.92"/>
 <!-- Castle outer walls — double line for thickness effect -->
-<path d="${walls}" fill="none" stroke="rgba(201,168,76,0.12)" stroke-width="6"/>
-<path d="${walls}" fill="none" stroke="rgba(201,168,76,0.6)" stroke-width="1.8" stroke-linejoin="round"/>
+<path d="${walls}" fill="none" stroke="rgba(216,185,130,0.12)" stroke-width="6"/>
+<path d="${walls}" fill="none" stroke="rgba(216,185,130,0.6)" stroke-width="1.8" stroke-linejoin="round"/>
 
 <!-- Dashed path to Czill pavilion -->
-<path d="M 256,82 C 265,76 275,72 292,70" stroke="rgba(201,168,76,0.38)" stroke-width="1.2" fill="none" stroke-dasharray="3,2.5"/>
+<path d="M 256,82 C 265,76 275,72 292,70" stroke="rgba(216,185,130,0.38)" stroke-width="1.2" fill="none" stroke-dasharray="3,2.5"/>
 
 <!-- ZONE: Wieża — Anima/Animus (upper) -->
-<rect x="102" y="62" width="126" height="50" fill="rgba(74,111,165,0.16)" stroke="${Z.anima}" stroke-width="1.2" stroke-opacity="0.55"/>
+<rect x="102" y="62" width="126" height="50" fill="rgba(125,162,201,0.16)" stroke="${Z.anima}" stroke-width="1.2" stroke-opacity="0.55"/>
 <!-- Wieża internal divisions -->
-<line x1="102" y1="112" x2="228" y2="112" stroke="rgba(201,168,76,0.18)" stroke-width="0.7"/>
-<line x1="165" y1="112" x2="165" y2="152" stroke="rgba(201,168,76,0.18)" stroke-width="0.7"/>
+<line x1="102" y1="112" x2="228" y2="112" stroke="rgba(216,185,130,0.18)" stroke-width="0.7"/>
+<line x1="165" y1="112" x2="165" y2="152" stroke="rgba(216,185,130,0.18)" stroke-width="0.7"/>
 <!-- ZONE: Wieża — Podświadomości (lower-left) -->
-<rect x="102" y="112" width="63" height="40" fill="rgba(123,63,130,0.16)" stroke="${Z.podsw}" stroke-width="1.2" stroke-opacity="0.55"/>
+<rect x="102" y="112" width="63" height="40" fill="rgba(165,156,211,0.16)" stroke="${Z.podsw}" stroke-width="1.2" stroke-opacity="0.55"/>
 <!-- ZONE: Wieża — VIP Sala Świnek (lower-right) -->
-<rect x="165" y="112" width="63" height="40" fill="rgba(201,168,76,0.06)" stroke="rgba(201,168,76,0.28)" stroke-width="0.7"/>
+<rect x="165" y="112" width="63" height="40" fill="rgba(216,185,130,0.06)" stroke="rgba(216,185,130,0.28)" stroke-width="0.7"/>
 
 <!-- ZONE: Scena UMBRA -->
-<rect x="40" y="100" width="28" height="55" fill="rgba(224,92,26,0.2)" stroke="${Z.umbra}" stroke-width="1.5" stroke-opacity="0.75"/>
-<line x1="40" y1="118" x2="68" y2="118" stroke="rgba(224,92,26,0.22)" stroke-width="0.5"/>
-<line x1="40" y1="136" x2="68" y2="136" stroke="rgba(224,92,26,0.22)" stroke-width="0.5"/>
+<rect x="40" y="100" width="28" height="55" fill="rgba(239,132,72,0.2)" stroke="${Z.umbra}" stroke-width="1.5" stroke-opacity="0.75"/>
+<line x1="40" y1="118" x2="68" y2="118" stroke="rgba(239,132,72,0.22)" stroke-width="0.5"/>
+<line x1="40" y1="136" x2="68" y2="136" stroke="rgba(239,132,72,0.22)" stroke-width="0.5"/>
 
 <!-- ZONE: Kino Gnoza -->
-<rect x="118" y="205" width="104" height="55" fill="rgba(45,125,70,0.2)" stroke="${Z.gnoza}" stroke-width="1.5" stroke-opacity="0.7"/>
+<rect x="118" y="205" width="104" height="55" fill="rgba(127,181,154,0.2)" stroke="${Z.gnoza}" stroke-width="1.5" stroke-opacity="0.7"/>
 
 <!-- ZONE: SACRUM (right-side pavilion) -->
-<rect x="238" y="132" width="58" height="64" fill="rgba(201,168,76,0.12)" stroke="${Z.sacrum}" stroke-width="1.5" stroke-opacity="0.72"/>
+<rect x="238" y="132" width="58" height="64" fill="rgba(216,185,130,0.12)" stroke="${Z.sacrum}" stroke-width="1.5" stroke-opacity="0.72"/>
 <polyline points="238,142 267,128 296,142" stroke="${Z.sacrum}" stroke-width="1" stroke-opacity="0.35" fill="none"/>
 
 <!-- ZONE: Lochy (circular) -->
-<circle cx="72" cy="238" r="40" fill="rgba(139,69,19,0.2)" stroke="${Z.lochy}" stroke-width="1.5" stroke-opacity="0.78"/>
-<circle cx="72" cy="238" r="22" fill="none" stroke="rgba(139,69,19,0.22)" stroke-width="0.6"/>
-<circle cx="72" cy="238" r="8" fill="rgba(139,69,19,0.18)" stroke="rgba(139,69,19,0.32)" stroke-width="0.6"/>
-<line x1="72" y1="216" x2="72" y2="200" stroke="rgba(139,69,19,0.22)" stroke-width="0.6"/>
-<line x1="72" y1="260" x2="72" y2="276" stroke="rgba(139,69,19,0.22)" stroke-width="0.6"/>
-<line x1="50" y1="238" x2="34" y2="238" stroke="rgba(139,69,19,0.22)" stroke-width="0.6"/>
-<line x1="94" y1="238" x2="110" y2="238" stroke="rgba(139,69,19,0.22)" stroke-width="0.6"/>
-<line x1="57" y1="223" x2="46" y2="212" stroke="rgba(139,69,19,0.18)" stroke-width="0.5"/>
-<line x1="87" y1="223" x2="98" y2="212" stroke="rgba(139,69,19,0.18)" stroke-width="0.5"/>
-<line x1="57" y1="253" x2="46" y2="264" stroke="rgba(139,69,19,0.18)" stroke-width="0.5"/>
-<line x1="87" y1="253" x2="98" y2="264" stroke="rgba(139,69,19,0.18)" stroke-width="0.5"/>
+<circle cx="72" cy="238" r="40" fill="rgba(196,138,106,0.2)" stroke="${Z.lochy}" stroke-width="1.5" stroke-opacity="0.78"/>
+<circle cx="72" cy="238" r="22" fill="none" stroke="rgba(196,138,106,0.22)" stroke-width="0.6"/>
+<circle cx="72" cy="238" r="8" fill="rgba(196,138,106,0.18)" stroke="rgba(196,138,106,0.32)" stroke-width="0.6"/>
+<line x1="72" y1="216" x2="72" y2="200" stroke="rgba(196,138,106,0.22)" stroke-width="0.6"/>
+<line x1="72" y1="260" x2="72" y2="276" stroke="rgba(196,138,106,0.22)" stroke-width="0.6"/>
+<line x1="50" y1="238" x2="34" y2="238" stroke="rgba(196,138,106,0.22)" stroke-width="0.6"/>
+<line x1="94" y1="238" x2="110" y2="238" stroke="rgba(196,138,106,0.22)" stroke-width="0.6"/>
+<line x1="57" y1="223" x2="46" y2="212" stroke="rgba(196,138,106,0.18)" stroke-width="0.5"/>
+<line x1="87" y1="223" x2="98" y2="212" stroke="rgba(196,138,106,0.18)" stroke-width="0.5"/>
+<line x1="57" y1="253" x2="46" y2="264" stroke="rgba(196,138,106,0.18)" stroke-width="0.5"/>
+<line x1="87" y1="253" x2="98" y2="264" stroke="rgba(196,138,106,0.18)" stroke-width="0.5"/>
 
 <!-- Czill & Heal pavilion (separate) -->
-<circle cx="292" cy="70" r="28" fill="rgba(30,60,30,0.14)" stroke="rgba(201,168,76,0.48)" stroke-width="1.5"/>
-<circle cx="292" cy="70" r="15" fill="none" stroke="rgba(201,168,76,0.18)" stroke-width="0.6"/>
-<polyline points="278,72 292,58 306,72" stroke="rgba(201,168,76,0.28)" stroke-width="0.8" fill="none"/>
+<circle cx="292" cy="70" r="28" fill="rgba(30,60,30,0.14)" stroke="rgba(216,185,130,0.48)" stroke-width="1.5"/>
+<circle cx="292" cy="70" r="15" fill="none" stroke="rgba(216,185,130,0.18)" stroke-width="0.6"/>
+<polyline points="278,72 292,58 306,72" stroke="rgba(216,185,130,0.28)" stroke-width="0.8" fill="none"/>
 
 <!-- Bar U Alchemików -->
-<rect x="108" y="262" width="78" height="22" rx="2" fill="rgba(201,168,76,0.07)" stroke="rgba(201,168,76,0.3)" stroke-width="0.8"/>
+<rect x="108" y="262" width="78" height="22" rx="2" fill="rgba(216,185,130,0.07)" stroke="rgba(216,185,130,0.3)" stroke-width="0.8"/>
 <!-- Gastro-Phase -->
-<rect x="196" y="248" width="64" height="38" rx="2" fill="rgba(80,60,30,0.14)" stroke="rgba(201,168,76,0.28)" stroke-width="0.8"/>
+<rect x="196" y="248" width="64" height="38" rx="2" fill="rgba(80,60,30,0.14)" stroke="rgba(216,185,130,0.28)" stroke-width="0.8"/>
 
 <!-- Courtyard -->
-<rect x="110" y="158" width="122" height="44" rx="2" fill="none" stroke="rgba(201,168,76,0.1)" stroke-width="0.5" stroke-dasharray="3,3"/>
+<rect x="110" y="158" width="122" height="44" rx="2" fill="none" stroke="rgba(216,185,130,0.1)" stroke-width="0.5" stroke-dasharray="3,3"/>
 
 <!-- Labels -->
 ${zLabel(165, 88, 'ANIMA / ANIMUS', Z.anima, 7.5)}
 ${zLabel(133, 134, 'PODŚW.', Z.podsw, 7)}
-${zLabel(196, 130, 'VIP', 'rgba(201,168,76,0.65)', 6)}
+${zLabel(196, 130, 'VIP', 'rgba(216,185,130,0.65)', 6)}
 ${zLabel(54, 130, 'SCENA\nUMBRA', Z.umbra, 6.5)}
 ${zLabel(72, 238, 'LOCHY', Z.lochy, 9)}
 ${zLabel(267, 164, 'SACRUM', Z.sacrum, 8.5)}
 ${zLabel(170, 233, 'KINO GNOZA', Z.gnoza, 8)}
-${zLabel(148, 273, 'Bar U Alchemików', 'rgba(201,168,76,0.7)', 5.5)}
-${zLabel(228, 267, 'Gastro\nPhase', 'rgba(201,168,76,0.62)', 5.5)}
-${zLabel(292, 70, 'Czill\n& Heal', 'rgba(201,168,76,0.82)', 6)}
+${zLabel(148, 273, 'Bar U Alchemików', 'rgba(216,185,130,0.7)', 5.5)}
+${zLabel(228, 267, 'Gastro\nPhase', 'rgba(216,185,130,0.62)', 5.5)}
+${zLabel(292, 70, 'Czill\n& Heal', 'rgba(216,185,130,0.82)', 6)}
 
 <!-- Attribution -->
-<text x="170" y="372" text-anchor="middle" fill="rgba(201,168,76,0.22)" font-size="4.5" font-family="serif" letter-spacing="0.14em">ZAMEK ŚWINY · MAPA STREF</text>
+<text x="170" y="372" text-anchor="middle" fill="rgba(216,185,130,0.22)" font-size="4.5" font-family="serif" letter-spacing="0.14em">ZAMEK ŚWINY · MAPA STREF</text>
 <!-- North indicator -->
-<line x1="22" y1="356" x2="22" y2="344" stroke="rgba(201,168,76,0.38)" stroke-width="1.2"/>
-<polygon points="22,340 19,349 22,346 25,349" fill="rgba(201,168,76,0.38)"/>
-<text x="22" y="362" text-anchor="middle" fill="rgba(201,168,76,0.38)" font-size="5.5" font-family="serif">N</text>
+<line x1="22" y1="356" x2="22" y2="344" stroke="rgba(216,185,130,0.38)" stroke-width="1.2"/>
+<polygon points="22,340 19,349 22,346 25,349" fill="rgba(216,185,130,0.38)"/>
+<text x="22" y="362" text-anchor="middle" fill="rgba(216,185,130,0.38)" font-size="5.5" font-family="serif">N</text>
 </svg>`;
 }
 
@@ -1660,12 +1642,12 @@ function openPoiModal(poiId) {
   const poi = (State.data?.pois || []).find(p => p.id === poiId);
   if (!poi) return;
   const modal = document.getElementById('event-modal');
-  modal.querySelector('.modal-zone-badge').style.color = '#C9A84C';
-  modal.querySelector('.modal-zone-badge').innerHTML = poi.icon + ' ' + poi.type.toUpperCase();
+  modal.querySelector('.modal-zone-badge').style.color = '#D8B982';
+  modal.querySelector('.modal-zone-badge').innerHTML = snIco(poi.icon) + ' ' + poi.type.toUpperCase();
   modal.querySelector('.modal-title').textContent = poi.label;
   modal.querySelector('.modal-artist').textContent = '';
   modal.querySelector('.modal-artist').style.display = 'none';
-  modal.querySelector('.modal-time').innerHTML = `📍 ${poi.location} · ${poi.hours}`;
+  modal.querySelector('.modal-time').innerHTML = `<i class="ph-light ph-map-pin sn-ico" aria-hidden="true"></i> ${poi.location} · ${poi.hours}`;
   modal.querySelector('.modal-description').innerHTML = poi.description || '';
   const tagsEl = modal.querySelector('.modal-tags');
   if (tagsEl) tagsEl.innerHTML = '';
@@ -1732,7 +1714,7 @@ function renderJournal() {
     </div>`).join('');
 
   container.innerHTML = tabsHTML + `
-    <div class="journal-privacy-note">🔒 Dziennik jest prywatny — zapisuje się tylko na Twoim urządzeniu i nigdy nie opuszcza telefonu.</div>
+    <div class="journal-privacy-note"><i class="ph-light ph-lock sn-ico" aria-hidden="true"></i> Dziennik jest prywatny — zapisuje się tylko na Twoim urządzeniu i nigdy nie opuszcza telefonu.</div>
     <div class="alchemy-arc">${arcHTML}</div>
     <div class="journal-prompt">
       <div class="prompt-label">Pytanie dnia</div>
@@ -1745,8 +1727,8 @@ function renderJournal() {
     </div>
     <div class="journal-actions">
       <button class="btn btn-gold" onclick="saveJournalEntry('${stage}')">Zapisz</button>
-      <button class="btn btn-outline" onclick="emailJournalEntry('${stage}')">✉ Ten wpis</button>
-      <button class="btn btn-outline" onclick="emailAllJournalEntries()">✉ Wszystkie</button>
+      <button class="btn btn-outline" onclick="emailJournalEntry('${stage}')"><i class="ph-light ph-envelope-simple sn-ico" aria-hidden="true"></i> Ten wpis</button>
+      <button class="btn btn-outline" onclick="emailAllJournalEntries()"><i class="ph-light ph-envelope-simple sn-ico" aria-hidden="true"></i> Wszystkie</button>
     </div>
     ${savedEntries.filter(e => e.text && e.stage !== stage).length > 0 ? `
       <div class="section-sep"></div>
@@ -1874,7 +1856,7 @@ function setWheelAnswer(areaId, qi, val) {
       btn.classList.add('active');
       btn.style.background = area.color;
       btn.style.borderColor = area.color;
-      btn.style.color = '#1a1a1a';
+      btn.style.color = '#0D1220';
     } else {
       btn.classList.remove('active');
       btn.style.background = '';
@@ -1985,17 +1967,17 @@ function buildPlanHTML(area, plan) {
   return `<div class="wplan-header">Plan integracji — ${area.name}</div>
   <div class="wplan-grid">
     <div class="wplan-col">
-      <div class="wplan-col-title" style="color:${area.color}">⚡ TERAZ</div>
+      <div class="wplan-col-title" style="color:${area.color}"><i class="ph-light ph-lightning sn-ico" aria-hidden="true"></i> TERAZ</div>
       <div class="wplan-col-sub">Ten tydzień</div>
       ${makeItems(plan.teraz || [], 'teraz')}
     </div>
     <div class="wplan-col">
-      <div class="wplan-col-title" style="color:${area.color}">🔄 REGULARNIE</div>
+      <div class="wplan-col-title" style="color:${area.color}"><i class="ph-light ph-arrows-clockwise sn-ico" aria-hidden="true"></i> REGULARNIE</div>
       <div class="wplan-col-sub">Co tydzień</div>
       ${makeItems(plan.regularnie || [], 'regularnie')}
     </div>
     <div class="wplan-col">
-      <div class="wplan-col-title" style="color:${area.color}">🌟 ZA ROK</div>
+      <div class="wplan-col-title" style="color:${area.color}"><i class="ph-light ph-star sn-ico" aria-hidden="true"></i> ZA ROK</div>
       <div class="wplan-col-sub">Moja wizja za 12 miesięcy</div>
       <div class="plan-vision">${plan.rok || '—'}</div>
     </div>
@@ -2003,9 +1985,9 @@ function buildPlanHTML(area, plan) {
   <div class="wplan-date">Wygenerowano: ${plan.createdAt || ''}</div>
   <div style="display:flex;gap:0.5rem;margin-top:0.5rem">
     <button class="btn btn-outline" style="flex:1;font-size:0.78rem;padding:0.45rem 0.5rem"
-      onclick="sharePlan('${area.id}')">📤 Zapisz / Wyślij</button>
+      onclick="sharePlan('${area.id}')"><i class="ph-light ph-export sn-ico" aria-hidden="true"></i> Zapisz / Wyślij</button>
     <button class="btn btn-gold" style="flex:1;font-size:0.78rem;padding:0.45rem 0.5rem"
-      onclick="aiCustomizePlan('${area.id}')">✨ Generuj plan</button>
+      onclick="aiCustomizePlan('${area.id}')"><i class="ph-light ph-sparkle sn-ico" aria-hidden="true"></i> Generuj plan</button>
   </div>`;
 }
 
@@ -2115,21 +2097,21 @@ function _showAIPlanModal(area, planText, errorMsg) {
   if (existing) existing.remove();
 
   const content = errorMsg
-    ? `<div class="aipm-error">⚠️ ${errorMsg}</div>`
+    ? `<div class="aipm-error"><i class="ph-light ph-warning sn-ico" aria-hidden="true"></i> ${errorMsg}</div>`
     : planText === null
     ? `<div class="aipm-loading"><div class="aipm-spinner"></div><div>Generuję plan dla <strong>${escHtml(area.name)}</strong>…</div></div>`
     : `<div class="aipm-result">${planText.replace(/^## (.+)$/gm, '<div class="aipm-section-title">$1</div>').replace(/^• (.+)$/gm, '<div class="aipm-item">• $1</div>').replace(/\n/g, '<br>')}</div>`;
 
   const shareBtn = planText ? `<button class="btn btn-outline" style="flex:0 0 auto;font-size:0.8rem" onclick="
     navigator.share ? navigator.share({title:'Plan AI — ${escHtml(area.name)}',text:document.querySelector('#ai-plan-modal .aipm-result')?.innerText||''}) : showToast('Udostępnianie niedostępne')
-  ">📤</button>` : '';
+  "><i class="ph-light ph-export sn-ico" aria-hidden="true"></i></button>` : '';
 
   const m = document.createElement('div');
   m.id = 'ai-plan-modal';
   m.innerHTML = `
     <div class="aipm-inner">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem">
-        <div class="aipm-title">🤖 Plan AI — ${escHtml(area.name)}</div>
+        <div class="aipm-title"><i class="ph-light ph-robot sn-ico" aria-hidden="true"></i> Plan AI — ${escHtml(area.name)}</div>
         <button class="btn btn-outline" style="flex:0 0 auto;padding:0.3rem 0.6rem;font-size:0.8rem" onclick="document.getElementById('ai-plan-modal').remove()">✕</button>
       </div>
       ${content}
@@ -2155,7 +2137,7 @@ function buildWheelQuestionnaireHTML(answers) {
         `<button class="wheel-rating-btn${val===n?' active':''}"
           id="wbtn-${area.id}-${qi}-${n}"
           onclick="setWheelAnswer('${area.id}',${qi},${n})"
-          ${val===n?`style="background:${area.color};border-color:${area.color};color:#1a1a1a"`:''}>
+          ${val===n?`style="background:${area.color};border-color:${area.color};color:#0D1220"`:''}>
           ${n}</button>`).join('');
       return `<div class="wheel-question">
         <div class="wheel-q-text">${q}</div>
@@ -2229,17 +2211,17 @@ function buildWheelResultsHTML(answers) {
   </div>
   <div class="wheel-chart-wrap"><canvas id="wheel-chart"></canvas></div>
   ${areasHTML}
-  <button class="btn btn-outline" style="width:100%;margin:0.5rem 0" onclick="emailWheelResults()">✉ Wyślij sobie wyniki</button>
+  <button class="btn btn-outline" style="width:100%;margin:0.5rem 0" onclick="emailWheelResults()"><i class="ph-light ph-envelope-simple sn-ico" aria-hidden="true"></i> Wyślij sobie wyniki</button>
   <button class="btn btn-outline" style="width:100%;margin-bottom:1.5rem" onclick="resetWheel()">Wypełnij ponownie</button>
   ${(() => {
     const hist = _getWheelHistory();
     if (hist.length < 2) return '';
-    return `<div style="margin-top:1.5rem;padding-top:1rem;border-top:1px solid rgba(245,230,200,0.1)">
+    return `<div style="margin-top:1.5rem;padding-top:1rem;border-top:1px solid rgba(239,235,226,0.1)">
       <div style="font-family:var(--font-display);color:var(--pergamin);margin-bottom:0.75rem;font-size:0.9rem">Historia koła</div>
       ${hist.slice().reverse().map(s => `
         <div style="display:flex;gap:0.4rem;align-items:center;margin:0.35rem 0;font-size:0.78rem;color:var(--szary)">
           <span style="min-width:5.5rem">${s.date}</span>
-          ${WHEEL_AREAS.map(a => `<span title="${a.name}" style="background:rgba(201,168,76,0.12);border-radius:4px;padding:0.1rem 0.3rem;color:${a.color}">${s.scores[a.id] ?? '–'}</span>`).join('')}
+          ${WHEEL_AREAS.map(a => `<span title="${a.name}" style="background:rgba(216,185,130,0.12);border-radius:4px;padding:0.1rem 0.3rem;color:${a.color}">${s.scores[a.id] ?? '–'}</span>`).join('')}
         </div>`).join('')}
     </div>`;
   })()}`;
@@ -2308,7 +2290,7 @@ function _drawWheelFrame(canvas, size, dpr, scores) {
       i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
     }
     ctx.closePath();
-    ctx.strokeStyle = f === 1.0 ? 'rgba(245,240,232,0.18)' : 'rgba(245,240,232,0.07)';
+    ctx.strokeStyle = f === 1.0 ? 'rgba(239,235,226,0.18)' : 'rgba(239,235,226,0.07)';
     ctx.lineWidth = 1; ctx.stroke();
   });
 
@@ -2318,7 +2300,7 @@ function _drawWheelFrame(canvas, size, dpr, scores) {
     ctx.beginPath();
     ctx.moveTo(cx, cy);
     ctx.lineTo(cx + radius * Math.cos(a), cy + radius * Math.sin(a));
-    ctx.strokeStyle = 'rgba(245,240,232,0.12)';
+    ctx.strokeStyle = 'rgba(239,235,226,0.12)';
     ctx.lineWidth = 1; ctx.stroke();
   }
 
@@ -2392,14 +2374,14 @@ function renderSacrum() {
     </div>
 
     <button class="emergency-btn" onclick="callHelp()">
-      <span class="em-icon">🚨</span>
+      <span class="em-icon"><i class="ph-light ph-siren sn-ico" aria-hidden="true"></i></span>
       <span>Potrzebuję pomocy TERAZ</span>
     </button>
 
     <div class="sacrum-section" style="margin-top:1rem">
       <div class="sacrum-section-title">Gdzie jest punkt pomocy?</div>
       <div class="sacrum-card">
-        <div class="sacrum-card-title">🗺 Lokalizacja</div>
+        <div class="sacrum-card-title"><i class="ph-light ph-map-trifold sn-ico" aria-hidden="true"></i> Lokalizacja</div>
         <div class="sacrum-card-body">
           Strefa SACRUM — Śródzamcze.<br>
           <strong>Piątek i sobota, godz. 19:00–04:00.</strong><br>
@@ -2407,7 +2389,7 @@ function renderSacrum() {
         </div>
       </div>
       <div class="sacrum-card">
-        <div class="sacrum-card-title">📧 Kontakt</div>
+        <div class="sacrum-card-title"><i class="ph-light ph-envelope-simple sn-ico" aria-hidden="true"></i> Kontakt</div>
         <div class="sacrum-card-body">
           <a href="mailto:kontakt@cienfestiwal.com" style="color:var(--zloto)">kontakt@cienfestiwal.com</a>
         </div>
@@ -2420,28 +2402,28 @@ function renderSacrum() {
       <div class="sacrum-section-title">Zasady Harm Reduction</div>
 
       <div class="sacrum-card">
-        <div class="sacrum-card-title">🌿 Ustaw intencję przed</div>
+        <div class="sacrum-card-title"><i class="ph-light ph-leaf sn-ico" aria-hidden="true"></i> Ustaw intencję przed</div>
         <div class="sacrum-card-body">
           Wiedz, po co tu jesteś. Substancja wzmacnia to, co już jest — nie tworzy nowego. Jasna intencja to kotwa.
         </div>
       </div>
 
       <div class="sacrum-card">
-        <div class="sacrum-card-title">👥 Zaufany towarzysz</div>
+        <div class="sacrum-card-title"><i class="ph-light ph-users sn-ico" aria-hidden="true"></i> Zaufany towarzysz</div>
         <div class="sacrum-card-body">
           Zawsze miej przy sobie kogoś, kto wie, gdzie jesteś i co bierzesz. Trip sitter nie musi sam zażywać.
         </div>
       </div>
 
       <div class="sacrum-card">
-        <div class="sacrum-card-title">💧 Woda i jedzenie</div>
+        <div class="sacrum-card-title"><i class="ph-light ph-drop sn-ico" aria-hidden="true"></i> Woda i jedzenie</div>
         <div class="sacrum-card-body">
           Pij regularnie. Nie przesadzaj — nadmiar wody przy stymulantach też szkodzi. Jedz lekko przed i po.
         </div>
       </div>
 
       <div class="sacrum-card">
-        <div class="sacrum-card-title">🌡 Dawki i mieszanki</div>
+        <div class="sacrum-card-title"><i class="ph-light ph-thermometer sn-ico" aria-hidden="true"></i> Dawki i mieszanki</div>
         <div class="sacrum-card-body">
           Zacznij od małej dawki. Odczekaj zanim weźmiesz więcej — efekty nie zawsze są natychmiastowe.<br>
           <strong style="color:var(--zloto)">Unikaj mieszania substancji.</strong> Szczególnie psychodeliki + stymulanty + alkohol.
@@ -2449,7 +2431,7 @@ function renderSacrum() {
       </div>
 
       <div class="sacrum-card">
-        <div class="sacrum-card-title">🛌 Jeśli jest trudno</div>
+        <div class="sacrum-card-title"><i class="ph-light ph-bed sn-ico" aria-hidden="true"></i> Jeśli jest trudno</div>
         <div class="sacrum-card-body">
           Znajdź spokojne miejsce. Połóż się. Oddychaj wolno i głęboko. Pamiętaj: to przejdzie.<br>
           <strong>Poproś o pomoc</strong> — trip sitterzy są po to.
@@ -2463,14 +2445,14 @@ function renderSacrum() {
       <div class="sacrum-section-title">Integracja — po doświadczeniu</div>
 
       <div class="sacrum-card">
-        <div class="sacrum-card-title">📖 Zapisz, zanim zapomnisz</div>
+        <div class="sacrum-card-title"><i class="ph-light ph-book-open sn-ico" aria-hidden="true"></i> Zapisz, zanim zapomnisz</div>
         <div class="sacrum-card-body">
           Użyj Dziennika przemiany w tej aplikacji. Nawet fragmenty, obrazy, słowa.
         </div>
       </div>
 
       <div class="sacrum-card">
-        <div class="sacrum-card-title">⏳ Czas integracji</div>
+        <div class="sacrum-card-title"><i class="ph-light ph-hourglass sn-ico" aria-hidden="true"></i> Czas integracji</div>
         <div class="sacrum-card-body">
           Głębokie doświadczenia potrzebują czasu. Nie oceniaj od razu. Daj sobie kilka dni — albo tygodni.
         </div>
@@ -2488,7 +2470,7 @@ function renderSacrum() {
       </p>
 
       <div class="sacrum-card" style="border-left:3px solid #3BAFBA">
-        <div class="sacrum-card-title" style="color:#3BAFBA">🌿 Team SACRUM</div>
+        <div class="sacrum-card-title" style="color:#3BAFBA"><i class="ph-light ph-leaf sn-ico" aria-hidden="true"></i> Team SACRUM</div>
         <div class="sacrum-card-body">
           Centrum Terapii Psychodelicznych — hipnoterapia, terapia integracyjna, psychotraumatologia.<br><br>
           <strong>Piotr Matejuk</strong> — hipnoterapeuta, psychotraumatolog, doktorant PAN<br>
@@ -2497,16 +2479,16 @@ function renderSacrum() {
         </div>
       </div>
 
-      <div class="sacrum-card" style="border-left:3px solid #C9A84C;margin-top:0.75rem">
-        <div class="sacrum-card-title" style="color:#C9A84C">🎓 Team PSH</div>
+      <div class="sacrum-card" style="border-left:3px solid #D8B982;margin-top:0.75rem">
+        <div class="sacrum-card-title" style="color:#D8B982"><i class="ph-light ph-graduation-cap sn-ico" aria-hidden="true"></i> Team PSH</div>
         <div class="sacrum-card-body">
           Profesjonalna Szkoła Hipnoterapii — kadra wykładowców i absolwentów.<br><br>
           Konsultacje z zakresu: hipnoterapia, praca z nieświadomością, integracja doświadczeń.<br><br>
-          <a href="https://hipnoterapia.edu.pl" target="_blank" style="color:#C9A84C">hipnoterapia.edu.pl →</a>
+          <a href="https://hipnoterapia.edu.pl" target="_blank" style="color:#D8B982">hipnoterapia.edu.pl →</a>
         </div>
       </div>
 
-      <div class="sacrum-card" style="margin-top:0.75rem;background:rgba(201,168,76,0.06)">
+      <div class="sacrum-card" style="margin-top:0.75rem;background:rgba(216,185,130,0.06)">
         <div class="sacrum-card-body" style="font-size:0.88rem;color:var(--szary)">
           Konsultacje mają charakter wsparcia i orientacji — nie zastępują długoterminowej psychoterapii.
           Jeśli coś trudnego wychodzi na powierzchni podczas festiwalu — jesteśmy tu po to.
@@ -2528,10 +2510,10 @@ function renderSacrum() {
 function callHelp() {
   const modal = document.getElementById('event-modal');
   modal.querySelector('.modal-zone-badge').style.color = '#FF4444';
-  modal.querySelector('.modal-zone-badge').innerHTML = '🚨 POMOC';
+  modal.querySelector('.modal-zone-badge').innerHTML = '<i class="ph-light ph-siren sn-ico" aria-hidden="true"></i> POMOC';
   modal.querySelector('.modal-title').textContent = 'Potrzebujesz pomocy?';
   modal.querySelector('.modal-artist').style.display = 'none';
-  modal.querySelector('.modal-time').innerHTML = '📍 Strefa SACRUM — Śródzamcze · Pt–Sb 19:00–04:00';
+  modal.querySelector('.modal-time').innerHTML = '<i class="ph-light ph-map-pin sn-ico" aria-hidden="true"></i> Strefa SACRUM — Śródzamcze · Pt–Sb 19:00–04:00';
   modal.querySelector('.modal-description').innerHTML = `
     <strong style="color:#FF6B6B">Idź do punktu pomocy lub poproś kogoś w pobliżu.</strong><br><br>
     Powiedz obsłudze: <em>"Potrzebuję trip sittera"</em>. Nie musisz nic tłumaczyć.<br><br>
@@ -2657,7 +2639,7 @@ async function _loadAnnouncements() {
     }
     const TYPE_META = {
       urgent: { icon:'🚨', color:'#E05C5C', label:'PILNE' },
-      warning:{ icon:'⚠️', color:'#C9A84C', label:'UWAGA' },
+      warning:{ icon:'⚠️', color:'#D8B982', label:'UWAGA' },
       info:   { icon:'📢', color:'var(--zloto-2)', label:'INFO' },
     };
     el.innerHTML = items.map(a => {
@@ -2666,7 +2648,7 @@ async function _loadAnnouncements() {
       const ts = new Date(a.created).toLocaleString('pl-PL',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
       return `<div class="ann-item ann-${a.type||'info'}">
         <div class="ann-header">
-          <span class="ann-icon">${m.icon}</span>
+          <span class="ann-icon">${snIco(m.icon)}</span>
           <span class="ann-title">${escHtml(a.title)}${isNew}</span>
           ${_annAdminMode ? `<button class="ann-del" onclick="annDelete('${a.id}')">✕</button>` : ''}
         </div>
@@ -2719,15 +2701,15 @@ function renderInfo() {
   container.innerHTML = `
     <div class="ann-section">
       <div class="ann-section-header" onclick="_annTapHeader()">
-        <span>📢 Ogłoszenia organizatorów</span>
-        ${!pushSub ? `<button class="ann-push-btn" id="push-sub-btn" onclick="subscribePush();event.stopPropagation()">🔔 Powiadomienia</button>` : `<span style="color:var(--szary);font-size:0.75rem">🔔 aktywne</span>`}
+        <span><i class="ph-light ph-megaphone sn-ico" aria-hidden="true"></i> Ogłoszenia organizatorów</span>
+        ${!pushSub ? `<button class="ann-push-btn" id="push-sub-btn" onclick="subscribePush();event.stopPropagation()"><i class="ph-light ph-bell sn-ico" aria-hidden="true"></i> Powiadomienia</button>` : `<span style="color:var(--szary);font-size:0.75rem"><i class="ph-light ph-bell sn-ico" aria-hidden="true"></i> aktywne</span>`}
       </div>
       <div id="ann-list"><div style="padding:1rem;color:var(--szary);font-size:0.85rem;text-align:center">Ładowanie...</div></div>
     </div>
 
     ${_annAdminMode ? `
     <div class="ann-admin-panel">
-      <div class="ann-admin-title">⚙️ Panel admina</div>
+      <div class="ann-admin-title"><i class="ph-light ph-gear-six sn-ico" aria-hidden="true"></i> Panel admina</div>
       <form id="ann-form" onsubmit="annPost(event)">
         <input class="sd-input" id="ann-title-in" placeholder="Tytuł ogłoszenia" required maxlength="120">
         <textarea class="sd-input" id="ann-body-in" placeholder="Treść (opcjonalnie)" maxlength="1000" rows="3" style="resize:vertical;margin-top:0.5rem"></textarea>
@@ -2748,7 +2730,7 @@ function renderInfo() {
     <div class="info-section" style="margin-top:1rem">
       <div class="info-card">
         <div class="info-card-header">
-          <span class="info-card-icon">📍</span>
+          <span class="info-card-icon"><i class="ph-light ph-map-pin sn-ico" aria-hidden="true"></i></span>
           <span class="info-card-title">Lokalizacja</span>
         </div>
         <div class="info-card-body">
@@ -2762,7 +2744,7 @@ function renderInfo() {
 
       <div class="info-card">
         <div class="info-card-header">
-          <span class="info-card-icon">📅</span>
+          <span class="info-card-icon"><i class="ph-light ph-calendar-dots sn-ico" aria-hidden="true"></i></span>
           <span class="info-card-title">Daty</span>
         </div>
         <div class="info-card-body">
@@ -2776,7 +2758,7 @@ function renderInfo() {
 
       <div class="info-card">
         <div class="info-card-header">
-          <span class="info-card-icon">🚗</span>
+          <span class="info-card-icon"><i class="ph-light ph-car sn-ico" aria-hidden="true"></i></span>
           <span class="info-card-title">Dojazd</span>
         </div>
         <div class="info-card-body">
@@ -2791,7 +2773,7 @@ function renderInfo() {
 
       <div class="info-card">
         <div class="info-card-header">
-          <span class="info-card-icon">🎒</span>
+          <span class="info-card-icon"><i class="ph-light ph-backpack sn-ico" aria-hidden="true"></i></span>
           <span class="info-card-title">Co zabrać</span>
         </div>
         <div class="info-card-body">
@@ -2810,7 +2792,7 @@ function renderInfo() {
 
       <div class="info-card">
         <div class="info-card-header">
-          <span class="info-card-icon">🚫</span>
+          <span class="info-card-icon"><i class="ph-light ph-prohibit sn-ico" aria-hidden="true"></i></span>
           <span class="info-card-title">Czego NIE brać</span>
         </div>
         <div class="info-card-body">
@@ -2825,7 +2807,7 @@ function renderInfo() {
 
       <div class="info-card">
         <div class="info-card-header">
-          <span class="info-card-icon">🌦</span>
+          <span class="info-card-icon"><i class="ph-light ph-cloud-rain sn-ico" aria-hidden="true"></i></span>
           <span class="info-card-title">Pogoda</span>
         </div>
         <div class="info-card-body">
@@ -2837,7 +2819,7 @@ function renderInfo() {
 
       <div class="info-card">
         <div class="info-card-header">
-          <span class="info-card-icon">📧</span>
+          <span class="info-card-icon"><i class="ph-light ph-envelope-simple sn-ico" aria-hidden="true"></i></span>
           <span class="info-card-title">Kontakt</span>
         </div>
         <div class="info-card-body">
@@ -2862,7 +2844,7 @@ function renderKnowledge() {
 
   const chipsHTML = KB_CATEGORIES.map(cat => `
     <button class="kb-chip ${activeCategory === cat.id ? 'active' : ''}"
-            style="${activeCategory === cat.id ? `background:${cat.color};border-color:${cat.color};color:#0A0A0A` : ''}"
+            style="${activeCategory === cat.id ? `background:${cat.color};border-color:${cat.color};color:#070B14` : ''}"
             onclick="setKBCategory('${cat.id}')">
       ${cat.label}
     </button>`).join('');
@@ -2872,11 +2854,11 @@ function renderKnowledge() {
     : ARTICLES_DATA.filter(a => a.category === activeCategory);
 
   const gridHTML = filtered.map(art => {
-    const catColor = KB_CAT_COLORS[art.category] || '#C9A84C';
+    const catColor = KB_CAT_COLORS[art.category] || '#D8B982';
     const catLabel = KB_CATEGORIES.find(c => c.id === art.category)?.label || '';
     return `
       <div class="kb-card" onclick="openArticle('${art.id}')">
-        <span class="kb-card-emoji">${art.emoji}</span>
+        <span class="kb-card-emoji">${snIco(art.emoji)}</span>
         <div class="kb-card-cat" style="color:${catColor}">${catLabel}</div>
         <div class="kb-card-title">${art.title}</div>
         <div class="kb-card-teaser">${art.teaser}</div>
@@ -2900,7 +2882,7 @@ function openArticle(id) {
   if (!art) return;
   history.pushState({ overlay: 'article' }, '');
 
-  const catColor = KB_CAT_COLORS[art.category] || '#C9A84C';
+  const catColor = KB_CAT_COLORS[art.category] || '#D8B982';
   const catLabel = KB_CATEGORIES.find(c => c.id === art.category)?.label || '';
 
   const sourcesHTML = art.sources.map(s =>
@@ -2915,7 +2897,7 @@ function openArticle(id) {
 
   document.getElementById('article-body').innerHTML = `
     <div class="art-cat" style="color:${catColor}">${catLabel}</div>
-    <span class="art-emoji">${art.emoji}</span>
+    <span class="art-emoji">${snIco(art.emoji)}</span>
     <h1 class="art-title">${art.title}</h1>
     <div class="art-meta">${art.readTime} czytania · źródła: ${art.sources.length}</div>
     <div class="art-content">${art.content}</div>
@@ -3114,12 +3096,12 @@ function renderSlowDating() {
   if (!localStorage.getItem('cien_sd_consent_v1')) {
     container.innerHTML = `
       <div class="sd-consent-screen">
-        <div class="sd-consent-title">💘 Slow Dating</div>
+        <div class="sd-consent-title"><i class="ph-light ph-heart sn-ico" aria-hidden="true"></i> Slow Dating</div>
         <div class="sd-consent-subtitle">Jak to działa?</div>
         <div class="sd-consent-points">
-          <div class="sd-consent-point">👤 Twój profil (nick, zdjęcie, opis, tagi) jest widoczny dla wszystkich zalogowanych uczestników festiwalu</div>
-          <div class="sd-consent-point">💘 Dopasowanie następuje gdy oboje się polubiecie — tylko wtedy widzicie się nawzajem</div>
-          <div class="sd-consent-point">🗑 Profile są trwale kasowane 30 dni po zakończeniu festiwalu (5 VIII 2026)</div>
+          <div class="sd-consent-point"><i class="ph-light ph-user sn-ico" aria-hidden="true"></i> Twój profil (nick, zdjęcie, opis, tagi) jest widoczny dla wszystkich zalogowanych uczestników festiwalu</div>
+          <div class="sd-consent-point"><i class="ph-light ph-heart sn-ico" aria-hidden="true"></i> Dopasowanie następuje gdy oboje się polubiecie — tylko wtedy widzicie się nawzajem</div>
+          <div class="sd-consent-point"><i class="ph-light ph-trash sn-ico" aria-hidden="true"></i> Profile są trwale kasowane 30 dni po zakończeniu festiwalu (5 VIII 2026)</div>
         </div>
         <button class="btn btn-gold" style="width:100%;margin-top:1rem" onclick="localStorage.setItem('cien_sd_consent_v1','1');renderSlowDating()">Rozumiem i dołączam →</button>
         <button class="dating-btn-text" style="margin-top:0.75rem" onclick="navigateTo('teraz')">Nie chcę brać udziału</button>
@@ -3197,7 +3179,7 @@ function _sdRenderDeck(wrap) {
   if (_sdDeck.length === 0) {
     wrap.innerHTML = `
       <div style="padding:3rem 2rem;text-align:center">
-        <div style="font-size:2.5rem;margin-bottom:1rem">✨</div>
+        <div style="font-size:2.5rem;margin-bottom:1rem"><i class="ph-light ph-sparkle sn-ico" aria-hidden="true"></i></div>
         <div style="color:var(--pergamin);margin-bottom:0.5rem;font-family:var(--font-display)">Przeswipowałeś wszystkich!</div>
         <div style="color:var(--szary);font-size:0.85rem;line-height:1.5">Nowe profile pojawią się w dniu festiwalu.</div>
         <button class="btn-burgund" style="margin-top:1.25rem" onclick="localStorage.removeItem('cien_sd_seen_2026');_sdDeckOk=false;_sdRenderDiscover(document.getElementById('sd-tab-content'))">Zacznij od nowa</button>
@@ -3459,7 +3441,7 @@ async function _sdRenderMatches(el) {
     const matchUids= [...iLiked].filter(uid => likedMe.has(uid));
     if (!matchUids.length) {
       el.innerHTML = `<div style="padding:3rem 2rem;text-align:center">
-        <div style="font-size:2.5rem;margin-bottom:1rem">🌙</div>
+        <div style="font-size:2.5rem;margin-bottom:1rem"><i class="ph-light ph-moon-stars sn-ico" aria-hidden="true"></i></div>
         <div style="color:var(--pergamin);margin-bottom:0.5rem;font-family:var(--font-display)">Brak dopasowań</div>
         <div style="color:var(--szary);font-size:0.85rem">Odkryj więcej profili — dopasowania pojawią się tu, gdy ktoś polubi Cię wzajemnie.</div></div>`;
       return;
@@ -3507,7 +3489,7 @@ function _sdRenderCardForm(el) {
         ${m.note ? `<div class="sd-meeting-note">${escHtml(m.note)}</div>` : ''}
       </div>
       <div class="sd-meeting-actions">
-        ${m.contact ? `<button class="sd-action-btn" data-contact="${escHtml(m.contact)}" onclick="sdContact(this.dataset.contact)" title="Kontakt">✉</button>` : ''}
+        ${m.contact ? `<button class="sd-action-btn" data-contact="${escHtml(m.contact)}" onclick="sdContact(this.dataset.contact)" title="Kontakt"><i class="ph-light ph-envelope-simple sn-ico" aria-hidden="true"></i></button>` : ''}
         <button class="sd-action-btn" onclick="sdDeleteMeeting(${i})" title="Usuń">✕</button>
       </div>
     </div>`).join('') :
@@ -3522,7 +3504,7 @@ function _sdRenderCardForm(el) {
 
   el.innerHTML = `
     <div class="sd-hero">
-      <div class="sd-hero-icon">💘</div>
+      <div class="sd-hero-icon"><i class="ph-light ph-heart sn-ico" aria-hidden="true"></i></div>
       <div class="sd-hero-title">SLOW DATING</div>
       <div class="sd-hero-sub">Spotkanie bez algorytmów · prowadzi Maciek Kołodziejczyk EUPHIRE</div>
     </div>
@@ -3531,8 +3513,8 @@ function _sdRenderCardForm(el) {
       <div class="sd-anima-label">Anima / Animus · Księżyc · Słońce</div>
     </div>
     <div class="sd-sessions">
-      <div class="sd-session-pill">💘 Piątek 16:30–18:00 · Anima/Animus</div>
-      <div class="sd-session-pill">💘 Piątek 18:30–20:00 · Anima/Animus</div>
+      <div class="sd-session-pill"><i class="ph-light ph-heart sn-ico" aria-hidden="true"></i> Piątek 16:30–18:00 · Anima/Animus</div>
+      <div class="sd-session-pill"><i class="ph-light ph-heart sn-ico" aria-hidden="true"></i> Piątek 18:30–20:00 · Anima/Animus</div>
     </div>
     <div class="sd-section">
       <div class="sd-section-title">Twoja karta</div>
@@ -3559,7 +3541,7 @@ function _sdRenderCardForm(el) {
           </div>
           ` : `
           <button class="sd-photo-add-btn" onclick="document.getElementById('sd-photo-input').click()">
-            <span class="sd-photo-add-icon">📷</span>
+            <span class="sd-photo-add-icon"><i class="ph-light ph-camera sn-ico" aria-hidden="true"></i></span>
             <span class="sd-photo-add-text">Dodaj zdjęcie profilowe</span>
             <span class="sd-photo-add-sub">Tapnij żeby wybrać</span>
           </button>`}
@@ -3844,8 +3826,8 @@ async function sdSaveProfile() {
 
 function sdOpenAddMeeting(prefillNick) {
   const modal = document.getElementById('event-modal');
-  modal.querySelector('.modal-zone-badge').style.color = '#8B3A52';
-  modal.querySelector('.modal-zone-badge').innerHTML = '💘 Nowe spotkanie';
+  modal.querySelector('.modal-zone-badge').style.color = '#6E5496';
+  modal.querySelector('.modal-zone-badge').innerHTML = '<i class="ph-light ph-heart sn-ico" aria-hidden="true"></i> Nowe spotkanie';
   modal.querySelector('.modal-title').textContent = 'Zapisz osobę';
   modal.querySelector('.modal-artist').style.display = 'none';
   modal.querySelector('.modal-time').innerHTML = '';
@@ -3891,7 +3873,7 @@ function sdConfirmAddMeeting() {
           ${m.note ? `<div class="sd-meeting-note">${escHtml(m.note)}</div>` : ''}
         </div>
         <div class="sd-meeting-actions">
-          ${m.contact ? `<button class="sd-action-btn" data-contact="${escHtml(m.contact)}" onclick="sdContact(this.dataset.contact)" title="Kontakt">✉</button>` : ''}
+          ${m.contact ? `<button class="sd-action-btn" data-contact="${escHtml(m.contact)}" onclick="sdContact(this.dataset.contact)" title="Kontakt"><i class="ph-light ph-envelope-simple sn-ico" aria-hidden="true"></i></button>` : ''}
           <button class="sd-action-btn" onclick="sdDeleteMeeting(${i})" title="Usuń">✕</button>
         </div>
       </div>`).join('');
@@ -3997,7 +3979,7 @@ function renderProfil() {
   const p = getProfile();
   const photoHTML = p.photo
     ? `<img src="${p.photo}" class="profil-photo" alt="Zdjęcie">`
-    : `<div class="profil-photo-placeholder">👤</div>`;
+    : `<div class="profil-photo-placeholder"><i class="ph-light ph-user sn-ico" aria-hidden="true"></i></div>`;
   const tagsHTML = SD_TAGS.map(t => `
     <button class="sd-tag-btn ${(p.tags || []).includes(t) ? 'selected' : ''}"
             onclick="sdToggleTag('${t}')">${escHtml(t)}</button>`).join('');
@@ -4006,7 +3988,7 @@ function renderProfil() {
     <div class="profil-hero">
       <div class="profil-photo-wrap" onclick="profilePhotoUpload()">
         ${photoHTML}
-        <div class="profil-photo-edit">📷</div>
+        <div class="profil-photo-edit"><i class="ph-light ph-camera sn-ico" aria-hidden="true"></i></div>
       </div>
       <div class="profil-nick">${escHtml(p.nick || 'Bez nicka')}</div>
       ${p.about ? `<div class="profil-about">${escHtml(p.about)}</div>` : ''}
@@ -4324,12 +4306,12 @@ function _renderWeatherWidget() {
       const max  = Math.round(daily.temperature_2m_max?.[idx] ?? 0);
       const min  = Math.round(daily.temperature_2m_min?.[idx] ?? 0);
       const rain = Math.round(daily.precipitation_sum?.[idx] ?? 0);
-      const icon = _weatherEmoji(code);
+      const icon = snIco(_weatherEmoji(code));
       return `<div class="weather-fday">
         <div class="weather-fday-label">${labels[i]}</div>
         <div class="weather-fday-icon">${icon}</div>
         <div class="weather-fday-temp">${max}°<span class="weather-fday-min">/${min}°</span></div>
-        ${rain > 0 ? `<div style="font-size:0.6rem;color:var(--szary)">💧${rain}mm</div>` : ''}
+        ${rain > 0 ? `<div style="font-size:0.6rem;color:var(--szary)"><i class="ph-light ph-drop sn-ico" aria-hidden="true"></i>${rain}mm</div>` : ''}
       </div>`;
     }).filter(Boolean).join('');
 
@@ -4344,7 +4326,7 @@ function _renderWeatherWidget() {
   // Fallback: current weather pill
   const cur = _weatherData.current || _weatherData;
   const temp = Math.round(cur.temperature_2m ?? 0);
-  const emoji = _weatherEmoji(cur.weathercode ?? 0);
+  const emoji = snIco(_weatherEmoji(cur.weathercode ?? 0));
   return `<div class="weather-widget" onclick="_fetchWeather()" title="Kliknij, żeby odświeżyć">
     <span class="weather-loc">Zamek Świny</span>
     <span class="weather-temp">${emoji} ${temp}°C</span>
@@ -4370,46 +4352,38 @@ function initParticles() {
   resize();
   window.addEventListener('resize', resize);
 
-  // Reduced count + squared distance avoids sqrt on every pair
-  const COUNT = 38;
-  const DIST_SQ = 110 * 110;
+  // Migoczące gwiazdy jak na stronie CIEŃ 2027 — bez linii między punktami
+  const COUNT = Math.round(Math.min(140, canvas.width * canvas.height / 6500));
+  const TINTS = ['239,235,226', '237,213,163', '165,156,211', '125,162,201'];
   const pts = Array.from({ length: COUNT }, () => ({
     x: Math.random() * canvas.width,
     y: Math.random() * canvas.height,
-    r: Math.random() * 1.2 + 0.4,
-    vx: (Math.random() - 0.5) * 0.12,
-    vy: (Math.random() - 0.5) * 0.12,
-    a: Math.random() * 0.5 + 0.25,
+    r: Math.random() < 0.08 ? Math.random() * 1.1 + 1.0 : Math.random() * 0.8 + 0.3,
+    a: Math.random() * 0.55 + 0.25,
+    tw: Math.random() * Math.PI * 2,
+    sp: Math.random() * 0.025 + 0.006,
+    vy: -(Math.random() * 0.04 + 0.01),
+    c: TINTS[Math.random() < 0.7 ? 0 : 1 + Math.floor(Math.random() * 3)],
   }));
 
   let _rafId = null;
   const draw = () => {
     if (document.hidden) { _rafId = requestAnimationFrame(draw); return; }
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    for (let i = 0; i < pts.length; i++) {
-      for (let j = i + 1; j < pts.length; j++) {
-        const dx = pts[i].x - pts[j].x, dy = pts[i].y - pts[j].y;
-        const dsq = dx*dx + dy*dy;
-        if (dsq < DIST_SQ) {
-          ctx.beginPath();
-          ctx.moveTo(pts[i].x, pts[i].y);
-          ctx.lineTo(pts[j].x, pts[j].y);
-          ctx.strokeStyle = `rgba(201,168,76,${(1 - Math.sqrt(dsq)/110) * 0.12})`;
-          ctx.lineWidth = 0.5;
-          ctx.stroke();
-        }
-      }
-    }
     pts.forEach(p => {
-      p.x += p.vx; p.y += p.vy;
-      if (p.x < 0) p.x = canvas.width;
-      if (p.x > canvas.width) p.x = 0;
-      if (p.y < 0) p.y = canvas.height;
-      if (p.y > canvas.height) p.y = 0;
+      p.tw += p.sp; p.y += p.vy;
+      if (p.y < -2) { p.y = canvas.height + 2; p.x = Math.random() * canvas.width; }
+      const al = p.a * (0.55 + 0.45 * Math.sin(p.tw));
       ctx.beginPath();
       ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(201,168,76,${p.a})`;
+      ctx.fillStyle = `rgba(${p.c},${al.toFixed(3)})`;
       ctx.fill();
+      if (p.r > 1) {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r * 3.2, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(${p.c},${(al * 0.12).toFixed(3)})`;
+        ctx.fill();
+      }
     });
     _rafId = requestAnimationFrame(draw);
   };
@@ -4430,7 +4404,7 @@ function fireConfetti() {
   canvas.height = window.innerHeight;
   document.body.appendChild(canvas);
   const ctx = canvas.getContext('2d');
-  const colors = ['#C9A84C','#F0CB70','#F5E6C8','#6B2D3E','#8B3A52','#ffffff','#E8D4A8'];
+  const colors = ['#D8B982','#EDD5A3','#EFEBE2','#A59CD3','#D5848A','#7DA2C9','#EF8448'];
   const particles = Array.from({ length: 90 }, () => ({
     x: Math.random() * canvas.width,
     y: -Math.random() * 40 - 10,
