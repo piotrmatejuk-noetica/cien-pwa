@@ -36,8 +36,24 @@ exports.handler = async (event) => {
     if (matchSecret !== MATCH_SECRET) {
       return { statusCode: 403, headers: CORS, body: JSON.stringify({ error: 'Nieautoryzowane' }) };
     }
-    if (!targetUid || typeof targetUid !== 'string') {
-      return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'Brak targetUid' }) };
+    const fromUid = body.fromUid;
+    const UID_RE = /^[\w-]{3,64}$/;
+    if (!targetUid || typeof targetUid !== 'string' || !UID_RE.test(targetUid) || typeof fromUid !== 'string' || !UID_RE.test(fromUid)) {
+      return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'Nieprawidłowe dane' }) };
+    }
+    // Powiadomienie tylko przy prawdziwym, wzajemnym polubieniu zapisanym w bazie
+    try {
+      const f = (a, b) => encodeURIComponent(`from_uid='${a}'&&to_uid='${b}'`);
+      const [r1, r2] = await Promise.all([
+        fetch(`${PB_URL}/api/collections/cien_sd_likes/records?filter=${f(fromUid, targetUid)}&perPage=1&fields=id`),
+        fetch(`${PB_URL}/api/collections/cien_sd_likes/records?filter=${f(targetUid, fromUid)}&perPage=1&fields=id`),
+      ]);
+      const [d1, d2] = [await r1.json(), await r2.json()];
+      if (!(d1.items && d1.items.length && d2.items && d2.items.length)) {
+        return { statusCode: 403, headers: CORS, body: JSON.stringify({ error: 'Brak wzajemnego polubienia' }) };
+      }
+    } catch (e) {
+      return { statusCode: 502, headers: CORS, body: JSON.stringify({ error: 'PB error' }) };
     }
     let subs = [];
     try {
@@ -51,7 +67,8 @@ exports.handler = async (event) => {
       return { statusCode: 200, headers: CORS, body: JSON.stringify({ sent: 0, message: 'Brak subskrypcji' }) };
     }
     webpush.setVapidDetails('mailto:kontakt@cienfestiwal.com', vapidPublic, vapidPrivate);
-    const payload = JSON.stringify({ title: '💘 Match!', body: `${matchNick || 'Ktoś'} chce się z Tobą spotkać` });
+    const nick = String(matchNick || 'Ktoś').slice(0, 40);
+    const payload = JSON.stringify({ title: 'Wzajemne dopasowanie', body: `${nick} też chce się z Tobą spotkać`, type: 'match', url: '/#slowdating' });
     let sent = 0;
     const staleIds = [];
     await Promise.allSettled(subs.map(async (sub) => {

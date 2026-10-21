@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cien-2026-v85';
+const CACHE_NAME = 'cien-2026-v86';
 
 const STATIC_ASSETS = [
   '/',
@@ -12,6 +12,9 @@ const STATIC_ASSETS = [
   '/icons/uroboros.webp',
   '/icons/slonce-cien.webp',
   '/icons/ksiezyce.webp',
+  '/icons/icon-192.png',
+  '/icons/icon-512.png',
+  '/icons/apple-touch-icon.png',
   '/vendor/fonts/CormorantGaramond-italic-latin-1.woff2',
   '/vendor/fonts/CormorantGaramond-italic-latin-ext-0.woff2',
   '/vendor/fonts/CormorantGaramond-normal-latin-3.woff2',
@@ -53,12 +56,13 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('push', e => {
-  const data = e.data ? e.data.json().catch(() => ({})) : {};
+  let data = {};
+  try { data = e.data ? e.data.json() : {}; } catch { data = { body: e.data ? e.data.text() : '' }; }
   e.waitUntil(
     self.registration.showNotification(data.title || 'CIEŃ Festiwal', {
       body:  data.body  || '',
-      icon:  '/icons/cien-logo.png',
-      badge: '/icons/cien-logo.png',
+      icon:  '/icons/icon-192.png',
+      badge: '/icons/icon-192.png',
       data:  data,
     })
   );
@@ -66,13 +70,24 @@ self.addEventListener('push', e => {
 
 self.addEventListener('notificationclick', e => {
   e.notification.close();
-  e.waitUntil(clients.openWindow('/'));
+  const d = e.notification.data || {};
+  const target = d.url || (d.type === 'match' || /match|dopasow/i.test(d.title || '') ? '/#slowdating' : '/');
+  e.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
+      const open = list.find(c => new URL(c.url).origin === self.location.origin);
+      if (open) { open.navigate ? open.navigate(target).catch(() => {}) : null; return open.focus(); }
+      return clients.openWindow(target);
+    })
+  );
 });
 
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
 
   const url = new URL(e.request.url);
+
+  // Dane na żywo (PocketBase, funkcje Netlify) zawsze z sieci — nigdy z pamięci podręcznej
+  if (url.pathname.startsWith('/pb/') || url.pathname.startsWith('/.netlify/')) return;
 
   // Network-first for HTML/JS/CSS on same origin — always fresh, cache as fallback
   if (

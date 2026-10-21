@@ -328,3 +328,75 @@ em, i:not([class*="ph-"]) { font-family: var(--font-serif); }
 .modal-title, .art-title { font-family: var(--font-display); font-weight: 400; }
 
 input, textarea, select, button { font-family: inherit; }
+
+/* ---------- Strefy: miękka poświata w kolorze strefy zamiast bocznego paska ---------- */
+.event-card, .tu-i-teraz-card, .ann-teraz-card, .wheel-area-hdr, .wf-section-title, .sn-tint,
+.info-card, .alchemic-quote, .team-note, .team-meeting {
+  border-left: 0 !important;
+  box-shadow: none;
+}
+.event-card, .tu-i-teraz-card, .ann-teraz-card, .wheel-area-hdr, .wf-section-title, .sn-tint {
+  background-image: radial-gradient(130% 160% at 0% 0%, color-mix(in srgb, var(--zc, transparent) 20%, transparent), transparent 58%);
+}
+.wheel-area-hdr, .wf-section-title { padding-left: 0.9rem; border-radius: 12px; }
+
+/* ---------- Czytelność: minimum 11–12 px dla tekstu funkcyjnego ---------- */
+.nav-btn .nav-label { font-size: 0.74rem; }
+.more-partners-label, .auth-partners-label { font-size: 0.72rem; letter-spacing: 0.18em; }
+.event-time, .event-duration, .event-zone-label, .kb-card-meta, .poi-meta, .weather-fday-label { font-size: max(0.72rem, 1em); }
+img[src=""] { visibility: hidden; }
+
+/* ---------- Slow Dating ---------- */
+.sd-empty { padding: 3rem 1.75rem; text-align: center; }
+.sd-empty-icon { font-size: 2.4rem; color: var(--zloto-3); margin-bottom: 0.9rem; }
+.sd-empty-title { font-family: var(--font-display); font-size: 1.7rem; font-weight: 300; color: var(--pergamin); margin-bottom: 0.5rem; }
+.sd-empty-text { color: var(--pergamin-2); opacity: 0.8; font-size: 0.92rem; line-height: 1.55; max-width: 300px; margin: 0 auto; }
+.dating-swipe-indicator { font-family: var(--font-serif); font-style: italic; text-transform: none; letter-spacing: 0; font-size: 1.6rem; }
+.dating-action-btn i { font-size: 1.6rem; }
+.match-title { font-family: var(--font-display); font-weight: 300; font-size: 2.2rem; letter-spacing: 0; text-transform: none; }
+.match-title em { color: var(--zloto); }
+.dating-card { border-radius: 26px; box-shadow: 0 30px 60px -30px rgba(0, 0, 0, 0.8); }
+.dating-match-item { gap: 0.85rem; }
+.dating-match-item .btn-burgund { width: auto !important; flex: 0 0 auto; border-radius: 999px; }
+.dating-tab.active { border-bottom-color: transparent !important; color: var(--zloto-3); }
+.dating-tab { font-family: var(--font-body); text-transform: none; letter-spacing: 0.02em; font-size: 0.9rem; }
+.btn-burgund { border-radius: 999px; font-family: var(--font-body); text-transform: none; letter-spacing: 0.01em; }
+.btn, .btn-gold, .dating-btn-gold, .team-btn-primary { font-size: 0.95rem !important; padding: 0.8rem 1.5rem; }
+.btn-outline { border-radius: 999px; font-family: var(--font-body); text-transform: none; letter-spacing: 0.01em; font-size: 0.9rem; }
+.sd-report-btn {
+  position: absolute; top: 14px; right: 14px; z-index: 5;
+  width: 44px; height: 44px; border-radius: 999px;
+  display: grid; place-items: center;
+  background: rgba(7, 11, 20, 0.55); color: var(--pergamin);
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  font-size: 1.15rem; cursor: pointer;
+}
+.sd-report-btn--row { position: static; flex: 0 0 auto; background: rgba(239, 235, 226, 0.06); }
+
+/* ---------- Audyt 21.10: czytelność, kontrast, dostępność ---------- */
+#bottom-nav .nav-btn .nav-label { font-size: 0.74rem; }
+.modal-action-sm { color: var(--pergamin); border-color: rgba(239, 235, 226, 0.18); opacity: 1; }
+.sd-tag-btn.selected, .dating-chip.selected { background: rgba(216, 185, 130, 0.18); color: var(--zloto-3); border-color: rgba(216, 185, 130, 0.5); }
+.event-zone-tag, .poi-hours, .tag, .countdown-lbl { font-size: 0.72rem; }
+#toast {
+  bottom: auto !important;
+  top: calc(env(safe-area-inset-top, 0px) + var(--header-h) + 10px) !important;
+  max-width: calc(100vw - 32px);
+  white-space: normal !important;
+  text-align: center;
+  z-index: 10050 !important;
+}
+.modal-sheet { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 1.25rem); }
+.sn-sos {
+  display: block; margin: 0.25rem 0 1rem; padding: 0.9rem 1rem; border-radius: 999px;
+  background: #E5484D; color: #fff !important; text-align: center; font-weight: 600; font-family: var(--font-body);
+}
+.wplan-ai-note { margin-top: 0.6rem; font-size: 0.78rem; line-height: 1.45; color: var(--szary); }
+:focus-visible { outline: 2px solid var(--zloto-3); outline-offset: 2px; border-radius: 8px; }
+
+/* W zainstalowanej aplikacji (także ze sklepu) nie pokazujemy instrukcji instalacji */
+@media (display-mode: standalone), (display-mode: fullscreen) {
+  #install-banner, #install-guide, .more-item[onclick*="showInstallGuide"] { display: none !important; }
+}
+#bottom-nav .nav-btn .nav-label { white-space: nowrap; font-size: 0.7rem; letter-spacing: 0.01em; }
+.nav-btn { min-width: 0; padding-left: 2px; padding-right: 2px; }

@@ -23,7 +23,7 @@
 
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/svg+xml" href="icons/icon.svg">
-  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 
   <link rel="preload" href="vendor/fonts/fonts.css" as="style">
   <link rel="stylesheet" href="vendor/fonts/fonts.css">
@@ -105,7 +105,7 @@
       <div class="install-guide-handle"></div>
       <div class="install-guide-logo"><i class="ph-light ph-moon-stars" aria-hidden="true"></i></div>
       <h3 class="install-guide-title">Zainstaluj CIEŃ</h3>
-      <p class="install-guide-sub">Działa offline · bez App Store · jak prawdziwa apka</p>
+      <p class="install-guide-sub">Działa offline · instalacja w kilka sekund</p>
       <div id="install-guide-steps" class="install-guide-steps"></div>
       <button id="install-guide-cta" class="install-guide-cta" onclick="triggerInstall()" style="display:none">Zainstaluj teraz</button>
       <button class="install-guide-skip" onclick="dismissInstallModal()">Nie teraz</button>
@@ -232,20 +232,23 @@
     <div class="more-panel-backdrop" onclick="closeMoreMenu()"></div>
     <div class="more-panel-sheet">
       <div class="more-panel-handle"></div>
-      <button class="more-item" onclick="closeMoreMenu();navigateTo('profil')">
+      <button class="more-item" onclick="closeMoreMenu();location.hash='profil'">
         <i class="more-item-icon ph-light ph-user" aria-hidden="true"></i><span>Mój Profil</span>
       </button>
-      <button class="more-item" onclick="closeMoreMenu();navigateTo('druzyna')">
+      <button class="more-item" onclick="closeMoreMenu();location.hash='druzyna'">
         <i class="more-item-icon ph-light ph-users-three" aria-hidden="true"></i><span>Drużyna</span>
       </button>
-      <button class="more-item" onclick="closeMoreMenu();navigateTo('sacrum')">
+      <button class="more-item" onclick="closeMoreMenu();location.hash='sacrum'">
         <img src="icons/ksiezyc-slonce.jpg" class="more-item-sacrum-img" alt=""><span>Sacrum</span>
       </button>
-      <button class="more-item" onclick="closeMoreMenu();navigateTo('wiedza')">
+      <button class="more-item" onclick="closeMoreMenu();location.hash='wiedza'">
         <i class="more-item-icon ph-light ph-books" aria-hidden="true"></i><span>Wiedza</span>
       </button>
+      <button class="more-item" onclick="closeMoreMenu();location.hash='info'">
+        <i class="more-item-icon ph-light ph-info" aria-hidden="true"></i><span>Informacje i ogłoszenia</span>
+      </button>
       <div class="more-sep"></div>
-      <button class="more-item" onclick="closeMoreMenu();navigateTo('ustawienia')">
+      <button class="more-item" onclick="closeMoreMenu();location.hash='ustawienia'">
         <i class="more-item-icon ph-light ph-gear-six" aria-hidden="true"></i><span>Ustawienia</span>
       </button>
       <button class="more-item" onclick="closeMoreMenu();showInstallGuide()">
@@ -268,7 +271,7 @@
 <!-- MATCH MODAL -->
 <div id="dating-match-modal">
   <div class="match-modal-inner">
-    <div class="match-title">MATCH! 💘</div>
+    <div class="match-title">Wzajemne <em>dopasowanie</em></div>
     <div class="match-subtitle">Oboje chcecie porozmawiać</div>
     <div class="match-photos">
       <div class="match-own-photo match-photo"></div>
@@ -280,7 +283,7 @@
       Dodaj do Spotkań →
     </button>
     <button onclick="closeMatchModal()" class="dating-btn-text" style="margin-top:0.5rem">
-      Wróć do swipowania
+      Wróć do kart
     </button>
   </div>
 </div>

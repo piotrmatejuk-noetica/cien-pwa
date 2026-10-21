@@ -59,7 +59,10 @@ function authContinue() {
     passInput.placeholder = 'Hasło';
     passInput.className = 'auth-input';
     passInput.style.cssText = 'margin-top:0.75rem;width:100%';
-    retPanel?.querySelector('.auth-returning-actions')?.prepend(passInput);
+    const holder = retPanel?.querySelector('.auth-returning-actions') || retPanel;
+    const cta = holder?.querySelector('.auth-btn-cta');
+    if (cta) holder.insertBefore(passInput, cta); else holder?.prepend(passInput);
+    passInput.addEventListener('keydown', ev => { if (ev.key === 'Enter') authContinue(); });
   }
   passInput.style.display = '';
   const pass = passInput.value;
@@ -856,15 +859,16 @@ function setupRouter() {
 
   document.getElementById('bottom-nav').addEventListener('click', e => {
     const btn = e.target.closest('.nav-btn');
-    if (btn) {
-      const view = btn.dataset.view;
-      location.hash = view;
-    }
+    if (btn && btn.dataset.view) location.hash = btn.dataset.view;
   });
 }
 
 function navigateTo(view) {
   if (!VIEWS.includes(view)) view = 'teraz';
+  // Zmiana widoku (także systemowym „Wstecz”) zamyka nakładki poprzedniego ekranu
+  const art = document.getElementById('article-overlay');
+  if (art && art.classList.contains('open')) closeArticle();
+  document.querySelector('#event-modal .modal-overlay.open')?.classList.remove('open');
   State.currentView = view;
 
   // Update nav — "Więcej" btn highlights for secondary views
@@ -1142,7 +1146,7 @@ async function _loadAnnTeraz() {
     const annId  = escHtml(ann.id);
 
     slot.innerHTML = `
-      <div class="ann-teraz-card" style="border-left-color:${m.border};background:${m.bg}" id="ann-teraz-${annId}">
+      <div class="ann-teraz-card" style="--zc:${m.border};background-color:${m.bg}" id="ann-teraz-${annId}">
         <div class="ann-teraz-top">
           <span class="ann-teraz-badge" style="background:${m.border}">${snIco(m.icon)} ${m.label}</span>
           ${isNew ? '<span class="ann-teraz-new">NOWE</span>' : ''}
@@ -1188,7 +1192,7 @@ function renderTuITeraz(allEvents) {
       const isMainStage = ev.zone === 'umbra';
       return `
         <div class="tu-i-teraz-card ${isMainStage ? 'tu-i-teraz-main' : ''}"
-             style="border-left-color:${color}"
+             style="--zc:${color}"
              onclick="openEventModal('${ev.id}')">
           ${isMainStage ? `<div class="tu-i-teraz-main-label"><i class="ph-light ph-music-note sn-ico" aria-hidden="true"></i> SCENA GŁÓWNA — TERAZ</div>` : ''}
           <div class="event-time">
@@ -1216,7 +1220,7 @@ function renderTuITeraz(allEvents) {
       const icon = snIco(zone.icon || ZONES_MAP[ev.zone]?.icon || '●');
       return `
         <div class="tu-i-teraz-card"
-             style="border-left-color:${color}"
+             style="--zc:${color}"
              onclick="openEventModal('${ev.id}')">
           <div class="event-time">
             ${formatTime(ev.start)} <span class="event-duration">→ ${formatTime(ev.end)}</span>
@@ -1274,7 +1278,7 @@ function renderEventsList(events) {
 
     parts.push(`
       <div class="event-card ${isNow ? 'is-now' : ''} ${isPast ? 'is-past' : ''} ${isFav ? 'is-fav' : ''}"
-           style="border-left-color:${color}"
+           style="--zc:${color}"
            onclick="openEventModal('${ev.id}')">
         ${progressBar}
         <div class="event-time">
@@ -1318,7 +1322,16 @@ let _scheduleSearchTimer = null;
 function scheduleSearch(q) {
   State.schedule.searchQuery = q;
   clearTimeout(_scheduleSearchTimer);
-  _scheduleSearchTimer = setTimeout(renderSchedule, 250);
+  _scheduleSearchTimer = setTimeout(() => {
+    const prev = document.querySelector('.schedule-search');
+    const hadFocus = prev && document.activeElement === prev;
+    const caret = prev ? prev.selectionStart : null;
+    renderSchedule();
+    if (hadFocus) {
+      const inp = document.querySelector('.schedule-search');
+      if (inp) { inp.focus({ preventScroll: true }); try { inp.setSelectionRange(caret, caret); } catch {} }
+    }
+  }, 250);
 }
 
 // ============================================
@@ -1638,10 +1651,19 @@ function highlightZone(zoneId) {
   location.hash = 'teraz';
 }
 
+// Wspólne okno: czyści sekcje poprzedniego użycia (prelegent, autor, tagi, akcje)
+function _resetSharedModal(modal) {
+  const sp = modal.querySelector('.modal-speaker'); if (sp) sp.style.display = 'none';
+  const ar = modal.querySelector('.modal-artist'); if (ar) { ar.textContent = ''; ar.style.display = 'none'; }
+  const tg = modal.querySelector('.modal-tags'); if (tg) tg.innerHTML = '';
+  const ac = document.getElementById('modal-actions'); if (ac) ac.innerHTML = '';
+}
+
 function openPoiModal(poiId) {
   const poi = (State.data?.pois || []).find(p => p.id === poiId);
   if (!poi) return;
   const modal = document.getElementById('event-modal');
+  if (modal) _resetSharedModal(modal);
   modal.querySelector('.modal-zone-badge').style.color = '#D8B982';
   modal.querySelector('.modal-zone-badge').innerHTML = snIco(poi.icon) + ' ' + poi.type.toUpperCase();
   modal.querySelector('.modal-title').textContent = poi.label;
@@ -1748,27 +1770,31 @@ function setDziennikTab(tab) {
 }
 
 let saveTimer = null;
+const _journalTimers = {};
+function _writeJournal(stage, text) {
+  const entries = getJournalEntries();
+  const idx = entries.findIndex(e => e.stage === stage);
+  const entry = { stage, text, savedAt: new Date().toLocaleDateString('pl-PL') };
+  if (idx >= 0) entries[idx] = entry;
+  else entries.push(entry);
+  localStorage.setItem('cien_journal_2026', JSON.stringify(entries));
+}
 function autoSaveJournal(stage, text) {
-  clearTimeout(saveTimer);
-  saveTimer = setTimeout(() => {
-    const entries = getJournalEntries();
-    const idx = entries.findIndex(e => e.stage === stage);
-    const entry = { stage, text, savedAt: new Date().toLocaleDateString('pl-PL') };
-    if (idx >= 0) entries[idx] = entry;
-    else entries.push(entry);
-    localStorage.setItem('cien_journal_2026', JSON.stringify(entries));
-  }, 1000);
+  clearTimeout(_journalTimers[stage]);
+  _journalTimers[stage] = setTimeout(() => { delete _journalTimers[stage]; _writeJournal(stage, text); }, 800);
 }
 
 function saveJournalEntry(stage) {
   const textarea = document.getElementById(`journal-text-${stage}`);
   if (!textarea) return;
-  autoSaveJournal(stage, textarea.value);
-  showToast('Wpis zapisany lokalnie na urządzeniu');
+  clearTimeout(_journalTimers[stage]); delete _journalTimers[stage];
+  _writeJournal(stage, textarea.value);
+  showToast('Wpis zapisany na tym telefonie');
 }
 
 function deleteJournalEntry(stage) {
   if (!confirm('Usunąć ten wpis?')) return;
+  clearTimeout(_journalTimers[stage]); delete _journalTimers[stage];
   const updated = getJournalEntries().filter(e => e.stage !== stage);
   localStorage.setItem('cien_journal_2026', JSON.stringify(updated));
   renderJournal();
@@ -1988,7 +2014,8 @@ function buildPlanHTML(area, plan) {
       onclick="sharePlan('${area.id}')"><i class="ph-light ph-export sn-ico" aria-hidden="true"></i> Zapisz / Wyślij</button>
     <button class="btn btn-gold" style="flex:1;font-size:0.78rem;padding:0.45rem 0.5rem"
       onclick="aiCustomizePlan('${area.id}')"><i class="ph-light ph-sparkle sn-ico" aria-hidden="true"></i> Generuj plan</button>
-  </div>`;
+  </div>
+  <div class="wplan-ai-note">Plan układa model AI (OpenAI). Wysyłamy tylko oceny koła i punkty planu z tego ekranu, bez dziennika, imienia i e-maila.</div>`;
 }
 
 function togglePlanItem(areaId, horizon, idx) {
@@ -2053,7 +2080,7 @@ async function aiCustomizePlan(areaId) {
     try { return JSON.parse(localStorage.getItem('cien_journal_2026') || '[]'); } catch { return []; }
   })();
   const journalSnippet = journalEntries.slice(0, 3).map(e =>
-    `[${e.stage || ''}] ${(e.answers || []).filter(Boolean).slice(0,2).join(' / ')}`
+    `[${e.stage || ''}] ${String(e.text || '').slice(0, 300)}`
   ).filter(Boolean).join('\n');
 
   const wheelScores = WHEEL_AREAS.map(a => {
@@ -2078,7 +2105,7 @@ async function aiCustomizePlan(areaId) {
         planTeraz: (plan.teraz || []).join('; '),
         planRegularnie: (plan.regularnie || []).join('; '),
         planRok: plan.rok || '',
-        journalSnippet,
+        journalSnippet: '', // dziennik zostaje na telefonie (obietnica w zakładce Dziennik)
       }),
     });
     clearTimeout(timer);
@@ -2145,7 +2172,7 @@ function buildWheelQuestionnaireHTML(answers) {
       </div>`;
     }).join('');
     return `<div class="wheel-area-block${areaOk?' done':''}" id="warea-${area.id}">
-      <div class="wheel-area-hdr" style="border-left:3px solid ${area.color}">
+      <div class="wheel-area-hdr" style="--zc:${area.color}">
         <span>${area.name}</span>
         <span id="wcheck-${area.id}" class="wheel-check" style="color:${area.color};display:${areaOk?'':'none'}">✓</span>
       </div>
@@ -2194,7 +2221,7 @@ function buildWheelResultsHTML(answers) {
         <div class="wheel-result-fill" style="width:${score*10}%;background:${area.color}"></div>
       </div>
       <div class="wf-section">
-        <div class="wf-section-title" style="border-left-color:${area.color}">Pytania rozwiązaniowe</div>
+        <div class="wf-section-title" style="--zc:${area.color}">Pytania rozwiązaniowe</div>
         ${formHTML}
         <button class="btn btn-gold" style="width:100%;margin-top:0.75rem"
           onclick="generateAndShowPlan('${area.id}')">Generuj plan integracji →</button>
@@ -2469,7 +2496,7 @@ function renderSacrum() {
         Zgłoś się do punktu SACRUM lub złap terapeutę w kuluarach.
       </p>
 
-      <div class="sacrum-card" style="border-left:3px solid #3BAFBA">
+      <div class="sacrum-card sn-tint" style="--zc:#3BAFBA">
         <div class="sacrum-card-title" style="color:#3BAFBA"><i class="ph-light ph-leaf sn-ico" aria-hidden="true"></i> Team SACRUM</div>
         <div class="sacrum-card-body">
           Centrum Terapii Psychodelicznych — hipnoterapia, terapia integracyjna, psychotraumatologia.<br><br>
@@ -2479,7 +2506,7 @@ function renderSacrum() {
         </div>
       </div>
 
-      <div class="sacrum-card" style="border-left:3px solid #D8B982;margin-top:0.75rem">
+      <div class="sacrum-card sn-tint" style="--zc:#D8B982;margin-top:0.75rem">
         <div class="sacrum-card-title" style="color:#D8B982"><i class="ph-light ph-graduation-cap sn-ico" aria-hidden="true"></i> Team PSH</div>
         <div class="sacrum-card-body">
           Profesjonalna Szkoła Hipnoterapii — kadra wykładowców i absolwentów.<br><br>
@@ -2509,6 +2536,7 @@ function renderSacrum() {
 
 function callHelp() {
   const modal = document.getElementById('event-modal');
+  if (modal) _resetSharedModal(modal);
   modal.querySelector('.modal-zone-badge').style.color = '#FF4444';
   modal.querySelector('.modal-zone-badge').innerHTML = '<i class="ph-light ph-siren sn-ico" aria-hidden="true"></i> POMOC';
   modal.querySelector('.modal-title').textContent = 'Potrzebujesz pomocy?';
@@ -2517,6 +2545,7 @@ function callHelp() {
   modal.querySelector('.modal-description').innerHTML = `
     <strong style="color:#FF6B6B">Idź do punktu pomocy lub poproś kogoś w pobliżu.</strong><br><br>
     Powiedz obsłudze: <em>"Potrzebuję trip sittera"</em>. Nie musisz nic tłumaczyć.<br><br>
+    <a href="tel:112" class="sn-sos">Zagrożenie życia — dzwoń 112</a>
     <strong>Jeśli to nagłe zagrożenie zdrowia:</strong><br>
     Ratownik medyczny — namioty przy wejściu (24h).<br><br>
     Email: <a href="mailto:kontakt@cienfestiwal.com" style="color:var(--zloto)">kontakt@cienfestiwal.com</a>
@@ -3081,6 +3110,27 @@ function addSDSeen(uid) {
   localStorage.setItem('cien_sd_seen_2026', JSON.stringify([...seen]));
 }
 
+function getSDBlocked() {
+  try { return new Set(JSON.parse(localStorage.getItem('cien_sd_blocked') || '[]')); } catch { return new Set(); }
+}
+
+// Zgłoś / zablokuj — wymagane przez Google Play i App Store dla treści użytkowników
+function sdReportBlock(uid, nick) {
+  if (!uid) return;
+  if (!confirm(`Zablokować ${nick || 'tę osobę'}? Nie zobaczycie się więcej w Slow Dating. Po zablokowaniu możesz też zgłosić profil organizatorom.`)) return;
+  const b = getSDBlocked(); b.add(uid);
+  localStorage.setItem('cien_sd_blocked', JSON.stringify([...b]));
+  addSDSeen(uid);
+  _sdDeck = _sdDeck.filter(p => p.uid !== uid);
+  if (confirm('Zgłosić profil organizatorom? Otworzy się gotowa wiadomość e-mail.')) {
+    const subject = encodeURIComponent('Zgłoszenie profilu Slow Dating');
+    const body = encodeURIComponent(`Zgłaszam profil Slow Dating.\nNick: ${nick || ''}\nID: ${uid}\nPowód: `);
+    location.href = `mailto:kontakt@sacrum.life?subject=${subject}&body=${body}`;
+  }
+  showToast('Zablokowano');
+  _sdRenderTab();
+}
+
 function _sdParseTags(raw) {
   if (!raw) return [];
   if (Array.isArray(raw)) return raw;
@@ -3093,6 +3143,17 @@ function renderSlowDating() {
   const container = document.getElementById('slowdating-content');
   if (!container) return;
 
+  if ((localStorage.getItem('cien_user_id') || '').startsWith('guest_')) {
+    container.innerHTML = `
+      <div class="sd-empty">
+        <div class="sd-empty-icon"><i class="ph-light ph-heart sn-ico" aria-hidden="true"></i></div>
+        <div class="sd-empty-title">Slow Dating wymaga konta</div>
+        <div class="sd-empty-text">Jako gość nie masz karty, więc nikt nie mógłby Cię polubić, a dopasowania nie dotarłyby do Ciebie. Załóż konto: wystarczy e-mail i hasło.</div>
+        <button class="btn btn-gold" style="margin-top:1.25rem" onclick="showAuthScreen()">Załóż konto →</button>
+      </div>`;
+    return;
+  }
+
   if (!localStorage.getItem('cien_sd_consent_v1')) {
     container.innerHTML = `
       <div class="sd-consent-screen">
@@ -3101,7 +3162,7 @@ function renderSlowDating() {
         <div class="sd-consent-points">
           <div class="sd-consent-point"><i class="ph-light ph-user sn-ico" aria-hidden="true"></i> Twój profil (nick, zdjęcie, opis, tagi) jest widoczny dla wszystkich zalogowanych uczestników festiwalu</div>
           <div class="sd-consent-point"><i class="ph-light ph-heart sn-ico" aria-hidden="true"></i> Dopasowanie następuje gdy oboje się polubiecie — tylko wtedy widzicie się nawzajem</div>
-          <div class="sd-consent-point"><i class="ph-light ph-trash sn-ico" aria-hidden="true"></i> Profile są trwale kasowane 30 dni po zakończeniu festiwalu (5 VIII 2026)</div>
+          <div class="sd-consent-point"><i class="ph-light ph-trash sn-ico" aria-hidden="true"></i> Profil możesz usunąć w każdej chwili w zakładce Moja karta. Wszystkie profile kasujemy 30 dni po zakończeniu festiwalu.</div>
         </div>
         <button class="btn btn-gold" style="width:100%;margin-top:1rem" onclick="localStorage.setItem('cien_sd_consent_v1','1');renderSlowDating()">Rozumiem i dołączam →</button>
         <button class="dating-btn-text" style="margin-top:0.75rem" onclick="navigateTo('teraz')">Nie chcę brać udziału</button>
@@ -3142,47 +3203,54 @@ function _sdRenderTab() {
 
 // ---- TAB: Odkryj ----
 
-const _SD_DEMO = [
-  { uid:'_demo1', nick:'Marta', about:'Psycholożka z Krakowa. Szukam rozmów o snach i cieniu.', tags:'["Jung","Psychologia","Medytacja"]', emoji:'🌙' },
-  { uid:'_demo2', nick:'Kuba', about:'Muzykant i psychonauta. Gram, podróżuję, integruję.', tags:'["Muzyka","Psychodeliki","Integracja"]', emoji:'🎵' },
-  { uid:'_demo3', nick:'Ania', about:'Terapeutka traumy. Tu po raz pierwszy.', tags:'["Trauma","NVC","Ruch"]', emoji:'🌿' },
-  { uid:'_demo4', nick:'Maciek', about:'Reżyser dźwięku, miłośnik misek gongowych.', tags:'["Dźwięk","Buddyzm","Natura"]', emoji:'🔔' },
-  { uid:'_demo5', nick:'Zuza', about:'Filozofka, doktorantka. Cień to mój ulubiony koncept.', tags:'["Filozofia","Jung","Sztuka"]', emoji:'⚡' },
-];
+function _sdHasCard() {
+  const p = getSDProfile();
+  return !!(p.nick && p.pbId);
+}
 
 function _sdRenderDiscover(el) {
-  // Pokaż demo karty natychmiast — zero czekania
-  _sdDeck = [..._SD_DEMO];
-  el.innerHTML = `<div id="sd-deck-wrap"></div>`;
-  _sdRenderDeck(document.getElementById('sd-deck-wrap'));
-  // W tle sprawdź czy są prawdziwe profile i podmień
+  if (!_sdHasCard()) {
+    el.innerHTML = `
+      <div class="sd-empty">
+        <div class="sd-empty-icon"><i class="ph-light ph-identification-card sn-ico" aria-hidden="true"></i></div>
+        <div class="sd-empty-title">Najpierw Twoja karta</div>
+        <div class="sd-empty-text">Inni zobaczą Cię dopiero, gdy zapiszesz kartę z nickiem. Bez niej wzajemne dopasowanie nie jest możliwe.</div>
+        <button class="btn btn-gold" style="margin-top:1.25rem" onclick="sdSetTab('karta')">Uzupełnij kartę →</button>
+      </div>`;
+    return;
+  }
+  _sdDeck = [];
+  el.innerHTML = `<div id="sd-deck-wrap"><div class="sd-empty"><div class="sd-empty-text">Szukam profili…</div></div></div>`;
   _sdFetchReal();
 }
 
 async function _sdFetchReal() {
   const myUid = getSDUid();
   try {
-    const res = await fetch(`${SD_PB}/api/collections/${SD_COL_PROFILES}/records?perPage=100&sort=-created`, { headers: {'Content-Type':'application/json'} });
-    if (!res.ok) return;
+    const res = await fetch(`${SD_PB}/api/collections/${SD_COL_PROFILES}/records?perPage=200&sort=-created`, { headers: {'Content-Type':'application/json'} });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
     const data = await res.json();
     const seen = getSDSeen();
-    const real = (data.items || []).filter(p => p.uid !== myUid && !seen.has(p.uid));
-    if (!real.length) return;
-    _sdDeck = real;
+    const blocked = getSDBlocked();
+    _sdDeck = (data.items || []).filter(p => p.uid && p.nick && p.uid !== myUid && !seen.has(p.uid) && !blocked.has(p.uid));
+    _sdDeckOk = true;
     const wrap = document.getElementById('sd-deck-wrap');
     if (wrap) _sdRenderDeck(wrap);
-  } catch { /* zostają demo */ }
+  } catch {
+    const wrap = document.getElementById('sd-deck-wrap');
+    if (wrap) wrap.innerHTML = `<div class="sd-empty"><div class="sd-empty-title">Brak połączenia</div><div class="sd-empty-text">Profile wczytają się, gdy wróci internet.</div><button class="btn btn-outline" style="margin-top:1rem" onclick="_sdRenderDiscover(document.getElementById('sd-tab-content'))">Spróbuj ponownie</button></div>`;
+  }
 }
 
 function _sdRenderDeck(wrap) {
   if (!wrap) return;
   if (_sdDeck.length === 0) {
     wrap.innerHTML = `
-      <div style="padding:3rem 2rem;text-align:center">
-        <div style="font-size:2.5rem;margin-bottom:1rem"><i class="ph-light ph-sparkle sn-ico" aria-hidden="true"></i></div>
-        <div style="color:var(--pergamin);margin-bottom:0.5rem;font-family:var(--font-display)">Przeswipowałeś wszystkich!</div>
-        <div style="color:var(--szary);font-size:0.85rem;line-height:1.5">Nowe profile pojawią się w dniu festiwalu.</div>
-        <button class="btn-burgund" style="margin-top:1.25rem" onclick="localStorage.removeItem('cien_sd_seen_2026');_sdDeckOk=false;_sdRenderDiscover(document.getElementById('sd-tab-content'))">Zacznij od nowa</button>
+      <div class="sd-empty">
+        <div class="sd-empty-icon"><i class="ph-light ph-sparkle sn-ico" aria-hidden="true"></i></div>
+        <div class="sd-empty-title">To na razie wszyscy</div>
+        <div class="sd-empty-text">Nowe karty pojawią się, gdy dołączą kolejne osoby. Zajrzyj później.</div>
+        <button class="btn btn-outline" style="margin-top:1.25rem" onclick="localStorage.removeItem('cien_sd_seen_2026');_sdDeckOk=false;_sdRenderDiscover(document.getElementById('sd-tab-content'))">Przejrzyj pominięte jeszcze raz</button>
       </div>`;
     return;
   }
@@ -3212,16 +3280,19 @@ function _sdRenderDeck(wrap) {
         ${p.about ? `<div class="dating-card-bio">${escHtml(p.about)}</div>` : ''}
         ${tags.length ? `<div style="display:flex;flex-wrap:wrap;gap:0.4rem;margin-top:0.5rem">${tags.map(t=>`<span class="sd-tag">${escHtml(t)}</span>`).join('')}</div>` : ''}
       </div>
-      <div class="dating-swipe-indicator left">NOPE</div>
-      <div class="dating-swipe-indicator right">LIKE</div>
+      ${i===0 ? `<button class="sd-report-btn" aria-label="Zgłoś lub zablokuj" data-uid="${escHtml(p.uid)}" data-nick="${escHtml(p.nick||'')}"
+          ontouchstart="event.stopPropagation()" onmousedown="event.stopPropagation()"
+          onclick="event.stopPropagation();sdReportBlock(this.dataset.uid,this.dataset.nick)"><i class="ph-light ph-flag" aria-hidden="true"></i></button>` : ''}
+      <div class="dating-swipe-indicator left">Dalej</div>
+      <div class="dating-swipe-indicator right">Lubię</div>
     </div>`;
   }).join('');
   wrap.innerHTML = `
     <div class="dating-deck-info">${total} profil${total===1?'':'e'} do odkrycia</div>
     <div class="dating-stack" id="sd-stack">${cards}</div>
     <div class="dating-actions">
-      <button class="dating-action-btn dating-action-no"  onclick="sdSwipe('left')">✕</button>
-      <button class="dating-action-btn dating-action-yes" onclick="sdSwipe('right')">♡</button>
+      <button class="dating-action-btn dating-action-no"  onclick="sdSwipe('left')" aria-label="Pomiń"><i class="ph-light ph-x" aria-hidden="true"></i></button>
+      <button class="dating-action-btn dating-action-yes" onclick="sdSwipe('right')" aria-label="Lubię"><i class="ph-light ph-heart" aria-hidden="true"></i></button>
     </div>`;
   _sdAttachSwipe();
 }
@@ -3265,25 +3336,30 @@ function _sdAttachSwipe() {
   card.addEventListener('mousedown', e => { e.preventDefault(); onStart(e.clientX); document.addEventListener('mousemove', _mmove); document.addEventListener('mouseup', _mup); });
 }
 
+let _sdSwipeBusy = false;
 function sdSwipe(dir) {
   const card = document.querySelector('.dating-card.is-top');
-  if (!card) return;
+  if (!card || _sdSwipeBusy) return;
   card.style.transition = 'transform 300ms ease';
   _sdFlyOut(card, dir);
 }
 
 function _sdFlyOut(card, dir) {
+  if (_sdSwipeBusy) return;
+  _sdSwipeBusy = true;
+  const uid = card.dataset.uid;
   const x = dir === 'right' ? '130vw' : '-130vw';
   card.querySelector('.dating-swipe-indicator.' + (dir==='right'?'right':'left')).style.opacity = 1;
   card.style.transform = `translate(${x}, 15px) rotate(${dir==='right'?25:-25}deg)`;
-  setTimeout(() => _sdHandleSwipe(dir), 320);
+  setTimeout(() => { _sdSwipeBusy = false; _sdHandleSwipe(dir, uid); }, 320);
 }
 
-function _sdHandleSwipe(dir) {
-  const top = _sdDeck[0];
-  if (!top) return;
+function _sdHandleSwipe(dir, uid) {
+  const i = _sdDeck.findIndex(p => p.uid === uid);
+  if (i < 0) return;
+  const top = _sdDeck[i];
   addSDSeen(top.uid);
-  _sdDeck.shift();
+  _sdDeck.splice(i, 1);
   if (dir === 'right') {
     _sdSendLike(top);
     if ('vibrate' in navigator) navigator.vibrate([15, 30, 15]);
@@ -3297,15 +3373,21 @@ async function _sdSendLike(profile) {
   if (toUid.startsWith('_demo')) return;
   const profileObj = typeof profile === 'object' ? profile : { uid: toUid };
   const myUid = getSDUid();
+  if (!/^[\w-]+$/.test(toUid) || !/^[\w-]+$/.test(myUid)) return;
   try {
-    await fetch(`${SD_PB}/api/collections/${SD_COL_LIKES}/records`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ from_uid: myUid, to_uid: toUid }),
-    });
+    const dup = await fetch(`${SD_PB}/api/collections/${SD_COL_LIKES}/records?filter=${encodeURIComponent(`from_uid='${myUid}'&&to_uid='${toUid}'`)}&perPage=1&fields=id`);
+    const dupData = dup.ok ? await dup.json() : { items: [] };
+    if (!(dupData.items && dupData.items.length)) {
+      const res = await fetch(`${SD_PB}/api/collections/${SD_COL_LIKES}/records`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ from_uid: myUid, to_uid: toUid }),
+      });
+      if (!res.ok) { showToast('Nie udało się zapisać polubienia — spróbuj ponownie'); return; }
+    }
     const check = await fetch(`${SD_PB}/api/collections/${SD_COL_LIKES}/records?filter=${encodeURIComponent(`from_uid='${toUid}'&&to_uid='${myUid}'`)}&perPage=1`, { headers:{'Content-Type':'application/json'} });
-    const cd    = await check.json();
-    if (cd.items && cd.items.length) {
+    const cd    = check.ok ? await check.json() : {};
+    if (cd.items && cd.items.length && !_sdGetSeenMatches().has(toUid)) {
       showMatchModal(profileObj);
       _sdMarkMatchSeen(toUid);
       _sdNotifyMatch(toUid);
@@ -3328,7 +3410,7 @@ async function _sdNotifyMatch(toUid) {
     await fetch('/.netlify/functions/send-push', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'match', targetUid: toUid, matchNick: myNick, matchSecret: _SD_MATCH_SECRET }),
+      body: JSON.stringify({ action: 'match', targetUid: toUid, fromUid: getSDUid(), matchNick: myNick, matchSecret: _SD_MATCH_SECRET }),
     });
   } catch { /* offline */ }
 }
@@ -3343,17 +3425,25 @@ function _sdStopMatchPoller() {
   if (_sdMatchPollerTimer) { clearInterval(_sdMatchPollerTimer); _sdMatchPollerTimer = null; }
 }
 
+let _sdPollBusy = false;
 async function _sdPollMatches() {
+  if (_sdPollBusy) return;
+  _sdPollBusy = true;
+  try { await _sdPollMatchesOnce(); } finally { _sdPollBusy = false; }
+}
+
+async function _sdPollMatchesOnce() {
   const myUid = getSDUid();
   if (!myUid || myUid.startsWith('guest_')) return;
   try {
     const [r1, r2] = await Promise.all([
-      fetch(`${SD_PB}/api/collections/${SD_COL_LIKES}/records?filter=${encodeURIComponent(`from_uid='${myUid}'`)}&perPage=200`, {headers:{'Content-Type':'application/json'}}),
-      fetch(`${SD_PB}/api/collections/${SD_COL_LIKES}/records?filter=${encodeURIComponent(`to_uid='${myUid}'`)}&perPage=200`,   {headers:{'Content-Type':'application/json'}}),
+      fetch(`${SD_PB}/api/collections/${SD_COL_LIKES}/records?filter=${encodeURIComponent(`from_uid='${myUid}'`)}&perPage=500`, {headers:{'Content-Type':'application/json'}}),
+      fetch(`${SD_PB}/api/collections/${SD_COL_LIKES}/records?filter=${encodeURIComponent(`to_uid='${myUid}'`)}&perPage=500`,   {headers:{'Content-Type':'application/json'}}),
     ]);
     const iLiked   = new Set((await r1.json()).items?.map(l=>l.to_uid)   || []);
     const likedMe  = new Set((await r2.json()).items?.map(l=>l.from_uid) || []);
-    const matchUids = [...iLiked].filter(uid => likedMe.has(uid));
+    const blockedP = getSDBlocked();
+    const matchUids = [...iLiked].filter(uid => likedMe.has(uid) && !blockedP.has(uid));
     const seen = _sdGetSeenMatches();
     const newUids = matchUids.filter(uid => !seen.has(uid));
     if (newUids.length) {
@@ -3415,15 +3505,18 @@ async function _sdPushProfile(photoBlob) {
     }
     if (data.items && data.items.length) {
       const existingId = data.items[0].id;
-      await fetch(`${SD_PB}/api/collections/${SD_COL_PROFILES}/records/${existingId}`, { method:'PATCH', headers, body });
+      const res = await fetch(`${SD_PB}/api/collections/${SD_COL_PROFILES}/records/${existingId}`, { method:'PATCH', headers, body });
+      if (!res.ok) return false;
       const p2 = getSDProfile(); p2.pbId = existingId; saveSDProfile(p2);
     } else {
       const res = await fetch(`${SD_PB}/api/collections/${SD_COL_PROFILES}/records`, { method:'POST', headers, body });
-      if (res.ok) { const created = await res.json(); const p2 = getSDProfile(); p2.pbId = created.id; saveSDProfile(p2); }
+      if (!res.ok) return false;
+      const created = await res.json(); const p2 = getSDProfile(); p2.pbId = created.id; saveSDProfile(p2);
     }
     if (photoBlob) { window._sdPendingPhoto = null; localStorage.setItem('cien_sd_photo_pushed', 'true'); }
     _sdDeckOk = false;
-  } catch { /* offline */ }
+    return !!getSDProfile().pbId;
+  } catch { return false; }
 }
 
 // ---- TAB: Dopasowania ----
@@ -3433,12 +3526,13 @@ async function _sdRenderMatches(el) {
   const myUid = getSDUid();
   try {
     const [r1, r2] = await Promise.all([
-      fetch(`${SD_PB}/api/collections/${SD_COL_LIKES}/records?filter=${encodeURIComponent(`from_uid='${myUid}'`)}&perPage=200`, {headers:{'Content-Type':'application/json'}}),
-      fetch(`${SD_PB}/api/collections/${SD_COL_LIKES}/records?filter=${encodeURIComponent(`to_uid='${myUid}'`)}&perPage=200`,   {headers:{'Content-Type':'application/json'}}),
+      fetch(`${SD_PB}/api/collections/${SD_COL_LIKES}/records?filter=${encodeURIComponent(`from_uid='${myUid}'`)}&perPage=500`, {headers:{'Content-Type':'application/json'}}),
+      fetch(`${SD_PB}/api/collections/${SD_COL_LIKES}/records?filter=${encodeURIComponent(`to_uid='${myUid}'`)}&perPage=500`,   {headers:{'Content-Type':'application/json'}}),
     ]);
     const iLiked   = new Set((await r1.json()).items?.map(l=>l.to_uid) || []);
     const likedMe  = new Set((await r2.json()).items?.map(l=>l.from_uid) || []);
-    const matchUids= [...iLiked].filter(uid => likedMe.has(uid));
+    const blockedM = getSDBlocked();
+    const matchUids= [...iLiked].filter(uid => likedMe.has(uid) && !blockedM.has(uid));
     if (!matchUids.length) {
       el.innerHTML = `<div style="padding:3rem 2rem;text-align:center">
         <div style="font-size:2.5rem;margin-bottom:1rem"><i class="ph-light ph-moon-stars sn-ico" aria-hidden="true"></i></div>
@@ -3456,12 +3550,13 @@ async function _sdRenderMatches(el) {
         ? `background-image:url(${photoUrl});background-size:cover;background-position:center;`
         : '';
       return `<div class="dating-match-item">
-        <div class="dating-match-avatar" style="${avatarStyle}">${photoUrl ? '' : (p.emoji||'💫')}</div>
+        <div class="dating-match-avatar" style="${avatarStyle}">${photoUrl ? '' : escHtml(p.emoji||'💫')}</div>
         <div style="flex:1;min-width:0">
           <div class="dating-match-name">${escHtml(p.nick||'')}</div>
           <div class="dating-match-last">${escHtml(p.about||'')}</div>
         </div>
-        <button class="btn-burgund" style="font-size:0.75rem;padding:0.3rem 0.6rem;flex-shrink:0" onclick="sdOpenAddMeeting('${escHtml(p.nick||'')}')">+ Spotkanie</button>
+        <button class="btn-burgund" style="font-size:0.8rem;padding:0.45rem 0.8rem;flex-shrink:0" data-nick="${escHtml(p.nick||'')}" onclick="sdOpenAddMeeting(this.dataset.nick)">+ Spotkanie</button>
+        <button class="sd-report-btn sd-report-btn--row" aria-label="Zgłoś lub zablokuj" data-uid="${escHtml(p.uid)}" data-nick="${escHtml(p.nick||'')}" onclick="sdReportBlock(this.dataset.uid,this.dataset.nick)"><i class="ph-light ph-flag" aria-hidden="true"></i></button>
       </div>`;
     }).join('')}</div>`;
   } catch {
@@ -3595,6 +3690,14 @@ async function sdDeleteProfile() {
       method: 'DELETE',
     }).catch(() => {});
   }
+  try {
+    const myUid = getSDUid();
+    const r = await fetch(`${SD_PB}/api/collections/${SD_COL_LIKES}/records?filter=${encodeURIComponent(`from_uid='${myUid}'`)}&perPage=500&fields=id`);
+    const items = r.ok ? ((await r.json()).items || []) : [];
+    await Promise.all(items.map(l => fetch(`${SD_PB}/api/collections/${SD_COL_LIKES}/records/${l.id}`, { method: 'DELETE' }).catch(() => {})));
+  } catch { /* offline — polubienia usuną się przy kasowaniu bazy */ }
+  localStorage.removeItem('cien_sd_seen_2026');
+  localStorage.removeItem('cien_shown_matches');
   ['cien_sd_photo','cien_sd_crop','cien_sd_photo_pos','cien_sd_profile_2026','cien_sd_consent_v1','cien_sd_photo_pushed'].forEach(k => localStorage.removeItem(k));
   showToast('Profil usunięty');
   renderSlowDating();
@@ -3640,7 +3743,18 @@ function sdShareCard() {
   }
 }
 
+// Przenosi wpisany (jeszcze niezapisany) nick i opis do profilu przed przebudową formularza
+function _sdStashForm() {
+  const n = document.getElementById('sd-nick'), a = document.getElementById('sd-about');
+  if (!n && !a) return;
+  const p = getSDProfile();
+  if (n) p.nick = n.value.trim();
+  if (a) p.about = a.value.trim();
+  saveSDProfile(p);
+}
+
 function sdSetEmoji(emoji) {
+  _sdStashForm();
   const profile = getSDProfile();
   profile.emoji = emoji;
   saveSDProfile(profile);
@@ -3778,13 +3892,18 @@ function sdPhotoSelected(input) {
   reader.readAsDataURL(file);
 }
 
+let _sdCropBusy = false;
 function sdCropDone() {
-  if (!_sdCropper) return;
+  if (!_sdCropper || _sdCropBusy) return;
+  _sdCropBusy = true;
+  _sdStashForm();
   const canvas = _sdCropper.getCroppedCanvas({ width: 600, height: 800, imageSmoothingQuality: 'high' });
   canvas.toBlob(blob => {
+    _sdCropBusy = false;
+    if (!blob || !_sdCropper) { showToast('Nie udało się przyciąć zdjęcia — spróbuj ponownie'); return; }
     window._sdPendingPhoto = blob;
     const dataUrl = canvas.toDataURL('image/jpeg', 0.88);
-    localStorage.setItem('cien_sd_photo', dataUrl);
+    try { localStorage.setItem('cien_sd_photo', dataUrl); } catch { showToast('Zdjęcie jest za duże dla pamięci telefonu'); }
     localStorage.setItem('cien_sd_photo_pushed', 'false');
     localStorage.removeItem('cien_sd_crop');
     _sdCropper.destroy(); _sdCropper = null;
@@ -3807,6 +3926,7 @@ function sdCropCancel() {
 async function sdSaveProfile() {
   const nick  = document.getElementById('sd-nick')?.value?.trim()  || '';
   const about = document.getElementById('sd-about')?.value?.trim() || '';
+  if (!nick) { showToast('Wpisz nick — bez niego karta nie pojawi się w Slow Dating'); document.getElementById('sd-nick')?.focus(); return; }
   const profile = getSDProfile();
   profile.nick  = nick;
   profile.about = about;
@@ -3819,13 +3939,15 @@ async function sdSaveProfile() {
       try { const r = await fetch(dataUrl); photoBlob = await r.blob(); } catch {}
     }
   }
-  _sdPushProfile(photoBlob);
-  showToast('Karta zapisana ✓');
+  showToast('Zapisuję kartę…');
+  const ok = await _sdPushProfile(photoBlob);
+  showToast(ok ? 'Karta zapisana — jest już widoczna w Slow Dating ✓' : 'Karta zapisana na telefonie. Wyślę ją, gdy wróci internet.', 3500);
   renderSlowDating();
 }
 
 function sdOpenAddMeeting(prefillNick) {
   const modal = document.getElementById('event-modal');
+  if (modal) _resetSharedModal(modal);
   modal.querySelector('.modal-zone-badge').style.color = '#6E5496';
   modal.querySelector('.modal-zone-badge').innerHTML = '<i class="ph-light ph-heart sn-ico" aria-hidden="true"></i> Nowe spotkanie';
   modal.querySelector('.modal-title').textContent = 'Zapisz osobę';
@@ -4116,18 +4238,59 @@ function renderUstawienia() {
   `;
 }
 
-function togglePushNotifs(enabled) {
+async function togglePushNotifs(enabled) {
   localStorage.setItem('cien_push_enabled', enabled ? '1' : '0');
   if (enabled) {
     subscribePush();
-  } else {
-    showToast('Powiadomienia wyłączone');
+    return;
   }
+  try {
+    const reg = await navigator.serviceWorker?.getRegistration();
+    const sub = reg && await reg.pushManager.getSubscription();
+    if (sub) {
+      const r = await fetch(`${SD_PB}/api/collections/cien_push_subs/records?filter=${encodeURIComponent(`endpoint='${sub.endpoint.replace(/'/g, '')}'`)}&perPage=50&fields=id`);
+      const items = r.ok ? ((await r.json()).items || []) : [];
+      await Promise.all(items.map(it => fetch(`${SD_PB}/api/collections/cien_push_subs/records/${it.id}`, { method: 'DELETE' })));
+      await sub.unsubscribe();
+    }
+    localStorage.removeItem('cien_push_subscribed');
+  } catch { /* offline */ }
+  showToast('Powiadomienia wyłączone');
 }
 
-function deleteAccount() {
-  const keys = Object.keys(localStorage).filter(k => k.startsWith('cien_'));
-  keys.forEach(k => localStorage.removeItem(k));
+async function deleteAccount() {
+  if (!confirm('Usunąć konto? Skasujemy Twój profil Slow Dating, polubienia, subskrypcję powiadomień i wszystkie dane z tego telefonu. Tego nie da się cofnąć.')) return;
+  showToast('Usuwam dane…');
+  const failed = [];
+  const myUid = getSDUid();
+  const del = async (col, id) => {
+    const r = await fetch(`${SD_PB}/api/collections/${col}/records/${id}`, { method: 'DELETE' });
+    if (!r.ok && r.status !== 404) failed.push(col);
+  };
+  const list = async (col, filter) => {
+    const r = await fetch(`${SD_PB}/api/collections/${col}/records?filter=${encodeURIComponent(filter)}&perPage=500&fields=id`);
+    if (!r.ok) { failed.push(col); return []; }
+    return (await r.json()).items || [];
+  };
+  try {
+    if (/^[\w-]+$/.test(myUid)) {
+      for (const p of await list(SD_COL_PROFILES, `uid='${myUid}'`)) await del(SD_COL_PROFILES, p.id);
+      for (const l of await list(SD_COL_LIKES, `from_uid='${myUid}'`)) await del(SD_COL_LIKES, l.id);
+    }
+    if ('serviceWorker' in navigator) {
+      const reg = await navigator.serviceWorker.getRegistration();
+      const sub = reg && await reg.pushManager.getSubscription();
+      if (sub) {
+        for (const r of await list('cien_push_subs', `endpoint='${sub.endpoint.replace(/'/g, '')}'`)) await del('cien_push_subs', r.id);
+        await sub.unsubscribe().catch(() => {});
+      }
+    }
+  } catch { failed.push('sieć'); }
+  if (failed.length) {
+    alert('Nie udało się usunąć wszystkich danych z serwera (brak połączenia albo odmowa serwera). Dane na telefonie zostają, żeby można było spróbować ponownie. Możesz też napisać na kontakt@sacrum.life.');
+    return;
+  }
+  Object.keys(localStorage).filter(k => k.startsWith('cien_')).forEach(k => localStorage.removeItem(k));
   location.reload();
 }
 
@@ -4457,6 +4620,7 @@ function showMatchModal(profile) {
       theirPhoto.style.cssText = `background-image:url(${photoUrl});background-size:cover;background-position:center;`;
       theirPhoto.textContent = '';
     } else {
+      theirPhoto.style.cssText = '';
       theirPhoto.textContent = profile.emoji || '💫';
     }
   }
@@ -4467,6 +4631,7 @@ function showMatchModal(profile) {
       ownPhoto.style.cssText = `background-image:url(${myPhoto});background-size:cover;background-position:center;`;
       ownPhoto.textContent = '';
     } else {
+      ownPhoto.style.cssText = '';
       ownPhoto.textContent = getSDProfile().emoji || '💘';
     }
   }

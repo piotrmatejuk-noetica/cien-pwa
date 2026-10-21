@@ -1,19 +1,19 @@
 {
-  "name": "CIEŃ Festiwal 2026",
+  "name": "CIEŃ Festiwal",
   "short_name": "CIEŃ",
-  "description": "Twój przewodnik po festiwalu przemiany. Zamek Świny, 3–5 lipca 2026.",
-  "start_url": "/",
+  "description": "Aplikacja uczestnika festiwalu CIEŃ: program, mapa terenu, Slow Dating, dziennik przemiany, koło życia, baza wiedzy i pomoc PsyCare.",
+  "start_url": "/?source=pwa",
   "display": "standalone",
   "background_color": "#070B14",
   "theme_color": "#070B14",
-  "orientation": "portrait-primary",
+  "orientation": "portrait",
   "lang": "pl",
   "icons": [
     {
       "src": "icons/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
       "src": "icons/icon-512.png",
@@ -22,35 +22,46 @@
       "purpose": "any"
     },
     {
-      "src": "icons/icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any"
-    }
-  ],
-  "screenshots": [
+      "src": "icons/icon-maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
     {
-      "src": "icons/cien-logo.png",
+      "src": "icons/icon-maskable-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "form_factor": "narrow",
-      "label": "CIEŃ Festiwal — Program i mapa"
+      "purpose": "maskable"
     }
   ],
+  "screenshots": [],
   "categories": [
     "entertainment",
-    "lifestyle"
+    "lifestyle",
+    "social"
   ],
   "shortcuts": [
     {
-      "name": "Teraz na scenie",
+      "name": "Program",
       "url": "/#teraz",
       "description": "Co dzieje się teraz"
     },
     {
+      "name": "Slow Dating",
+      "url": "/#slowdating",
+      "description": "Karty i dopasowania"
+    },
+    {
       "name": "Punkt pomocy",
       "url": "/#sacrum",
-      "description": "Wsparcie i harm reduction"
+      "description": "PsyCare i bezpieczeństwo"
     }
-  ]
+  ],
+  "id": "/",
+  "scope": "/",
+  "display_override": [
+    "standalone",
+    "minimal-ui"
+  ],
+  "dir": "ltr"
 }
