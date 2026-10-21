@@ -31,7 +31,16 @@ na Androida jako Trusted Web Activity (pełny ekran, bez paska przeglądarki), n
 5. **Retencja danych 2026.** W bazie nadal jest 171 profili Slow Dating i 3474 polubienia, mimo że ekran
    zgody obiecywał skasowanie 30 dni po festiwalu (5.08.2026). Decyzja: usunąć teraz (zalecane).
 
-## Android krok po kroku (bez instalowania niczego na Macu)
+## Android: stan 21.10.2026
+
+ZBUDOWANE na Macu (Bubblewrap): `~/Downloads/cien-google-play/cien-festiwal-1.0.0.aab` (do Google Play)
+i `cien-festiwal-1.0.0-test.apk` (do instalacji na telefonie). Projekt: `~/Desktop/Aplikacje/Cien/cien-android/`,
+narzędzia: `~/Library/Developer/cien-android-tools/`. Klucz przesyłania i hasło:
+`~/Documents/cien-android-klucz/` (przenieść do menedżera haseł). `/.well-known/assetlinks.json` jest na produkcji
+i Google go potwierdza. Po włączeniu Play App Signing dopisać do assetlinks drugi odcisk SHA-256 z Play Console.
+Nowa wersja: podnieść `appVersionCode` w `twa-manifest.json`, `bubblewrap update`, `bubblewrap build`.
+
+## Android krok po kroku (stara ścieżka przez PWABuilder, niepotrzebna)
 
 Dysk w Macu jest prawie pełny, więc zamiast lokalnych narzędzi Androida używamy PWABuilder (Microsoft, darmowy).
 
