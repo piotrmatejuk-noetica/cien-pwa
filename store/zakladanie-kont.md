@@ -61,3 +61,11 @@ w dniu wysyłki i wpiszę je w formularzach.
   (3) weryfikacja numerów telefonów (po 1 i 2).
 - **Apple:** podstawowa umowa Apple Developer zaakceptowana. Numer D-U-N-S Sacrum: 369477420 (już istniał w D&B).
   Zapis organizacji i opłata 99 USD tylko w aplikacji Apple Developer (iPhone/Mac) — Piotr.
+
+### Aktualizacja 21.10.2026, popołudnie
+- Strona sacrum.life **zweryfikowana** w Play Console (Search Console, plik `google5db174e38a93c7f5.html` serwowany regułą nginx na VPS — nie usuwać).
+- Dokumenty tożsamości przedstawiciela przesłane, status „Google weryfikuje Twoją tożsamość” (kilka dni, mail na piotr.matejuk@gmail.com).
+- Tworzenie aplikacji zablokowane do weryfikacji: sprawdzanie nazwy pakietu zwraca 404, każda nazwa wygląda na „zajętą”. `com.cienfestiwal.app` nie istnieje publicznie w Play (404). Po weryfikacji spróbować ponownie; jeśli naprawdę zajęta — nowy `packageId` w `cien-android/twa-manifest.json`, przebudowa, nowy assetlinks.
+- Zrzuty Google Play przerobione na 1080×2160 (Play przyjmuje najwyżej 2:1; poprzednie 1080×2340 byłyby odrzucone).
+- Paczka: targetSdk 36, minSdk 24, versionCode 1. W `app/build.gradle` `versionName ""` — przy najbliższej przebudowie ustawić 1.0.0.
+- Apple: Piotr nie przeszedł skanu prawa jazdy w aplikacji Apple Developer (iPhone 16 Pro nie łapie ostrości z bliska). Rady: telefon 25–35 cm, ciemne matowe tło, dowód/paszport zamiast prawa jazdy, ewentualnie inne urządzenie zalogowane jego Apple ID.
