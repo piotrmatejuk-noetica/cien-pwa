@@ -47,3 +47,17 @@ oraz bezpłatny wniosek: https://developer.apple.com/enroll/duns-lookup/ (logowa
 
 Oba sklepy poproszą o dane logowania do Slow Dating i drużyny. Założę konto `review@cienfestiwal.com` w appce
 w dniu wysyłki i wpiszę je w formularzach.
+
+## Stan 21.10.2026
+
+- **Google Play: konto ZAŁOŻONE i opłacone** (25 USD, karta Visa …3216, rachunek na piotr.matejuk@gmail.com).
+  Konto organizacji „CIEŃ Festiwal”, ID 4715212429697029904, właściciel piotr.matejuk@gmail.com,
+  profil płatności SACRUM SP Z O O (D-U-N-S 369477420, ul. Rudzka 5a-16, Warszawa).
+  Publiczny e-mail piotr@sacrum.life (zweryfikowany), publiczny telefon +48 669 510 131, strona https://sacrum.life.
+  Organizacja: wgrany odpis pełny KRS 0001229774 (stan 03.08.2026).
+  Do zrobienia przed publikacją: (1) przedstawiciel — dowód + selfie przez kod QR na telefonie (Piotr),
+  (2) potwierdzenie własności sacrum.life w Search Console (usługa https://sacrum.life/ dodana na piotr.matejuk@gmail.com,
+  plik google5db174e38a93c7f5.html albo TXT w Cloudflare; metoda Analytics nie działa, bo GA ładuje się po zgodzie),
+  (3) weryfikacja numerów telefonów (po 1 i 2).
+- **Apple:** podstawowa umowa Apple Developer zaakceptowana. Numer D-U-N-S Sacrum: 369477420 (już istniał w D&B).
+  Zapis organizacji i opłata 99 USD tylko w aplikacji Apple Developer (iPhone/Mac) — Piotr.
