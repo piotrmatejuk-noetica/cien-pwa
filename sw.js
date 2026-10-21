@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cien-2026-v86';
+const CACHE_NAME = 'cien-v87';
 
 const STATIC_ASSETS = [
   '/',
@@ -81,44 +81,55 @@ self.addEventListener('notificationclick', e => {
   );
 });
 
+// Sieć z limitem czasu: słaby zasięg nie blokuje startu, po 3 s bierzemy wersję zapisaną
+function networkWithTimeout(request, ms) {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error('timeout')), ms);
+    fetch(request).then(res => { clearTimeout(timer); resolve(res); }, err => { clearTimeout(timer); reject(err); });
+  });
+}
+
+function putInCache(request, res) {
+  if (res && res.status === 200 && res.type !== 'opaque') {
+    const clone = res.clone();
+    caches.open(CACHE_NAME).then(cache => cache.put(request, clone));
+  }
+  return res;
+}
+
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
-
   const url = new URL(e.request.url);
 
-  // Dane na żywo (PocketBase, funkcje Netlify) zawsze z sieci — nigdy z pamięci podręcznej
+  // Inne domeny (np. pogoda) i dane na żywo (konta, czat, funkcje) zawsze z sieci, bez zapisu
+  if (url.origin !== self.location.origin) return;
   if (url.pathname.startsWith('/pb/') || url.pathname.startsWith('/.netlify/')) return;
 
-  // Network-first for HTML/JS/CSS on same origin — always fresh, cache as fallback
-  if (
-    url.hostname === self.location.hostname &&
-    (url.pathname === '/' || url.pathname.endsWith('.html') ||
-     url.pathname.endsWith('.js') || url.pathname.endsWith('.css'))
-  ) {
+  // Strony, skrypty, style: najnowsze z sieci, ale najwyżej 3 s czekania
+  if (e.request.mode === 'navigate' || url.pathname === '/' || /\.(html|js|css)$/.test(url.pathname)) {
     e.respondWith(
-      fetch(e.request).then(res => {
-        if (res && res.status === 200) {
-          const clone = res.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(e.request, clone));
-        }
-        return res;
-      }).catch(() => caches.match(e.request).then(c => c || caches.match('/index.html')))
+      networkWithTimeout(e.request, 3000)
+        .then(res => putInCache(e.request, res))
+        .catch(() => caches.match(e.request, { ignoreSearch: true })
+          .then(c => c || (e.request.mode === 'navigate' ? caches.match('/index.html') : Promise.reject(new Error('offline')))))
     );
     return;
   }
 
-  // Cache-first for static assets (icons, JSON data, fonts)
-  // JSON/data files must NEVER fall back to index.html — that would break JSON.parse
-  const isData = url.pathname.startsWith('/data/') || url.pathname.endsWith('.json');
+  // Program i punkty: od razu z pamięci, w tle pobieramy nowszą wersję (zmiany w programie docierają bez aktualizacji appki)
+  if (url.pathname.startsWith('/data/')) {
+    e.respondWith(
+      caches.match(e.request).then(cached => {
+        const fresh = fetch(e.request).then(res => putInCache(e.request, res));
+        if (cached) { e.waitUntil(fresh.catch(() => {})); return cached; }
+        return fresh;
+      })
+    );
+    return;
+  }
+
+  // Ikony, fonty, zdjęcia: z pamięci, a gdy ich nie ma, z sieci
   e.respondWith(
-    caches.match(e.request).then(cached => {
-      if (cached) return cached;
-      return fetch(e.request).then(res => {
-        if (!res || res.status !== 200 || res.type === 'opaque') return res;
-        const clone = res.clone();
-        caches.open(CACHE_NAME).then(cache => cache.put(e.request, clone));
-        return res;
-      }).catch(() => isData ? Promise.reject(new Error('offline')) : caches.match('/index.html'));
-    })
+    caches.match(e.request).then(cached => cached || fetch(e.request).then(res => putInCache(e.request, res)))
   );
 });

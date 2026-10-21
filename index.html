@@ -7,19 +7,19 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="CIEŃ">
-  <meta name="description" content="Przewodnik uczestnika CIEŃ Festiwal 2026 — Zamek Świny, 3–5 lipca">
+  <meta name="description" content="Aplikacja uczestnika festiwalu CIEŃ: program, mapa, Mój Plan, dziennik, Slow Dating i pomoc PsyCare. CIEŃ 2027 Śnienie, 8–11 lipca, Pałac w Roztoce.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://app.cienfestiwal.com/">
-  <meta property="og:title" content="CIEŃ Festiwal 2026 — Aplikacja uczestnika">
-  <meta property="og:description" content="Plan wykładów, mapa zamku, baza wiedzy i Slow Dating. Zamek Świny, 3–5 lipca 2026.">
+  <meta property="og:title" content="CIEŃ Festiwal · aplikacja uczestnika">
+  <meta property="og:description" content="Program, Mój Plan, mapa, dziennik i Slow Dating. CIEŃ 2027 Śnienie, 8–11 lipca, Pałac w Roztoce.">
   <meta property="og:image" content="https://app.cienfestiwal.com/icons/cien-logo.png">
   <meta name="twitter:card" content="summary">
-  <meta name="twitter:title" content="CIEŃ Festiwal 2026">
-  <meta name="twitter:description" content="Plan wykładów, mapa zamku, baza wiedzy i Slow Dating. Zamek Świny, 3–5 lipca 2026.">
+  <meta name="twitter:title" content="CIEŃ Festiwal">
+  <meta name="twitter:description" content="Program, Mój Plan, mapa, dziennik i Slow Dating. CIEŃ 2027 Śnienie, 8–11 lipca, Pałac w Roztoce.">
   <meta name="twitter:image" content="https://app.cienfestiwal.com/icons/cien-logo.png">
   <meta name="mobile-web-app-capable" content="yes">
 
-  <title>CIEŃ Festiwal 2026</title>
+  <title>CIEŃ Festiwal</title>
 
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/svg+xml" href="icons/icon.svg">
@@ -38,44 +38,38 @@
 <div id="splash-screen">
   <div class="sn-emblem sn-emblem--splash" aria-hidden="true"><img src="icons/uroboros.webp" alt=""></div>
   <div class="sn-wordmark sn-wordmark--splash">CIEŃ<span>festiwal</span></div>
-  <div class="splash-tagline">3–5 lipca 2026 · Zamek Świny</div>
+  <div class="splash-tagline">8–11 lipca 2027 · Pałac w Roztoce</div>
 </div>
 
 <!-- AUTH SCREEN -->
-<div id="auth-screen" style="display:none">
-  <button class="auth-skip-x" onclick="skipAuth()" title="Kontynuuj bez logowania">✕</button>
+<div id="auth-screen" style="display:none" role="dialog" aria-modal="true" aria-labelledby="auth-form-title">
+  <button class="auth-skip-x" onclick="skipAuth()" aria-label="Wejdź bez konta">✕</button>
   <div class="auth-inner">
     <div class="sn-emblem sn-emblem--auth" aria-hidden="true"><img src="icons/slonce-cien.webp" alt=""></div>
     <div class="auth-title">CIEŃ <em>festiwal</em></div>
-    <div class="auth-sub">Twój profil pojawi się w Slow Dating i drużynie</div>
+    <div class="auth-sub">Program, mapa, Twój plan i dziennik działają bez konta. Konto jest potrzebne do Slow Dating i drużyny.</div>
 
-    <!-- RETURNING USER: instant re-login, hidden by default -->
-    <div id="auth-returning" style="display:none">
-      <button class="auth-btn auth-btn-cta" onclick="authContinue()">Kontynuuj jako <span id="auth-return-name"></span> →</button>
-      <button class="auth-back" onclick="authSwitchUser()">Zaloguj się na inne konto</button>
-    </div>
+    <button class="auth-btn auth-btn-cta auth-enter" onclick="skipAuth()">Wejdź do aplikacji</button>
 
-    <div id="auth-panel-main">
-      <div class="auth-register-form">
-        <input class="auth-input" id="auth-email" type="email" placeholder="Adres e-mail" autocomplete="email" onkeydown="if(event.key==='Enter')document.getElementById('auth-password').focus()">
-        <input class="auth-input" id="auth-password" type="password" placeholder="Ustaw hasło" autocomplete="new-password" onkeydown="if(event.key==='Enter')authRegister()">
-        <button class="auth-btn auth-btn-cta" onclick="authRegister()">Załóż konto →</button>
-      </div>
-      <div id="auth-error" class="auth-error"></div>
+    <div class="auth-guest-divider" aria-hidden="true"></div>
+    <div id="auth-legacy-note" class="auth-legacy-note" style="display:none">Konta przenieśliśmy na bezpieczny serwer. Załóż konto jeszcze raz: Twój plan i dziennik zostają na tym telefonie.</div>
 
+    <form id="auth-panel-main" class="auth-register-form" onsubmit="authSubmit(event)" novalidate>
+      <h2 id="auth-form-title" class="auth-form-title">Załóż konto</h2>
+      <input class="auth-input" id="auth-name" type="text" placeholder="Imię lub nick (widzi je drużyna)" autocomplete="nickname" maxlength="40" aria-label="Imię lub nick">
+      <input class="auth-input" id="auth-email" type="email" placeholder="Adres e-mail" autocomplete="email" inputmode="email" aria-label="Adres e-mail" required>
+      <input class="auth-input" id="auth-password" type="password" placeholder="Hasło (min. 8 znaków)" autocomplete="new-password" aria-label="Hasło" required>
       <div class="auth-terms" id="auth-terms-block">
         <label class="auth-terms-label">
           <input type="checkbox" id="auth-terms-check">
-          <span>Akceptuję <a href="/regulamin" target="_blank" rel="noopener">Regulamin</a> i <a href="/polityka-prywatnosci" target="_blank" rel="noopener">Politykę Prywatności</a>. Operatorem danych osobowych jest Sacrum sp.&nbsp;z&nbsp;o.o., ul.&nbsp;Klaudyny&nbsp;34c, 01-684&nbsp;Warszawa.</span>
+          <span>Akceptuję <a href="/regulamin" target="_blank" rel="noopener">Regulamin</a> i <a href="/polityka-prywatnosci" target="_blank" rel="noopener">Politykę Prywatności</a>.</span>
         </label>
       </div>
-
-      <div class="auth-guest-row">
-        <div class="auth-guest-divider"></div>
-        <button class="auth-guest-btn" onclick="skipAuth()">Kontynuuj jako gość</button>
-        <div class="auth-guest-info">Jako gość nie pojawisz się w Slow Dating i nie dołączysz do drużyny. Twoja decyzja.</div>
-      </div>
-    </div>
+      <div id="auth-error" class="auth-error" role="alert" aria-live="polite"></div>
+      <button id="auth-submit" type="submit" class="auth-btn auth-btn-secondary">Załóż konto</button>
+      <div id="auth-switch" class="auth-switch"></div>
+      <button id="auth-forgot" type="button" class="auth-link" style="display:none" onclick="authForgot()">Nie pamiętasz hasła?</button>
+    </form>
 
     <div class="auth-partners">
       <div class="auth-partners-label">Partnerzy</div>
@@ -83,7 +77,6 @@
         <img src="icons/sacrum-logo.png" alt="SACRUM" class="auth-partner-logo">
       </div>
     </div>
-
   </div>
 </div>
 
@@ -116,9 +109,12 @@
   <header id="app-header">
     <div class="logo">
       <span class="sn-wordmark" aria-label="CIEŃ festiwal">CIEŃ</span>
-      <span class="stage-badge" id="stage-badge">2026</span>
+      <span class="stage-badge" id="stage-badge">Śnienie · 2027</span>
     </div>
-    <div class="now-time" id="header-time">—</div>
+    <div class="header-right">
+      <div class="now-time" id="header-time">—</div>
+      <button class="header-help" onclick="callHelp()" aria-label="Pomoc i numery alarmowe"><i class="ph-light ph-lifebuoy" aria-hidden="true"></i><span>Pomoc</span></button>
+    </div>
   </header>
 
   <!-- CONTENT -->
@@ -143,8 +139,8 @@
     <!-- VIEW: MAPA -->
     <div class="view" id="view-mapa">
       <div class="view-header">
-        <div class="view-title">Mapa Zamku</div>
-        <div class="view-subtitle">Strefy festiwalu i punkty na terenie</div>
+        <div class="view-title">Mapa terenu</div>
+        <div class="view-subtitle">Edycja 2026 · Zamek Świny. Mapę Pałacu w Roztoce dodamy przed festiwalem 2027.</div>
       </div>
       <div id="map-content">
         <div style="padding:2rem;text-align:center;color:var(--szary)">

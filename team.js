@@ -1,6 +1,6 @@
 /* ============================================
-   CIEŃ FESTIWAL 2026 — Moja drużyna
-   Backend: PocketBase @ pb.cienfestiwal.com
+   CIEŃ FESTIWAL — Moja drużyna
+   Backend: PocketBase (/pb) z kontami; zapis członkostwa przez /.netlify/functions/api
    ============================================ */
 
 'use strict';
@@ -48,13 +48,12 @@ let _locPollTimer    = null;   // PocketBase location poll
 // ============================================
 
 async function _pb(path, opts = {}) {
-  const res = await fetch(PB + path, {
-    headers: { 'Content-Type': 'application/json', ...opts.headers },
-    ...opts,
-  });
+  const res = await pbFetch(path, opts);
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error(err.message || 'PB error ' + res.status);
+    const e = new Error(err.message || 'Błąd serwera ' + res.status);
+    e.status = res.status;
+    throw e;
   }
   return res.json();
 }
@@ -63,93 +62,54 @@ async function _pb(path, opts = {}) {
 // Team management
 // ============================================
 
-function _genCode() {
-  return Math.random().toString(36).slice(2, 8).toUpperCase();
-}
 
 async function teamCreate(name) {
-  const uid  = localStorage.getItem('cien_user_id') || 'guest';
-  const uname = localStorage.getItem('cien_user_name') || 'Uczestnik';
-  const code = _genCode();
-  const team = await _pb('/api/collections/cien_teams/records', {
-    method: 'POST',
-    body: JSON.stringify({
-      name, code,
-      creator_uid: uid, creator_name: uname,
-      members: JSON.stringify([{ uid, name: uname }]),
-    }),
-  });
+  const { team } = await apiCall('team-create', { name });
   _persistTeam(team);
+  await _loadMembers();
+  _syncProfileToTeam().catch(() => {});
   return team;
 }
 
 async function teamJoin(code) {
-  const uid   = localStorage.getItem('cien_user_id') || 'guest';
-  const uname = localStorage.getItem('cien_user_name') || 'Uczestnik';
-
-  const list = await _pb(`/api/collections/cien_teams/records?filter=${encodeURIComponent(`code='${code.toUpperCase()}'`)}&perPage=1`);
-  if (!list.items || !list.items.length) throw new Error('Nie znaleziono drużyny o tym kodzie');
-  const team = list.items[0];
-
-  let members = _parseTeamMembers(team);
-  if (!members.find(m => m.uid === uid)) {
-    members.push({ uid, name: uname });
-    for (let attempt = 0; attempt < 3; attempt++) {
-      try {
-        await _pb(`/api/collections/cien_teams/records/${team.id}`, {
-          method: 'PATCH',
-          body: JSON.stringify({ members: JSON.stringify(members) }),
-        });
-        break;
-      } catch (e) {
-        if (attempt === 2) throw e;
-        await new Promise(r => setTimeout(r, 200 + Math.random() * 300));
-        const fresh = await _pb(`/api/collections/cien_teams/records/${team.id}`);
-        const freshMembers = _parseTeamMembers(fresh);
-        if (!freshMembers.find(m => m.uid === uid)) {
-          freshMembers.push({ uid, name: uname });
-        }
-        members = freshMembers;
-      }
-    }
-  }
-  _persistTeam({ ...team, members });
+  const { team } = await apiCall('team-join', { code });
+  _persistTeam(team);
+  await _loadMembers();
   _syncProfileToTeam().catch(() => {});
   return team;
 }
 
 function _persistTeam(team) {
-  _team = team;
+  _team = { ...(_team && _team.id === team.id ? _team : {}), ...team };
   localStorage.setItem('cien_team_id',   team.id);
-  localStorage.setItem('cien_team_code', team.code);
-  localStorage.setItem('cien_team_name', team.name);
+  localStorage.setItem('cien_team_code', team.code || '');
+  localStorage.setItem('cien_team_name', team.name || '');
+  localStorage.setItem('cien_team_snapshot', JSON.stringify(_team));
 }
 
+// Brak sieci NIE wyrzuca z drużyny: zostaje ostatni zapisany stan
 async function teamLoad() {
   const id = localStorage.getItem('cien_team_id');
-  if (!id) return null;
+  if (!id || !isLoggedIn()) return null;
+  try { _team = JSON.parse(localStorage.getItem('cien_team_snapshot') || 'null'); } catch { _team = null; }
+  if (!_team || _team.id !== id) _team = { id, name: localStorage.getItem('cien_team_name') || '', code: localStorage.getItem('cien_team_code') || '', membersList: [] };
   try {
     const team = await _pb(`/api/collections/cien_teams/records/${id}`);
-    _team = team;
+    _persistTeam({ id: team.id, name: team.name, code: team.code, owner: team.owner });
+    await _loadMembers();
     _syncProfileToTeam().catch(() => {});
-    return team;
   } catch (e) {
-    localStorage.removeItem('cien_team_id');
-    return null;
+    if (e.status === 404 || e.status === 403) { teamReset(); return null; }
   }
+  return _team;
 }
 
-function teamLeave() {
-  localStorage.removeItem('cien_team_id');
-  localStorage.removeItem('cien_team_code');
-  localStorage.removeItem('cien_team_name');
-  _team = null;
-  _teamInitialized        = false;
-  _chatInputListenerAdded = false;
-  _seenMsgIds             = new Set();
-  _stopPoll();
-  _stopLocSharing();
-  _messages = []; _notes = []; _meetings = [];
+async function teamLeave() {
+  if (_team) {
+    try { await apiCall('team-leave', { team: _team.id }); }
+    catch (e) { _showTeamError('Nie udało się opuścić drużyny: ' + e.message); return; }
+  }
+  teamReset();
   renderTeamView();
 }
 
@@ -158,14 +118,12 @@ function teamLeave() {
 // ============================================
 
 async function sendMessage(text) {
-  const uid   = localStorage.getItem('cien_user_id') || 'guest';
-  const uname = localStorage.getItem('cien_user_name') || 'Uczestnik';
   return _pb('/api/collections/cien_messages/records', {
     method: 'POST',
     body: JSON.stringify({
-      team_id: _team.id,
-      sender_uid: uid,
-      sender_name: uname,
+      team: _team.id,
+      owner: Auth.user.id,
+      sender_name: (localStorage.getItem('cien_user_name') || 'Uczestnik').slice(0, 40),
       text,
       msg_type: 'text',
     }),
@@ -173,9 +131,8 @@ async function sendMessage(text) {
 }
 
 async function _fetchMessages(page = 1) {
-  const perPage = 30;
-  const filterExpr = `team_id='${_team.id}'`;
-  const data = await _pb(`/api/collections/cien_messages/records?filter=${encodeURIComponent(filterExpr)}&sort=-id&perPage=${perPage}&page=${page}`);
+  const perPage = 50;
+  const data = await _pb(`/api/collections/cien_messages/records?filter=${encodeURIComponent(`team='${_team.id}'`)}&sort=-created,-id&perPage=${perPage}&page=${page}`);
   _chatHasMore = (data.totalItems || 0) > page * perPage;
   const items = (data.items || []).reverse();
   return items.filter(m => !_seenMsgIds.has(m.id));
@@ -184,7 +141,10 @@ async function _fetchMessages(page = 1) {
 function _startPoll() {
   _stopPoll();
   _pollMessages();
-  _pollTimer = setInterval(_pollMessages, 5000);
+  _pollTimer = setInterval(() => { if (!document.hidden && State.currentView === 'druzyna') _pollMessages(); }, 6000);
+  clearInterval(_membersTimer);
+  _refreshMembersUI();
+  _membersTimer = setInterval(_refreshMembersUI, 30000);
 }
 
 function _stopPoll() {
@@ -209,13 +169,11 @@ async function _pollMessages() {
 // ============================================
 
 async function saveNote(title, content, lecture) {
-  const uid   = localStorage.getItem('cien_user_id') || 'guest';
-  const uname = localStorage.getItem('cien_user_name') || 'Uczestnik';
   const note = await _pb('/api/collections/cien_notes/records', {
     method: 'POST',
     body: JSON.stringify({
-      team_id: _team.id,
-      author_uid: uid, author_name: uname,
+      team: _team.id, owner: Auth.user.id,
+      author_name: (localStorage.getItem('cien_user_name') || 'Uczestnik').slice(0, 40),
       title, content, lecture,
     }),
   });
@@ -224,8 +182,7 @@ async function saveNote(title, content, lecture) {
 }
 
 async function _fetchNotes() {
-  const filterExpr = `team_id='${_team.id}'`;
-  const data = await _pb(`/api/collections/cien_notes/records?filter=${encodeURIComponent(filterExpr)}&perPage=50`);
+  const data = await _pb(`/api/collections/cien_notes/records?filter=${encodeURIComponent(`team='${_team.id}'`)}&sort=-created&perPage=100`);
   return data.items || [];
 }
 
@@ -234,22 +191,21 @@ async function _fetchNotes() {
 // ============================================
 
 const FESTIVAL_DAYS = {
-  'Piątek 3 VII':   '2026-07-03',
-  'Sobota 4 VII':   '2026-07-04',
-  'Niedziela 5 VII':'2026-07-05',
+  'Czwartek 8 VII':  '2027-07-08',
+  'Piątek 9 VII':    '2027-07-09',
+  'Sobota 10 VII':   '2027-07-10',
+  'Niedziela 11 VII':'2027-07-11',
 };
 
-const DAY_ORDER = { 'Piątek 3 VII': 0, 'Sobota 4 VII': 1, 'Niedziela 5 VII': 2 };
+const DAY_ORDER = { 'Czwartek 8 VII': 0, 'Piątek 9 VII': 1, 'Sobota 10 VII': 2, 'Niedziela 11 VII': 3 };
 
 async function createMeeting(title, zone, day, time) {
-  const uid   = localStorage.getItem('cien_user_id') || 'guest';
-  const uname = localStorage.getItem('cien_user_name') || 'Uczestnik';
   const m = await _pb('/api/collections/cien_meetings/records', {
     method: 'POST',
     body: JSON.stringify({
-      team_id: _team.id,
+      team: _team.id, owner: Auth.user.id,
       title, zone, day, time,
-      creator_uid: uid, creator_name: uname,
+      creator_name: (localStorage.getItem('cien_user_name') || 'Uczestnik').slice(0, 40),
     }),
   });
   _meetings.push(m);
@@ -258,8 +214,7 @@ async function createMeeting(title, zone, day, time) {
 }
 
 async function _fetchMeetings() {
-  const filterExpr = `team_id='${_team.id}'`;
-  const data = await _pb(`/api/collections/cien_meetings/records?filter=${encodeURIComponent(filterExpr)}&sort=day,time&perPage=50`);
+  const data = await _pb(`/api/collections/cien_meetings/records?filter=${encodeURIComponent(`team='${_team.id}'`)}&sort=day,time&perPage=100`);
   return data.items || [];
 }
 
@@ -310,6 +265,10 @@ async function _scheduleAllNotifs() {
 function renderTeamView() {
   const el = document.getElementById('team-content');
   if (!el) return;
+  if (!isLoggedIn()) {
+    el.innerHTML = accountRequiredHTML('Drużyna', 'druzyna');
+    return;
+  }
   if (!_team) {
     el.innerHTML = _tmplNoTeam();
     return;
@@ -349,14 +308,14 @@ function _tmplNoTeam() {
 
 function _tmplTeam() {
   const members = _parseMembersList();
-  const myUid = localStorage.getItem('cien_user_id') || '';
+  const myUid = Auth.user?.id || '';
   const at = t => _chatTab === t ? 'active' : '';
   const membersHtml = members.map(m => {
-    const isMe = m.uid === myUid;
-    const displayName = m.nick || m.name || 'Uczestnik';
+    const isMe = m.id === myUid;
+    const displayName = m.name || 'Uczestnik';
     const initials = displayName.trim().split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2);
     const avatarHTML = `<div class="team-member-avatar">${_esc(initials)}</div>`;
-    return `<div class="team-member-row" onclick="showMemberProfile('${_esc(m.uid)}')">
+    return `<div class="team-member-row" role="button" tabindex="0" onclick="showMemberProfile('${_esc(m.id)}')" onkeydown="if(event.key==='Enter')showMemberProfile('${_esc(m.id)}')">
       ${avatarHTML}
       <div class="team-member-info">
         <div class="team-member-name">${_esc(displayName)}${isMe ? ' <span class="team-member-you">(Ty)</span>' : ''}</div>
@@ -369,7 +328,7 @@ function _tmplTeam() {
 <div class="team-header">
   <div class="team-header-name">${_esc(_team.name)}</div>
   <div class="team-header-meta">Kod: <strong class="team-code">${_esc(_team.code)}</strong></div>
-  <button class="team-leave-btn" onclick="if(confirm('Opuścić drużynę?')) teamLeave()">Opuść</button>
+  <button class="team-leave-btn" onclick="if(confirm('Opuścić drużynę? Twoje wiadomości zostaną u pozostałych.')) teamLeave()">Opuść</button>
 </div>
 
 <div class="team-members-section">
@@ -388,9 +347,7 @@ function _tmplTeam() {
 }
 
 function _parseTeamMembers(team) {
-  let members = (team || _team).members || [];
-  if (typeof members === 'string') { try { members = JSON.parse(members); } catch (_e) { members = []; } }
-  return members;
+  return ((team || _team) && (team || _team).membersList) || [];
 }
 
 function _parseMembersList() {
@@ -444,12 +401,13 @@ function _tmplChat() {
 }
 
 function _msgHtml(m) {
-  const mine = m.sender_uid === (localStorage.getItem('cien_user_id') || '');
-  const ts   = m.created ? m.created.slice(11, 16) : '';
-  return `<div class="team-msg ${mine ? 'mine' : ''}">
-    ${!mine ? `<div class="team-msg-name">${_esc(m.sender_name || 'Uczestnik')}</div>` : ''}
+  const mine = !!(Auth.user && m.owner === Auth.user.id);
+  const ts   = m.created ? new Date(m.created.replace(' ', 'T')).toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' }) : '';
+  const state = m._pending ? `<div class="team-msg-ts">${m._failed ? `Nie wysłano · <button class="auth-link" onclick="retryMessage('${_esc(m.id)}')">Ponów</button>` : 'Wysyłanie…'}</div>` : (ts ? `<div class="team-msg-ts">${ts}</div>` : '');
+  return `<div class="team-msg ${mine || m._pending ? 'mine' : ''}" data-mid="${_esc(m.id)}">
+    ${!(mine || m._pending) ? `<div class="team-msg-name">${_esc((_parseMembersList().find(x => x.id === m.owner) || {}).name || m.sender_name || 'Uczestnik')}</div>` : ''}
     <div class="team-msg-bubble">${_esc(m.text)}</div>
-    ${ts ? `<div class="team-msg-ts">${ts}</div>` : ''}
+    ${state}
   </div>`;
 }
 
@@ -517,21 +475,18 @@ function _setupChatInput() {
   }
 }
 
+// Wiadomość trafia najpierw do lokalnej kolejki; przy błędzie zostaje z przyciskiem „Ponów”
 async function sendMessageUI() {
   const inp = document.getElementById('team-msg-input');
   if (!inp) return;
-  const text = inp.value.trim();
+  const text = inp.value.trim().slice(0, 2000);
   if (!text || !_team) return;
   inp.value = '';
   inp.style.height = 'auto';
-  try {
-    const m = await sendMessage(text);
-    _seenMsgIds.add(m.id);
-    _messages.push(m);
-    _appendMessages([m]);
-  } catch (e) {
-    _showTeamError('Błąd wysyłania: ' + e.message);
-  }
+  const tmp = { id: 'tmp_' + Date.now(), text, _pending: true, owner: Auth.user?.id };
+  _messages.push(tmp);
+  _appendMessages([tmp]);
+  await _deliverMessage(tmp);
 }
 
 // ============================================
@@ -616,12 +571,10 @@ function _tmplMeetingsList() {
   <input id="mtg-title" class="team-input" placeholder="Opis spotkania (np. Podsumowanie)">
   <select id="mtg-day" class="team-input team-select">
     <option value="">Wybierz dzień</option>
-    <option>Piątek 3 VII</option>
-    <option>Sobota 4 VII</option>
-    <option>Niedziela 5 VII</option>
+    ${Object.keys(FESTIVAL_DAYS).map(d => `<option>${d}</option>`).join('')}
   </select>
   <input id="mtg-time" class="team-input" type="time">
-  <input id="mtg-zone" class="team-input" placeholder="Miejsce / strefa (np. Wieża, Dziedziniec)">
+  <input id="mtg-zone" class="team-input" placeholder="Miejsce (np. przy fosie, Scena Umbra)">
   <div class="team-notif-hint"><i class="ph-light ph-bell sn-ico" aria-hidden="true"></i> Powiadomienie 15 min przed — tylko gdy appka jest otwarta</div>
   <div style="display:flex;gap:0.5rem">
     <button class="team-btn team-btn-primary" onclick="saveMeetingUI()" style="flex:1">Zaplanuj</button>
@@ -758,37 +711,31 @@ function _startCompass() {
 }
 
 async function _writeMyLoc() {
-  if (!_myPos || !_team) return;
-  const uid   = localStorage.getItem('cien_user_id') || 'guest';
-  const uname = localStorage.getItem('cien_user_name') || 'Uczestnik';
+  if (!_myPos || !_team || !isLoggedIn()) return;
+  const me = Auth.user.id;
   try {
-    const existing = await _pb(`/api/collections/cien_locations/records?filter=${encodeURIComponent(`uid='${uid}'&&team_id='${_team.id}'`)}&perPage=1`);
+    const existing = await _pb(`/api/collections/cien_locations/records?filter=${encodeURIComponent(`owner='${me}' && team='${_team.id}'`)}&perPage=1`);
     const payload  = { lat: _myPos.lat, lon: _myPos.lng, loc_ts: new Date().toISOString(), sharing: true };
     if (existing.items && existing.items.length) {
-      await _pb(`/api/collections/cien_locations/records/${existing.items[0].id}`, {
-        method: 'PATCH',
-        body: JSON.stringify(payload),
-      });
+      await _pb(`/api/collections/cien_locations/records/${existing.items[0].id}`, { method: 'PATCH', body: JSON.stringify(payload) });
     } else {
       await _pb('/api/collections/cien_locations/records', {
         method: 'POST',
-        body: JSON.stringify({ uid, nick: uname, team_id: _team.id, ...payload }),
+        body: JSON.stringify({ owner: me, team: _team.id, nick: (localStorage.getItem('cien_user_name') || 'Uczestnik').slice(0, 40), ...payload }),
       });
     }
   } catch (_e) {}
 }
 
 async function _fetchTeamLocsPB() {
-  if (!_team) return;
-  const uid = localStorage.getItem('cien_user_id') || 'guest';
+  if (!_team || !isLoggedIn()) return;
+  const me = Auth.user.id;
   try {
     const cutoff = new Date(Date.now() - 90000).toISOString();
-    const data = await _pb(`/api/collections/cien_locations/records?filter=${encodeURIComponent(`team_id='${_team.id}'&&sharing=true&&loc_ts>='${cutoff}'`)}&perPage=50`);
+    const data = await _pb(`/api/collections/cien_locations/records?filter=${encodeURIComponent(`team='${_team.id}' && loc_ts>='${cutoff}'`)}&perPage=50`);
     _teamLocs = {};
     (data.items || []).forEach(m => {
-      if (m.uid !== uid) {
-        _teamLocs[m.uid] = { uid: m.uid, name: m.nick || 'Uczestnik', lat: m.lat, lng: m.lon };
-      }
+      if (m.owner !== me) _teamLocs[m.owner] = { uid: m.owner, name: m.nick || 'Uczestnik', lat: m.lat, lng: m.lon };
     });
     _updateLocationUI();
     _updateLocationArrows();
@@ -1161,32 +1108,21 @@ async function teamJoinUI() {
 // Profile sync
 // ============================================
 
+// Imię, opis, tematy i „Moje cienie” widzą tylko członkowie Twojej drużyny (przez serwer)
 async function _syncProfileToTeam() {
-  if (!_team) return;
-  const myUid = localStorage.getItem('cien_user_id') || '';
-  if (!myUid) return;
-  const p = (function() { try { return JSON.parse(localStorage.getItem('cien_sd_profile_2026') || '{}'); } catch { return {}; } })();
-  // Skip sync if nothing relevant changed — avoids GET+PATCH storm on app start
-  const syncKey = JSON.stringify({ nick: p.nick || '', about: p.about || '', tags: p.tags || [], shadows: p.shadows || [] });
-  if (localStorage.getItem('cien_team_sync_hash') === syncKey) return;
-  const current = await _pb(`/api/collections/cien_teams/records/${_team.id}`);
-  let members = current.members || [];
-  if (typeof members === 'string') { try { members = JSON.parse(members); } catch { members = []; } }
-  const idx = members.findIndex(m => m.uid === myUid);
-  const entry = idx >= 0 ? { ...members[idx] } : { uid: myUid, name: localStorage.getItem('cien_user_name') || 'Uczestnik' };
-  if (p.nick)    entry.nick    = p.nick;
-  if (p.about)   entry.about   = p.about;
-  if (p.tags)    entry.tags    = p.tags;
-  // photo intentionally NOT synced — base64 balloons the team record on every location poll
-  if (p.shadows) entry.shadows = p.shadows;
-  if (idx >= 0) members[idx] = entry; else members.push(entry);
-  await _pb(`/api/collections/cien_teams/records/${_team.id}`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ members: JSON.stringify(members) }),
-  });
-  _team.members = JSON.stringify(members);
-  localStorage.setItem('cien_team_sync_hash', syncKey);
+  if (!isLoggedIn()) return;
+  const p = typeof getSDProfile === 'function' ? getSDProfile() : {};
+  const body = {
+    name: (p.nick || localStorage.getItem('cien_user_name') || '').slice(0, 40),
+    about: (p.about || '').slice(0, 200),
+    tags: JSON.stringify(p.tags || []),
+    shadows: (typeof p.shadows === 'string' ? p.shadows : '').slice(0, 1000),
+  };
+  const key = JSON.stringify(body);
+  if (localStorage.getItem('cien_team_sync_hash') === key) return;
+  await _pb(`/api/collections/users/records/${Auth.user.id}`, { method: 'PATCH', body: JSON.stringify(body) });
+  if (body.name) localStorage.setItem('cien_user_name', body.name);
+  localStorage.setItem('cien_team_sync_hash', key);
 }
 
 // ============================================
@@ -1194,30 +1130,28 @@ async function _syncProfileToTeam() {
 // ============================================
 
 function showMemberProfile(uid) {
-  const members = _parseMembersList();
-  const m = members.find(x => x.uid === uid);
+  const m = _parseMembersList().find(x => x.id === uid);
   if (!m) return;
-  const myUid = localStorage.getItem('cien_user_id') || '';
-  const isMe = m.uid === myUid;
-  const displayName = m.nick || m.name || 'Uczestnik';
+  const isMe = !!(Auth.user && m.id === Auth.user.id);
+  const displayName = m.name || 'Uczestnik';
   const initials = displayName.trim().split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2);
-  // photo not stored in team JSON (would balloon with base64) — fetch from SD profiles async
-  const avatarHTML = `<div class="member-modal-avatar" id="mmp-avatar-${_esc(uid)}">${_esc(initials)}</div>`;
   const tagsHTML = (m.tags || []).map(t => `<span class="sd-tag">${_esc(t)}</span>`).join('');
-
   let modal = document.getElementById('member-profile-modal');
   if (!modal) {
     modal = document.createElement('div');
     modal.id = 'member-profile-modal';
     modal.className = 'member-modal-overlay';
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
     modal.onclick = e => { if (e.target === modal) closeMemberProfile(); };
+    modal.addEventListener('keydown', e => { if (e.key === 'Escape') closeMemberProfile(); });
     document.body.appendChild(modal);
   }
   modal.innerHTML = `
     <div class="member-modal-sheet">
-      <button class="member-modal-close" onclick="closeMemberProfile()">✕</button>
+      <button class="member-modal-close" onclick="closeMemberProfile()" aria-label="Zamknij">✕</button>
       <div class="member-modal-header">
-        ${avatarHTML}
+        <div class="member-modal-avatar">${_esc(initials)}</div>
         <div class="member-modal-name">${_esc(displayName)}${isMe ? ' <span class="team-member-you">(Ty)</span>' : ''}</div>
         ${m.about ? `<div class="member-modal-about">${_esc(m.about)}</div>` : ''}
       </div>
@@ -1227,26 +1161,11 @@ function showMemberProfile(uid) {
           <div class="member-modal-section-title"><i class="ph-light ph-moon sn-ico" aria-hidden="true"></i> Moje Cienie</div>
           <div class="member-modal-section-body">${_esc(m.shadows)}</div>
         </div>` : ''}
-      ${isMe ? `<button class="btn btn-gold" style="margin:1rem 0 0;width:100%" onclick="closeMemberProfile();navigateTo('profil')">Edytuj profil</button>` : ''}
+      ${isMe ? `<button class="btn btn-gold" style="margin:1rem 0 0;width:100%" onclick="closeMemberProfile();navigateTo('profil')">Edytuj profil</button>`
+             : `<button class="dating-btn-text" style="margin-top:1rem;width:100%" data-uid="${_esc(m.id)}" data-nick="${_esc(displayName)}" onclick="closeMemberProfile();teamReportMember(this.dataset.uid,this.dataset.nick)">Zgłoś tę osobę organizatorom</button>`}
     </div>`;
   modal.style.display = 'flex';
-  // Async: fetch photo from SD profiles collection (not stored in team JSON)
-  const avatarEl = document.getElementById(`mmp-avatar-${uid}`);
-  if (avatarEl) {
-    _pb(`/api/collections/cien_sd_profiles/records?filter=${encodeURIComponent(`uid='${uid}'`)}&perPage=1`)
-      .then(data => {
-        const sp = data.items?.[0];
-        if (sp?.photo && sp?.collectionId && sp?.id) {
-          const photoUrl = `/pb/api/files/${sp.collectionId}/${sp.id}/${sp.photo}?thumb=200x200`;
-          const img = document.createElement('img');
-          img.className = 'member-modal-photo';
-          img.alt = '';
-          img.src = photoUrl;
-          img.onerror = () => {};
-          avatarEl.replaceWith(img);
-        }
-      }).catch(() => {});
-  }
+  modal.querySelector('.member-modal-close')?.focus();
 }
 
 function closeMemberProfile() {
@@ -1276,15 +1195,87 @@ function _showTeamError(msg) {
 // Bootstrap — called from app.js init()
 // ============================================
 
-async function initTeam() {
-  if (_teamInitialized) return;
+async function initTeam(force) {
+  if (_teamInitialized && !force) return;
   _teamInitialized = true;
   const team = await teamLoad();
   if (team) {
     await _scheduleAllNotifs();
     localStorage.removeItem('cien_loc_sharing');
-    if (document.getElementById('view-druzyna')?.classList.contains('active')) {
-      renderTeamView();
-    }
   }
+  if (document.getElementById('view-druzyna')?.classList.contains('active')) renderTeamView();
+}
+
+// ============================================
+// Członkowie, reset, kolejka wiadomości, zgłoszenia
+// ============================================
+
+async function _loadMembers() {
+  if (!_team) return;
+  try {
+    const d = await apiCall('team-members', { team: _team.id });
+    _team.membersList = d.members || [];
+    _team.owner = d.owner;
+    localStorage.setItem('cien_team_snapshot', JSON.stringify(_team));
+  } catch { /* offline: zostaje lista z ostatniego zapisu */ }
+}
+
+// Czyści drużynę tylko na tym telefonie (wylogowanie, usunięcie z drużyny)
+function teamReset() {
+  ['cien_team_id', 'cien_team_code', 'cien_team_name', 'cien_team_snapshot', 'cien_team_sync_hash'].forEach(k => localStorage.removeItem(k));
+  _team = null;
+  _teamInitialized        = false;
+  _chatInputListenerAdded = false;
+  _seenMsgIds             = new Set();
+  _stopPoll();
+  if (typeof _stopLocSharing === 'function') _stopLocSharing();
+  _messages = []; _notes = []; _meetings = [];
+}
+
+async function _deliverMessage(tmp) {
+  try {
+    const m = await sendMessage(tmp.text);
+    _seenMsgIds.add(m.id);
+    const i = _messages.indexOf(tmp);
+    if (i >= 0) _messages[i] = m;
+    document.querySelector(`.team-msg[data-mid="${tmp.id}"]`)?.insertAdjacentHTML('afterend', _msgHtml(m));
+    document.querySelector(`.team-msg[data-mid="${tmp.id}"]`)?.remove();
+  } catch {
+    tmp._failed = true;
+    const el = document.querySelector(`.team-msg[data-mid="${tmp.id}"]`);
+    if (el) el.outerHTML = _msgHtml(tmp);
+  }
+}
+
+function retryMessage(id) {
+  const tmp = _messages.find(m => m.id === id);
+  if (!tmp) return;
+  tmp._failed = false;
+  const el = document.querySelector(`.team-msg[data-mid="${id}"]`);
+  if (el) el.outerHTML = _msgHtml(tmp);
+  _deliverMessage(tmp);
+}
+
+async function teamReportMember(uid, nick) {
+  const reason = prompt(`Zgłoszenie: ${nick}. Co się stało? Zgłoszenie czyta zespół CIENIA.`);
+  if (!reason || !reason.trim()) return;
+  try {
+    await apiCall('report', { target: uid, kind: 'team', ref: _team?.id || '', reason: reason.trim() });
+    showToast('Zgłoszenie wysłane. Dziękujemy.', 3000);
+  } catch (e) { showToast(e.message, 3500); }
+}
+
+// Odświeża listę członków w otwartej drużynie (ktoś dołączył albo wyszedł)
+let _membersTimer = null;
+async function _refreshMembersUI() {
+  if (!_team || State.currentView !== 'druzyna' || document.hidden) return;
+  const before = JSON.stringify(_parseMembersList().map(m => m.id));
+  await _loadMembers();
+  if (JSON.stringify(_parseMembersList().map(m => m.id)) === before) return;
+  const sec = document.querySelector('.team-members-section');
+  if (!sec) return;
+  const tmp = document.createElement('div');
+  tmp.innerHTML = _tmplTeam();
+  const fresh = tmp.querySelector('.team-members-section');
+  if (fresh) sec.replaceWith(fresh);
 }

@@ -389,7 +389,7 @@ img[src=""] { visibility: hidden; }
 .modal-sheet { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 1.25rem); }
 .sn-sos {
   display: block; margin: 0.25rem 0 1rem; padding: 0.9rem 1rem; border-radius: 999px;
-  background: #E5484D; color: #fff !important; text-align: center; font-weight: 600; font-family: var(--font-body);
+  background: #B4232A; color: #fff !important; text-align: center; font-weight: 600; font-family: var(--font-body);
 }
 .wplan-ai-note { margin-top: 0.6rem; font-size: 0.78rem; line-height: 1.45; color: var(--szary); }
 :focus-visible { outline: 2px solid var(--zloto-3); outline-offset: 2px; border-radius: 8px; }
@@ -400,3 +400,75 @@ img[src=""] { visibility: hidden; }
 }
 #bottom-nav .nav-btn .nav-label { white-space: nowrap; font-size: 0.7rem; letter-spacing: 0.01em; }
 .nav-btn { min-width: 0; padding-left: 2px; padding-right: 2px; }
+
+/* ---- Ekran powitalny / konto (X 2026) ---- */
+#auth-screen .auth-inner { gap: 0; }
+.auth-sub { max-width: 21rem; line-height: 1.55; }
+.auth-enter { width: 100%; margin-top: 1.4rem; }
+.auth-guest-divider { height: 1px; width: 100%; margin: 1.6rem 0 1.2rem; background: linear-gradient(90deg, transparent, rgba(216,185,130,.35), transparent); }
+.auth-form-title { font-family: var(--font-serif); font-weight: 500; font-size: 1.45rem; color: var(--pergamin); margin: 0 0 .9rem; text-align: center; }
+.auth-register-form { width: 100%; display: flex; flex-direction: column; gap: .7rem; }
+.auth-register-form .auth-input { width: 100%; }
+.auth-btn-secondary {
+  width: 100%; min-height: 48px; border-radius: 999px; cursor: pointer;
+  background: transparent; color: var(--pergamin); border: 1px solid rgba(216,185,130,.45);
+  font-family: var(--font-body); font-size: .95rem; letter-spacing: .02em;
+}
+.auth-btn-secondary:active { background: rgba(216,185,130,.12); }
+.auth-btn-secondary:disabled { opacity: .6; }
+.auth-switch { text-align: center; font-size: .85rem; color: var(--szary); }
+.auth-link { background: none; border: 0; padding: .25rem; color: var(--zloto); font: inherit; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+#auth-forgot { align-self: center; font-size: .85rem; }
+.auth-legacy-note { width: 100%; font-size: .85rem; line-height: 1.5; color: var(--pergamin); background: rgba(216,185,130,.08); border: 1px solid rgba(216,185,130,.25); border-radius: 14px; padding: .8rem 1rem; margin-bottom: 1rem; }
+.auth-error:empty { display: none; }
+.auth-error { color: #F2A38A; font-size: .85rem; text-align: center; }
+.auth-terms-label { font-size: .8rem; line-height: 1.5; }
+
+/* ---- Tryb oszczędny (Ustawienia) ---- */
+.sn-calm body::before, .sn-calm body::after { animation: none !important; }
+
+.sn-calm *, .sn-calm *::before, .sn-calm *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; }
+.sn-calm .card, .sn-calm .view-header, .sn-calm #bottom-nav, .sn-calm .modal-content { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+
+/* ---- Arkusz dialogowy (zgłoś/zablokuj) ---- */
+.sn-sheet { position: fixed; inset: 0; z-index: 3000; background: rgba(4,6,12,.72); display: flex; align-items: flex-end; justify-content: center; }
+.sn-sheet-panel { width: 100%; max-width: 520px; background: #0D1322; border: 1px solid rgba(216,185,130,.2); border-radius: 22px 22px 0 0; padding: 1.4rem 1.25rem calc(1.25rem + env(safe-area-inset-bottom)); }
+.sn-sheet-title { font-family: var(--font-serif); font-size: 1.5rem; color: var(--pergamin); margin-bottom: .4rem; }
+.sn-sheet-text { color: var(--szary); font-size: .9rem; line-height: 1.5; margin: 0 0 1rem; }
+.sn-sheet textarea.sd-input { width: 100%; resize: vertical; min-height: 4.5rem; }
+
+/* ---- Nagłówek: przycisk pomocy ---- */
+.header-right { display: flex; align-items: center; gap: .6rem; }
+.header-help { display: inline-flex; align-items: center; gap: .35rem; min-height: 36px; padding: 0 .8rem; border-radius: 999px; border: 1px solid rgba(242,163,138,.45); background: rgba(242,163,138,.1); color: #F6C3B2; font: 500 .8rem var(--font-body); cursor: pointer; }
+.header-help i { font-size: 1.05rem; }
+.header-help:active { background: rgba(242,163,138,.22); }
+
+/* ---- Zapowiedź edycji 2027 ---- */
+.ed-hero { margin: .25rem 0 1.25rem; padding: 1.4rem 1.2rem 1.3rem; border-radius: 22px; border: 1px solid rgba(216,185,130,.22); background: radial-gradient(120% 90% at 85% 0%, rgba(165,156,211,.16), transparent 60%), rgba(13,19,34,.72); }
+.ed-kicker { font: 500 .72rem var(--font-body); letter-spacing: .16em; text-transform: uppercase; color: var(--zloto); }
+.ed-title { font-family: var(--font-serif); font-weight: 500; font-size: 2rem; line-height: 1.1; margin: .35rem 0 .3rem; color: var(--pergamin); }
+.ed-title em { color: var(--zloto); }
+.ed-when { color: var(--pergamin); opacity: .85; font-size: .95rem; }
+.ed-count { display: flex; align-items: baseline; gap: .5rem; margin: 1rem 0 .25rem; }
+.ed-count-num { font-family: var(--font-serif); font-size: 2.6rem; line-height: 1; color: var(--zloto); }
+.ed-count-lbl { color: var(--szary); font-size: .9rem; }
+.ed-nights { display: grid; gap: .6rem; margin-top: 1rem; }
+.ed-night { padding: .8rem .9rem; border-radius: 14px; background: rgba(239,235,226,.04); border: 1px solid rgba(239,235,226,.07); }
+.ed-night-meta { font-size: .74rem; letter-spacing: .08em; text-transform: uppercase; color: var(--szary); }
+.ed-night-name { font-family: var(--font-serif); font-size: 1.3rem; color: var(--pergamin); margin: .15rem 0 .2rem; }
+.ed-night-text { margin: 0; font-size: .88rem; line-height: 1.5; color: var(--szary); }
+.ed-note { font-size: .85rem; color: var(--szary); line-height: 1.5; margin: 1rem 0; }
+.ed-cta { display: inline-flex; justify-content: center; width: 100%; text-decoration: none; }
+.ed-archive-label { font: 500 .74rem var(--font-body); letter-spacing: .14em; text-transform: uppercase; color: var(--szary); margin: 0 0 .75rem; display: flex; align-items: center; gap: .6rem; }
+.ed-archive-label::after { content: ''; flex: 1; height: 1px; background: rgba(216,185,130,.22); }
+.ed-inline-note { font-size: .85rem; color: var(--szary); line-height: 1.5; margin: 0 0 .75rem; }
+@media (min-width: 640px) { .ed-nights { grid-template-columns: 1fr 1fr; } }
+
+/* ---- Mój plan: konflikty i eksport ---- */
+.event-conflict { margin-top: .4rem; font-size: .78rem; line-height: 1.4; color: #F2C48A; }
+.plan-tools { display: flex; align-items: center; justify-content: space-between; gap: .75rem; flex-wrap: wrap; margin: .25rem 0 .75rem; font-size: .85rem; color: var(--szary); }
+.plan-conflict-count { color: #F2C48A; font-weight: 500; }
+
+/* ---- Kontrast drobnych napisów ---- */
+.team-msg-ts { color: var(--szary) !important; font-size: .72rem !important; }
+#toast { font-family: var(--font-body) !important; font-size: .85rem !important; letter-spacing: 0 !important; line-height: 1.4; }

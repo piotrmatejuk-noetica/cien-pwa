@@ -15,6 +15,11 @@
   status = 200
 
 [[redirects]]
+  from = "/usun-konto"
+  to = "/usun-konto.html"
+  status = 200
+
+[[redirects]]
   from = "/polityka-prywatnosci"
   to = "/polityka-prywatnosci.html"
   status = 200

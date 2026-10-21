@@ -5,28 +5,138 @@
 'use strict';
 
 // ============================================
-// AUTH
+// KONTO (PocketBase: e-mail + hasło, token w każdym prywatnym żądaniu)
+// Program, mapa, plan, dziennik i pomoc działają bez konta.
+// Konto jest potrzebne do Slow Dating i drużyny.
 // ============================================
 
 function initFirebase() {} // Firebase not used
 
-function _setUser(uid, email, name) {
-  localStorage.setItem('cien_user_id', uid);
-  if (email) localStorage.setItem('cien_user_email', email);
-  if (name)  localStorage.setItem('cien_user_name', name);
-  // Persist ghost record so returning users get instant re-login
-  if (email) localStorage.setItem('cien_prev_email', email);
-  if (name)  localStorage.setItem('cien_prev_name', name);
-  if (uid)   localStorage.setItem('cien_prev_uid', uid);
-  localStorage.setItem('cien_terms_accepted', '1');
-  hideAuthScreen();
-  showToast('Witaj na Cieniu 🌙', 2000);
-  if (typeof initTeam === 'function') initTeam();
+const PB_BASE = '/pb';
+const API_URL = '/.netlify/functions/api';
+const EDITION = '2027';
+
+const Auth = {
+  get token() { return localStorage.getItem('cien_pb_token') || ''; },
+  get user() { try { return JSON.parse(localStorage.getItem('cien_pb_user') || 'null'); } catch { return null; } },
+  save(token, user) {
+    localStorage.setItem('cien_pb_token', token);
+    localStorage.setItem('cien_pb_user', JSON.stringify({ id: user.id, email: user.email, name: user.name || '' }));
+    localStorage.setItem('cien_user_id', user.id);
+    localStorage.setItem('cien_user_name', user.name || (user.email || '').split('@')[0]);
+    localStorage.setItem('cien_user_email', user.email || '');
+  },
+  clear() {
+    ['cien_pb_token', 'cien_pb_user', 'cien_user_id', 'cien_user_name', 'cien_user_email'].forEach(k => localStorage.removeItem(k));
+  },
+};
+
+function isLoggedIn() { return !!(Auth.token && Auth.user); }
+
+// Identyfikator na potrzeby lokalnych kluczy; dla gościa stały losowy
+function getSDUid() {
+  if (isLoggedIn()) return Auth.user.id;
+  let g = localStorage.getItem('cien_guest_id');
+  if (!g) { g = 'guest_' + Math.random().toString(36).slice(2, 10); localStorage.setItem('cien_guest_id', g); }
+  return g;
 }
 
-function showAuthScreen() {
+// Żądanie do PocketBase z tokenem (gdy zalogowany)
+async function pbFetch(path, opts = {}) {
+  const headers = { ...(opts.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }), ...(opts.headers || {}) };
+  if (Auth.token) headers.Authorization = Auth.token;
+  const res = await fetch(PB_BASE + path, { ...opts, headers });
+  if (res.status === 401 && Auth.token) _authExpired();
+  return res;
+}
+
+// Wywołanie funkcji serwerowej; rzuca Error z komunikatem dla człowieka
+async function apiCall(action, body = {}) {
+  let res;
+  try {
+    res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...(Auth.token ? { Authorization: Auth.token } : {}) },
+      body: JSON.stringify({ action, ...body }),
+    });
+  } catch { throw new Error('Brak połączenia z internetem'); }
+  const data = await res.json().catch(() => ({}));
+  if (res.status === 401) { _authExpired(); throw new Error('Zaloguj się ponownie'); }
+  if (!res.ok) throw new Error(data.error || 'Coś poszło nie tak. Spróbuj za chwilę.');
+  return data;
+}
+
+function _authExpired() {
+  Auth.clear();
+  showToast('Sesja wygasła. Zaloguj się ponownie.', 3500);
+}
+
+// Odświeża token przy starcie (przedłuża sesję, wykrywa zawieszone/usunięte konto)
+async function authRefresh() {
+  if (!Auth.token) return;
+  try {
+    const res = await fetch(`${PB_BASE}/api/collections/users/auth-refresh`, { method: 'POST', headers: { Authorization: Auth.token } });
+    if (res.ok) { const d = await res.json(); Auth.save(d.token, d.record); }
+    else if (res.status === 401 || res.status === 404 || res.status === 403) _authExpired();
+  } catch { /* offline: zostaje dotychczasowy token */ }
+}
+
+// ============================================
+// EDYCJA: zapowiedź 2027 (dane ze strony festiwalu), program 2026 jako archiwum
+// ============================================
+const EDITION_INFO = {
+  year: 2027,
+  name: 'Śnienie',
+  dates: '8–11 lipca 2027',
+  place: 'Pałac w Roztoce',
+  start: new Date('2027-07-08T00:00:00+02:00'),
+  end: new Date('2027-07-12T06:00:00+02:00'),
+  site: 'https://cien27.piotrmatejuk.com',
+  nights: [
+    { n: 'I', day: 'Czwartek 8.07', name: 'Hipnagogia', text: 'Próg snu, gdy myśli zamieniają się w obrazy. Przyjazd, przekroczenie fosy, hipnoza i pierwsze rozmowy.' },
+    { n: 'II', day: 'Piątek 9.07', name: 'Sen głęboki', text: 'Zejście. Najciemniejsza i najcichsza faza, w której ciało się regeneruje. Dzień ciała, cienia i tego, co leży najniżej.' },
+    { n: 'III', day: 'Sobota 10.07', name: 'REM', text: 'Obrazy. Faza, w której śnimy najżywiej. Archetypy, relacje, Anima i Animus. Najdłuższa noc pod sceną Umbra.' },
+    { n: 'IV', day: 'Niedziela 11.07', name: 'Przebudzenie', text: 'Powrót na powierzchnię. Zapamiętać sen, zanim zniknie. Integracja i wspólne zamknięcie.' },
+  ],
+};
+
+function editionPhase() {
+  const now = Date.now();
+  if (now < EDITION_INFO.start.getTime()) return 'zapowiedz';
+  if (now < EDITION_INFO.end.getTime()) return 'trwa';
+  return 'po';
+}
+
+function _renderEditionHero() {
+  const days = Math.max(0, Math.ceil((EDITION_INFO.start.getTime() - Date.now()) / 86400000));
+  const nights = EDITION_INFO.nights.map(x => `
+    <div class="ed-night">
+      <div class="ed-night-meta">Noc ${x.n} · ${x.day}</div>
+      <div class="ed-night-name">${x.name}</div>
+      <p class="ed-night-text">${x.text}</p>
+    </div>`).join('');
+  return `
+  <section class="ed-hero" aria-labelledby="ed-title">
+    <div class="ed-kicker">Następna edycja</div>
+    <h2 id="ed-title" class="ed-title">CIEŃ ${EDITION_INFO.year} <em>${EDITION_INFO.name}</em></h2>
+    <div class="ed-when">${EDITION_INFO.dates} · ${EDITION_INFO.place}</div>
+    ${days > 0 ? `<div class="ed-count"><span class="ed-count-num">${days}</span><span class="ed-count-lbl">${days === 1 ? 'dzień' : 'dni'} do festiwalu</span></div>` : ''}
+    <div class="ed-nights">${nights}</div>
+    <p class="ed-note">Program 2027 pojawi się tutaj, gdy organizatorzy go opublikują. Do tego czasu poniżej znajdziesz program poprzedniej edycji.</p>
+    <a class="btn btn-gold ed-cta" href="${EDITION_INFO.site}" target="_blank" rel="noopener">Bilety i aktualności</a>
+  </section>
+  <div class="ed-archive-label">Archiwum · program 2026 · Zamek Świny</div>`;
+}
+
+let _authMode = 'register'; // 'register' | 'login'
+let _authNext = null;       // co otworzyć po zalogowaniu
+
+function showAuthScreen(next) {
+  _authNext = typeof next === 'string' ? next : null;
+  _prepareAuthScreen();
   document.getElementById('auth-screen').style.display = 'flex';
   document.getElementById('app').style.display = 'none';
+  setTimeout(() => document.getElementById('auth-email')?.focus(), 50);
 }
 
 function hideAuthScreen() {
@@ -34,106 +144,115 @@ function hideAuthScreen() {
   document.getElementById('app').style.display = '';
 }
 
+// „Wejdź bez konta” — appka działa, konto można założyć później
 function skipAuth() {
-  const guestId = 'guest_' + Math.random().toString(36).slice(2, 10);
-  localStorage.setItem('cien_user_id', guestId);
+  localStorage.setItem('cien_onboarded', '1');
+  getSDUid();
   hideAuthScreen();
   renderSchedule();
 }
 
-// Returning user re-login — requires password if one was set
-function authContinue() {
-  const uid   = localStorage.getItem('cien_prev_uid');
-  const email = localStorage.getItem('cien_prev_email');
-  const name  = localStorage.getItem('cien_prev_name');
-  if (!uid) { _authSwitchToFull(); return; }
-  const stored = localStorage.getItem('cien_pass_hash');
-  if (!stored) { _setUser(uid, email, name); return; }
-  // Has password — show password field in returning panel
-  const retPanel = document.getElementById('auth-returning');
-  let passInput = retPanel?.querySelector('#auth-return-pass');
-  if (!passInput) {
-    passInput = document.createElement('input');
-    passInput.id = 'auth-return-pass';
-    passInput.type = 'password';
-    passInput.placeholder = 'Hasło';
-    passInput.className = 'auth-input';
-    passInput.style.cssText = 'margin-top:0.75rem;width:100%';
-    const holder = retPanel?.querySelector('.auth-returning-actions') || retPanel;
-    const cta = holder?.querySelector('.auth-btn-cta');
-    if (cta) holder.insertBefore(passInput, cta); else holder?.prepend(passInput);
-    passInput.addEventListener('keydown', ev => { if (ev.key === 'Enter') authContinue(); });
-  }
-  passInput.style.display = '';
-  const pass = passInput.value;
-  if (!pass) { passInput.focus(); return; }
-  _hashPass(pass).then(hash => {
-    if (hash !== stored) { _authError('Błędne hasło'); return; }
-    _setUser(uid, email, name);
+function authSetMode(mode) {
+  _authMode = mode;
+  _prepareAuthScreen();
+}
+
+function _prepareAuthScreen() {
+  const reg = _authMode === 'register';
+  const set = (id, fn) => { const el = document.getElementById(id); if (el) fn(el); };
+  set('auth-form-title', el => { el.textContent = reg ? 'Załóż konto' : 'Zaloguj się'; });
+  set('auth-name', el => { el.style.display = reg ? '' : 'none'; });
+  set('auth-password', el => { el.autocomplete = reg ? 'new-password' : 'current-password'; el.placeholder = reg ? 'Hasło (min. 8 znaków)' : 'Hasło'; });
+  set('auth-submit', el => { el.textContent = reg ? 'Załóż konto' : 'Zaloguj się'; });
+  set('auth-terms-block', el => { el.style.display = reg ? '' : 'none'; });
+  set('auth-switch', el => {
+    el.innerHTML = reg
+      ? 'Masz już konto? <button type="button" class="auth-link" onclick="authSetMode(\'login\')">Zaloguj się</button>'
+      : 'Nie masz konta? <button type="button" class="auth-link" onclick="authSetMode(\'register\')">Załóż je</button>';
   });
-}
-
-function authSwitchUser() {
-  localStorage.removeItem('cien_prev_uid');
-  localStorage.removeItem('cien_prev_email');
-  localStorage.removeItem('cien_prev_name');
-  _authSwitchToFull();
-}
-
-function _authSwitchToFull() {
-  const ret = document.getElementById('auth-returning');
-  const main = document.getElementById('auth-panel-main');
-  if (ret) ret.style.display = 'none';
-  if (main) main.style.display = '';
-}
-
-function authRegister() {
-  if (!_authTermsOk()) return;
-  const emailEl = document.getElementById('auth-email');
-  const passEl  = document.getElementById('auth-password');
-  if (!emailEl || !emailEl.value.trim()) { _authError('Wpisz adres email'); return; }
-  if (!emailEl.validity.valid) { _authError('Wpisz poprawny adres email'); return; }
-  if (!passEl || !passEl.value || passEl.value.length < 6) { _authError('Hasło musi mieć co najmniej 6 znaków'); return; }
-  const email = emailEl.value.trim().toLowerCase();
-  // UID is random per device — not guessable from email
-  const existingUid = localStorage.getItem('cien_prev_uid');
-  const existingEmail = localStorage.getItem('cien_prev_email');
-  if (existingUid && existingEmail === email) {
-    // Same email on this device — verify password
-    _verifyPassAndLogin(existingUid, email, passEl.value);
-    return;
-  }
-  // New account on this device
-  const rand = Array.from(crypto.getRandomValues(new Uint8Array(8))).map(b => b.toString(16).padStart(2,'0')).join('');
-  const uid  = 'u_' + rand;
-  const name = email.split('@')[0];
-  _hashPass(passEl.value).then(hash => {
-    localStorage.setItem('cien_pass_hash', hash);
-    _setUser(uid, email, name);
+  set('auth-forgot', el => { el.style.display = reg ? 'none' : ''; });
+  set('auth-legacy-note', el => {
+    el.style.display = localStorage.getItem('cien_pass_hash') ? '' : 'none';
   });
+  _authError('');
 }
 
-async function _hashPass(pass) {
-  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pass));
-  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+async function authSubmit(e) {
+  if (e) e.preventDefault();
+  const email = (document.getElementById('auth-email')?.value || '').trim().toLowerCase();
+  const pass = document.getElementById('auth-password')?.value || '';
+  const name = (document.getElementById('auth-name')?.value || '').trim().slice(0, 40);
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { _authError('Wpisz poprawny adres e-mail'); return; }
+  if (_authMode === 'register') {
+    if (pass.length < 8) { _authError('Hasło musi mieć co najmniej 8 znaków'); return; }
+    if (!_authTermsOk()) return;
+  } else if (!pass) { _authError('Wpisz hasło'); return; }
+
+  const btn = document.getElementById('auth-submit');
+  if (btn) { btn.disabled = true; btn.dataset.label = btn.textContent; btn.textContent = 'Chwila…'; }
+  try {
+    if (_authMode === 'register') {
+      const r = await fetch(`${PB_BASE}/api/collections/users/records`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password: pass, passwordConfirm: pass, name: name || email.split('@')[0] }),
+      });
+      if (!r.ok) {
+        const d = await r.json().catch(() => ({}));
+        if (d?.data?.email) { _authError('To konto już istnieje. Zaloguj się.'); authSetMode('login'); document.getElementById('auth-email').value = email; return; }
+        if (d?.data?.password) { _authError('Hasło jest za słabe. Użyj co najmniej 8 znaków.'); return; }
+        _authError('Nie udało się założyć konta. Spróbuj za chwilę.'); return;
+      }
+    }
+    const a = await fetch(`${PB_BASE}/api/collections/users/auth-with-password`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ identity: email, password: pass }),
+    });
+    if (!a.ok) { _authError(a.status === 400 ? 'Nieprawidłowy e-mail lub hasło' : 'Nie udało się zalogować. Spróbuj za chwilę.'); return; }
+    const d = await a.json();
+    Auth.save(d.token, d.record);
+    localStorage.removeItem('cien_pass_hash');
+    localStorage.setItem('cien_terms_accepted', '1');
+    localStorage.setItem('cien_onboarded', '1');
+    hideAuthScreen();
+    showToast(_authMode === 'register' ? 'Konto gotowe. Witaj na Cieniu.' : 'Zalogowano', 2200);
+    await _afterLogin();
+    if (typeof _pushLinkToAccount === 'function') _pushLinkToAccount();
+    if (typeof initTeam === 'function') initTeam(true);
+    if (_authNext) navigateTo(_authNext); else renderSchedule();
+    _authNext = null;
+  } catch {
+    _authError('Brak połączenia z internetem');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = btn.dataset.label || btn.textContent; }
+  }
 }
 
-async function _verifyPassAndLogin(uid, email, pass) {
-  const stored = localStorage.getItem('cien_pass_hash');
-  if (!stored) { _setUser(uid, email, email.split('@')[0]); return; }
-  const hash = await _hashPass(pass);
-  if (hash !== stored) { _authError('Błędne hasło'); return; }
-  _setUser(uid, email, localStorage.getItem('cien_prev_name') || email.split('@')[0]);
+function authForgot() {
+  const email = (document.getElementById('auth-email')?.value || '').trim();
+  const subject = encodeURIComponent('Reset hasła w aplikacji CIEŃ');
+  const body = encodeURIComponent(`Proszę o reset hasła do konta: ${email}`);
+  location.href = `mailto:kontakt@cienfestiwal.com?subject=${subject}&body=${body}`;
+}
+
+async function authLogout() {
+  if (!confirm('Wylogować? Program, plan i dziennik zostaną na tym telefonie.')) return;
+  // Powiadomienia tego telefonu przestają trafiać do konta
+  try {
+    const reg = await navigator.serviceWorker?.getRegistration();
+    const sub = reg && await reg.pushManager.getSubscription();
+    if (sub) await apiCall('push-unlink', { endpoint: sub.endpoint });
+  } catch { /* offline: subskrypcja odepnie się przy usunięciu konta */ }
+  _clearAccountLocalData();
+  Auth.clear();
+  if (typeof teamReset === 'function') teamReset();
+  showToast('Wylogowano');
+  navigateTo('teraz');
 }
 
 function _authTermsOk() {
-  if (localStorage.getItem('cien_terms_accepted')) return true;
   const cb = document.getElementById('auth-terms-check');
-  if (!cb || cb.closest('#auth-terms-block').style.display === 'none') return true;
-  if (!cb.checked) {
+  if (cb && !cb.checked) {
     _authError('Zaakceptuj Regulamin i Politykę Prywatności');
-    const label = document.querySelector('.auth-terms-label');
-    if (label) { label.style.color = '#ff6b6b'; setTimeout(() => label.style.color = '', 1800); }
     return false;
   }
   return true;
@@ -144,32 +263,16 @@ function _authError(msg) {
   if (el) el.textContent = msg;
 }
 
-function _prepareAuthScreen() {
-  const prevUid  = localStorage.getItem('cien_prev_uid');
-  const prevName = localStorage.getItem('cien_prev_name');
-  const prevEmail= localStorage.getItem('cien_prev_email');
-  const termsOk  = localStorage.getItem('cien_terms_accepted');
-
-  const returningBlock = document.getElementById('auth-returning');
-  const mainPanel      = document.getElementById('auth-panel-main');
-  const termsBlock     = document.getElementById('auth-terms-block');
-  const returnName     = document.getElementById('auth-return-name');
-
-  if (prevUid) {
-    // Returning user — show quick button, hide main form
-    if (returningBlock) returningBlock.style.display = '';
-    if (mainPanel)      mainPanel.style.display = 'none';
-    if (returnName)     returnName.textContent = prevName || prevEmail || 'poprzednie konto';
-  } else {
-    // New user — show form, hide returning block, show terms if not accepted
-    if (returningBlock) returningBlock.style.display = 'none';
-    if (mainPanel)      mainPanel.style.display = '';
-    if (termsBlock)     termsBlock.style.display = termsOk ? 'none' : '';
-  }
-
-  // Pre-fill email if available
-  const emailInput = document.getElementById('auth-email');
-  if (emailInput && prevEmail && !prevUid) emailInput.value = prevEmail;
+// Ekran „wymaga konta” dla Slow Dating i drużyny
+function accountRequiredHTML(feature, next) {
+  return `
+    <div class="sd-empty">
+      <div class="sd-empty-icon"><i class="ph-light ph-user-circle sn-ico" aria-hidden="true"></i></div>
+      <div class="sd-empty-title">${feature} wymaga konta</div>
+      <div class="sd-empty-text">Konto to e-mail i hasło. Dzięki niemu inni widzą Twoją kartę i wiadomości, a Ty możesz wszystko usunąć jednym przyciskiem. Program, mapa i dziennik działają bez konta.</div>
+      <button class="btn btn-gold" style="margin-top:1.25rem" onclick="_authMode='register';showAuthScreen('${next}')">Załóż konto</button>
+      <button class="dating-btn-text" style="margin-top:0.6rem" onclick="_authMode='login';showAuthScreen('${next}')">Mam konto, zaloguj</button>
+    </div>`;
 }
 
 // ============================================
@@ -794,20 +897,20 @@ async function init() {
   initParticles();
   _fetchWeather();
 
-  const loggedIn = localStorage.getItem('cien_user_id');
-  if (!loggedIn) {
-    _prepareAuthScreen();
-    showAuthScreen();
+  // Pierwsze uruchomienie: ekran powitalny (wejście bez konta albo konto). Potem prosto do programu.
+  // Stare konto lokalne (2026, bez serwera) traktujemy jak gościa; dane na telefonie zostają.
+  if (localStorage.getItem('cien_pass_hash') || (localStorage.getItem('cien_user_id') || '').startsWith('u_')) {
+    if (!Auth.token) { localStorage.removeItem('cien_user_id'); localStorage.setItem('cien_legacy_account', '1'); }
   }
-  // Init team feature after auth check
-  if (loggedIn && typeof initTeam === 'function') initTeam();
-  if (typeof _fbAuth !== 'undefined' && _fbAuth) {
-    _fbAuth.onAuthStateChanged(user => {
-      if (user) {
-        _setUser(user.uid, user.email, user.displayName);
-      }
-    });
+  if (!localStorage.getItem('cien_onboarded') && !isLoggedIn()) {
+    if (localStorage.getItem('cien_legacy_account') || localStorage.getItem('cien_user_id')) localStorage.setItem('cien_onboarded', '1');
+    else { _authMode = 'register'; showAuthScreen(); }
   }
+  authRefresh().then(() => {
+    if (!isLoggedIn()) return;
+    if (typeof initTeam === 'function') initTeam();
+    _sdRetryPending();
+  });
 }
 
 async function loadData() {
@@ -934,7 +1037,7 @@ function updateHeader() {
   const stageBadge = document.getElementById('stage-badge');
   if (stageBadge) {
     const labels = { nigredo: 'Nigredo · 3 VII', albedo: 'Albedo · 4 VII', rubedo: 'Rubedo · 5 VII' };
-    stageBadge.textContent = labels[stage] || 'CIEŃ 2026';
+    stageBadge.textContent = editionPhase() === 'zapowiedz' ? `${EDITION_INFO.name} · ${EDITION_INFO.year}` : (labels[stage] || 'CIEŃ');
   }
 }
 
@@ -1022,10 +1125,12 @@ function renderSchedule() {
   const events = State.data.events || [];
   const zones  = State.data.festival?.zones || [];
 
-  const festivalStarted = new Date() >= new Date('2026-07-03T06:00:00');
-  const tuITerazHTML    = festivalStarted ? renderTuITeraz(events) : '';
-  const countdownHTML   = !festivalStarted ? _renderCountdown() : '';
-  const weatherHTML     = `<div id="weather-widget-slot" style="margin:0 0 0.5rem">${_renderWeatherWidget()}</div>`;
+  // Program w aplikacji to edycja 2026; „Tu i teraz” i pogoda tylko w trakcie festiwalu z aktualnym programem
+  const programLive     = (State.data.festival?.year || 2026) === EDITION_INFO.year;
+  const festivalStarted = true;
+  const tuITerazHTML    = programLive && editionPhase() === 'trwa' ? renderTuITeraz(events) : '';
+  const countdownHTML   = editionPhase() === 'zapowiedz' && !programLive ? _renderEditionHero() : '';
+  const weatherHTML     = programLive && editionPhase() === 'trwa' ? `<div id="weather-widget-slot" style="margin:0 0 0.5rem">${_renderWeatherWidget()}</div>` : '';
 
   const DAYS = ['2026-07-03', '2026-07-04', '2026-07-05'];
   const DAY_META = {
@@ -1084,11 +1189,17 @@ function renderSchedule() {
   let eventsHTML;
   if (filteredEvts.length) {
     eventsHTML = `<div class="events-list">${renderEventsList(filteredEvts)}</div>`;
-  } else if (State.schedule.showFavOnly) {
+  } else if (State.schedule.showFavOnly && getFavorites().length && !q) {
+    const other = DAYS.filter(d => d !== activeDay).map(d => ({ d, n: events.filter(ev => getFavorites().includes(ev.id) && getFestivalDay(ev.start) === d).length })).filter(x => x.n);
+    eventsHTML = `<div class="empty-favs">
+      <div class="empty-favs-title">Brak zapisanych wydarzeń w tym dniu</div>
+      <div class="empty-favs-hint">${other.map(x => `<button class="zone-chip" onclick="setActiveDay('${x.d}')">${DAY_META[x.d].label}: ${x.n}</button>`).join(' ')}</div>
+    </div>`;
+  } else if (State.schedule.showFavOnly && !q) {
     eventsHTML = `<div class="empty-favs">
       <div class="empty-favs-icon">☆</div>
       <div class="empty-favs-title">Mój Plan jest pusty</div>
-      <div class="empty-favs-hint">Tap ☆ na wydarzeniu żeby dodać je do planu. Twój plan zapisuje się na urządzeniu.</div>
+      <div class="empty-favs-hint">Stuknij ☆ przy wydarzeniu, żeby dodać je do planu. Plan zapisuje się na tym telefonie.</div>
     </div>`;
   } else if (q) {
     eventsHTML = `<div style="padding:2.5rem 1rem;text-align:center;color:var(--szary)">
@@ -1108,7 +1219,11 @@ function renderSchedule() {
     ${_onboardingCard()}
     ${tuITerazHTML}
     ${weatherHTML}
-    <div class="day-tabs">${dayTabsHTML}</div>
+    <div class="day-tabs" role="tablist" aria-label="Dni festiwalu">${dayTabsHTML}</div>
+    ${State.schedule.showFavOnly && getFavorites().length ? `<div class="plan-tools">
+      <span>${getFavorites().length} w planie${_planConflicts().size ? ` · <strong class="plan-conflict-count">${_planConflicts().size} nakłada się</strong>` : ''}</span>
+      <button class="auth-link" onclick="exportPlanICS()"><i class="ph-light ph-calendar-plus sn-ico" aria-hidden="true"></i> Cały plan do kalendarza</button>
+    </div>` : ''}
     <div class="zone-filter">${zoneChipsHTML}</div>
     <div class="schedule-search-wrap">
       <span class="schedule-search-icon"><i class="ph-light ph-magnifying-glass sn-ico" aria-hidden="true"></i></span>
@@ -1131,6 +1246,7 @@ async function _loadAnnTeraz() {
     const d = await r.json();
     const ann = d.items?.[0];
     if (!ann) return;
+    if (Date.now() - new Date(ann.created.replace(' ', 'T')).getTime() > 7 * 86400000) return;
 
     if (localStorage.getItem(`cien_ann_dismissed_${ann.id}`)) return;
 
@@ -1278,8 +1394,8 @@ function renderEventsList(events) {
 
     parts.push(`
       <div class="event-card ${isNow ? 'is-now' : ''} ${isPast ? 'is-past' : ''} ${isFav ? 'is-fav' : ''}"
-           style="--zc:${color}"
-           onclick="openEventModal('${ev.id}')">
+           style="--zc:${color}" role="button" tabindex="0"
+           onclick="openEventModal('${ev.id}')" onkeydown="if(event.key==='Enter'&&event.target===this)openEventModal('${ev.id}')">
         ${progressBar}
         <div class="event-time">
           ${isNow ? '<span class="live-dot" title="Teraz">●</span> ' : ''}${formatTime(ev.start)} <span class="event-duration">→ ${formatTime(ev.end)} (${getDuration(ev.start, ev.end)})</span>
@@ -1287,7 +1403,8 @@ function renderEventsList(events) {
         <div class="event-title">${ev.title}</div>
         ${ev.artist ? `<div class="event-artist">${ev.artist}</div>` : ''}
         <div class="event-zone-tag" style="color:${color}">${icon} ${zone.shortName || zone.name || ev.zone}</div>
-        <button class="fav-btn ${isFav ? 'active' : ''}"
+        ${isFav && _planConflicts().has(ev.id) ? `<div class="event-conflict"><i class="ph-light ph-warning sn-ico" aria-hidden="true"></i> Nakłada się z: ${escHtml(_planConflicts().get(ev.id).join(', '))}</div>` : ''}
+        <button class="fav-btn ${isFav ? 'active' : ''}" aria-pressed="${isFav}" aria-label="${isFav ? 'Usuń z Mojego Planu' : 'Dodaj do Mojego Planu'}: ${escHtml(ev.title)}"
                 onclick="event.stopPropagation();toggleFavorite('${ev.id}')"
                 title="${isFav ? 'Usuń z Mojego Planu' : 'Dodaj do Mojego Planu'}">
           ${isFav ? '★' : '☆'}
@@ -1427,32 +1544,61 @@ function shareApp() {
   }
 }
 
-function addToCalendar(eventId) {
-  const ev = (State.data?.events || []).find(e => e.id === eventId);
-  if (!ev) return;
-  // Convert ISO 2026-07-03T12:00:00 → 20260703T120000
-  const toICS = iso => iso.replace(/-/g, '').replace(/:/g, '').replace('T', 'T');
-  const ics = [
-    'BEGIN:VCALENDAR', 'VERSION:2.0',
-    'PRODID:-//CIEŃ Festiwal//App//PL',
-    'X-WR-CALNAME:CIEŃ Festiwal 2026',
+// Kalendarz: czas w UTC (bez zależności od strefy telefonu), DTSTAMP, escapowanie pól, alarm 15 min przed
+function _icsEsc(t) { return String(t || '').replace(/\\/g, '\\\\').replace(/[,;]/g, m => '\\' + m).replace(/\r?\n/g, '\\n'); }
+function _icsUtc(iso) { return new Date(iso).toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, ''); }
+function _icsEvent(ev) {
+  return [
     'BEGIN:VEVENT',
-    `UID:${ev.id}@cienfestiwal.com`,
-    `DTSTART;TZID=Europe/Warsaw:${toICS(ev.start)}`,
-    `DTEND;TZID=Europe/Warsaw:${toICS(ev.end)}`,
-    `SUMMARY:${ev.title}${ev.artist ? ` — ${ev.artist}` : ''}`,
-    `DESCRIPTION:${(ev.description || '').replace(/[\n\r]/g, '\\n')}`,
-    'LOCATION:Zamek Świny\\, Świny\\, Bolków\\, Polska',
-    'GEO:50.9388;16.1125',
-    'END:VEVENT', 'END:VCALENDAR'
-  ].join('\r\n');
+    `UID:${ev.id}@app.cienfestiwal.com`,
+    `DTSTAMP:${_icsUtc(new Date().toISOString())}`,
+    `DTSTART:${_icsUtc(ev.start)}`,
+    `DTEND:${_icsUtc(ev.end)}`,
+    `SUMMARY:${_icsEsc(ev.title + (ev.artist ? ' · ' + ev.artist : ''))}`,
+    `DESCRIPTION:${_icsEsc(ev.description || '')}`,
+    `LOCATION:${_icsEsc(((State.data?.festival?.zones || []).find(z => z.id === ev.zone)?.name || '') + ', CIEŃ Festiwal')}`,
+    'BEGIN:VALARM', 'ACTION:DISPLAY', `DESCRIPTION:${_icsEsc(ev.title)}`, 'TRIGGER:-PT15M', 'END:VALARM',
+    'END:VEVENT',
+  ];
+}
+function _icsDownload(events, filename) {
+  const ics = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//CIEN Festiwal//App//PL', 'CALSCALE:GREGORIAN', 'X-WR-CALNAME:CIEŃ Festiwal', ...events.flatMap(_icsEvent), 'END:VCALENDAR'].join('\r\n');
   const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = url; a.download = `cien-${ev.id}.ics`;
-  a.click();
-  URL.revokeObjectURL(url);
-  showToast('📅 Plik .ics pobrany');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+function addToCalendar(eventId) {
+  const ev = (State.data?.events || []).find(e => e.id === eventId);
+  if (!ev) return;
+  _icsDownload([ev], `cien-${ev.id}.ics`);
+  showToast('Plik kalendarza pobrany. Otwórz go, żeby dodać wydarzenie z przypomnieniem.', 3500);
+}
+function exportPlanICS() {
+  const favs = getFavorites();
+  const evs = (State.data?.events || []).filter(e => favs.includes(e.id)).sort((a, b) => a.start.localeCompare(b.start));
+  if (!evs.length) { showToast('Twój plan jest pusty'); return; }
+  _icsDownload(evs, 'cien-moj-plan.ics');
+  showToast(`Pobrano ${evs.length} wydarzeń. Otwórz plik, żeby dodać je do kalendarza z przypomnieniem 15 min przed.`, 4000);
+}
+// Pary zapisanych wydarzeń, które nachodzą na siebie w czasie: id → [tytuły]
+function _planConflicts() {
+  const favs = getFavorites();
+  const key = favs.join(',');
+  if (_planConflicts._key === key && _planConflicts._map) return _planConflicts._map;
+  const evs = (State.data?.events || []).filter(e => favs.includes(e.id));
+  const map = new Map();
+  for (const a of evs) for (const b of evs) {
+    if (a.id >= b.id) continue;
+    if (new Date(a.start) < new Date(b.end) && new Date(b.start) < new Date(a.end)) {
+      map.set(a.id, [...(map.get(a.id) || []), b.title]);
+      map.set(b.id, [...(map.get(b.id) || []), a.title]);
+    }
+  }
+  _planConflicts._key = key; _planConflicts._map = map;
+  return map;
 }
 
 function closeEventModal() {
@@ -1732,7 +1878,7 @@ function renderJournal() {
         <span class="past-entry-date">${e.savedAt || ''}</span>
         <button onclick="event.stopPropagation();deleteJournalEntry('${e.stage}')" style="background:none;border:none;color:var(--szary);cursor:pointer;font-size:1rem;padding:0 0.25rem;float:right;line-height:1" title="Usuń wpis">✕</button>
       </div>
-      <div class="past-entry-preview">${e.text}</div>
+      <div class="past-entry-preview">${escHtml(e.text)}</div>
     </div>`).join('');
 
   container.innerHTML = tabsHTML + `
@@ -1745,7 +1891,7 @@ function renderJournal() {
     <div class="journal-entry-area">
       <textarea class="journal-textarea" id="journal-text-${stage}"
         placeholder="Pisz tutaj — to tylko dla Ciebie. Nie ma właściwej ani złej odpowiedzi."
-        oninput="autoSaveJournal('${stage}', this.value)">${currentEntry.text || ''}</textarea>
+        oninput="autoSaveJournal('${stage}', this.value)">${escHtml(currentEntry.text || '')}</textarea>
     </div>
     <div class="journal-actions">
       <button class="btn btn-gold" onclick="saveJournalEntry('${stage}')">Zapisz</button>
@@ -1986,7 +2132,7 @@ function buildPlanHTML(area, plan) {
       <input type="checkbox" class="plan-check" id="pc-${area.id}-${key}"
         ${done ? 'checked' : ''}
         onchange="togglePlanItem('${area.id}','${horizon}',${i})">
-      <label for="pc-${area.id}-${key}">${item}</label>
+      <label for="pc-${area.id}-${key}">${escHtml(item)}</label>
     </div>`;
   }).join('') || '<div class="plan-empty">—</div>';
 
@@ -2005,7 +2151,7 @@ function buildPlanHTML(area, plan) {
     <div class="wplan-col">
       <div class="wplan-col-title" style="color:${area.color}"><i class="ph-light ph-star sn-ico" aria-hidden="true"></i> ZA ROK</div>
       <div class="wplan-col-sub">Moja wizja za 12 miesięcy</div>
-      <div class="plan-vision">${plan.rok || '—'}</div>
+      <div class="plan-vision">${escHtml(plan.rok || '—')}</div>
     </div>
   </div>
   <div class="wplan-date">Wygenerowano: ${plan.createdAt || ''}</div>
@@ -2124,10 +2270,10 @@ function _showAIPlanModal(area, planText, errorMsg) {
   if (existing) existing.remove();
 
   const content = errorMsg
-    ? `<div class="aipm-error"><i class="ph-light ph-warning sn-ico" aria-hidden="true"></i> ${errorMsg}</div>`
+    ? `<div class="aipm-error"><i class="ph-light ph-warning sn-ico" aria-hidden="true"></i> ${escHtml(errorMsg)}</div>`
     : planText === null
     ? `<div class="aipm-loading"><div class="aipm-spinner"></div><div>Generuję plan dla <strong>${escHtml(area.name)}</strong>…</div></div>`
-    : `<div class="aipm-result">${planText.replace(/^## (.+)$/gm, '<div class="aipm-section-title">$1</div>').replace(/^• (.+)$/gm, '<div class="aipm-item">• $1</div>').replace(/\n/g, '<br>')}</div>`;
+    : `<div class="aipm-result">${escHtml(planText).replace(/^## (.+)$/gm, '<div class="aipm-section-title">$1</div>').replace(/^• (.+)$/gm, '<div class="aipm-item">• $1</div>').replace(/\n/g, '<br>')}</div>`;
 
   const shareBtn = planText ? `<button class="btn btn-outline" style="flex:0 0 auto;font-size:0.8rem" onclick="
     navigator.share ? navigator.share({title:'Plan AI — ${escHtml(area.name)}',text:document.querySelector('#ai-plan-modal .aipm-result')?.innerText||''}) : showToast('Udostępnianie niedostępne')
@@ -2397,7 +2543,7 @@ function renderSacrum() {
         <img src="icons/ksiezyc-slonce.jpg" class="sacrum-mandala-img" alt="SACRUM">
         <img src="icons/sacrum-logo.png" class="sacrum-svg-logo" alt="SACRUM">
       </div>
-      <div class="sacrum-hero-sub">PsyCare · Pt–Sb 19:00–04:00 · Strefa SACRUM</div>
+      <div class="sacrum-hero-sub">PsyCare · bezpłatne wsparcie terapeutów na festiwalu</div>
     </div>
 
     <button class="emergency-btn" onclick="callHelp()">
@@ -2407,6 +2553,7 @@ function renderSacrum() {
 
     <div class="sacrum-section" style="margin-top:1rem">
       <div class="sacrum-section-title">Gdzie jest punkt pomocy?</div>
+      <p class="ed-inline-note">Edycja 2027: miejsce i godziny dyżurów PsyCare podamy przed festiwalem. Poniżej informacje z edycji 2026.</p>
       <div class="sacrum-card">
         <div class="sacrum-card-title"><i class="ph-light ph-map-trifold sn-ico" aria-hidden="true"></i> Lokalizacja</div>
         <div class="sacrum-card-body">
@@ -2536,19 +2683,21 @@ function renderSacrum() {
 
 function callHelp() {
   const modal = document.getElementById('event-modal');
-  if (modal) _resetSharedModal(modal);
-  modal.querySelector('.modal-zone-badge').style.color = '#FF4444';
-  modal.querySelector('.modal-zone-badge').innerHTML = '<i class="ph-light ph-siren sn-ico" aria-hidden="true"></i> POMOC';
+  if (!modal) return;
+  _resetSharedModal(modal);
+  const live = editionPhase() === 'trwa';
+  modal.querySelector('.modal-zone-badge').style.color = '#F2A38A';
+  modal.querySelector('.modal-zone-badge').innerHTML = '<i class="ph-light ph-lifebuoy sn-ico" aria-hidden="true"></i> POMOC';
   modal.querySelector('.modal-title').textContent = 'Potrzebujesz pomocy?';
   modal.querySelector('.modal-artist').style.display = 'none';
-  modal.querySelector('.modal-time').innerHTML = '<i class="ph-light ph-map-pin sn-ico" aria-hidden="true"></i> Strefa SACRUM — Śródzamcze · Pt–Sb 19:00–04:00';
+  modal.querySelector('.modal-time').innerHTML = live
+    ? '<i class="ph-light ph-map-pin sn-ico" aria-hidden="true"></i> PsyCare: miejsce i godziny dyżurów znajdziesz w zakładce Sacrum i na tablicach festiwalowych'
+    : '<i class="ph-light ph-info sn-ico" aria-hidden="true"></i> Na festiwalu dyżuruje bezpłatny PsyCare. Miejsce i godziny podamy przed startem.';
   modal.querySelector('.modal-description').innerHTML = `
-    <strong style="color:#FF6B6B">Idź do punktu pomocy lub poproś kogoś w pobliżu.</strong><br><br>
-    Powiedz obsłudze: <em>"Potrzebuję trip sittera"</em>. Nie musisz nic tłumaczyć.<br><br>
-    <a href="tel:112" class="sn-sos">Zagrożenie życia — dzwoń 112</a>
-    <strong>Jeśli to nagłe zagrożenie zdrowia:</strong><br>
-    Ratownik medyczny — namioty przy wejściu (24h).<br><br>
-    Email: <a href="mailto:kontakt@cienfestiwal.com" style="color:var(--zloto)">kontakt@cienfestiwal.com</a>
+    <a href="tel:112" class="sn-sos">Zagrożenie życia lub zdrowia: dzwoń 112</a>
+    <p style="margin:1rem 0 .5rem"><strong>Kryzys emocjonalny, nie wiesz, co zrobić:</strong> zadzwoń pod <a href="tel:116123" style="color:var(--zloto)">116 123</a> (telefon zaufania dla dorosłych w kryzysie emocjonalnym).</p>
+    ${live ? '<p style="margin:.5rem 0">Na terenie festiwalu podejdź do kogokolwiek z obsługi i powiedz: <em>„Potrzebuję PsyCare”</em>. Nie musisz nic tłumaczyć.</p>' : ''}
+    <p style="margin:.5rem 0">Organizatorzy: <a href="mailto:kontakt@cienfestiwal.com" style="color:var(--zloto)">kontakt@cienfestiwal.com</a></p>
   `;
   const tagsEl = modal.querySelector('.modal-tags');
   if (tagsEl) tagsEl.innerHTML = '';
@@ -2574,82 +2723,48 @@ async function _annTapHeader() {
   _annHeaderTaps++;
   clearTimeout(_annHeaderTapTimer);
   _annHeaderTapTimer = setTimeout(() => { _annHeaderTaps = 0; }, 2000);
-  if (_annHeaderTaps >= 5) {
-    _annHeaderTaps = 0;
-    const pin = prompt('PIN admina:');
-    if (!pin) return;
-    // Weryfikacja przez serwer — PIN nie jest w source code
-    try {
-      const r = await fetch('/.netlify/functions/send-push', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pin, action: 'verify' }),
-      });
-      if (r.ok) {
-        _annAdminPin = pin;
-        _annAdminMode = true;
-        renderInfo();
-        showToast('Tryb admina aktywny');
-      } else {
-        showToast('Nieprawidłowy PIN');
-      }
-    } catch { showToast('Błąd połączenia'); }
-  }
+  if (_annHeaderTaps < 5) return;
+  _annHeaderTaps = 0;
+  const pin = prompt('PIN organizatora:');
+  if (!pin) return;
+  try {
+    await apiCall('admin-verify', { pin });
+    _annAdminPin = pin;
+    _annAdminMode = true;
+    renderInfo();
+    showToast('Tryb organizatora aktywny');
+  } catch (e) { showToast(e.message); }
 }
 
-async function annPost(e) {
-  e.preventDefault();
+async function annPost(e, withPush) {
+  if (e) e.preventDefault();
   const title = document.getElementById('ann-title-in')?.value?.trim();
-  const body  = document.getElementById('ann-body-in')?.value?.trim();
+  const body  = document.getElementById('ann-body-in')?.value?.trim() || '';
   const type  = document.getElementById('ann-type-in')?.value || 'info';
-  if (!title) return;
-  const btn = e.submitter || document.querySelector('#ann-form button[type=submit]');
-  if (btn) btn.disabled = true;
-  try {
-    await fetch(`${ANN_PB}/api/collections/${ANN_COL}/records`, {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ title, body: body||'', type }),
-    });
-    showToast('✓ Ogłoszenie dodane');
-    document.getElementById('ann-title-in').value = '';
-    document.getElementById('ann-body-in').value  = '';
-    _loadAnnouncements();
-  } catch { showToast('Błąd zapisu'); }
-  finally { if (btn) btn.disabled = false; }
-}
-
-async function annSendPush() {
-  const title = document.getElementById('ann-title-in')?.value?.trim();
-  const message = document.getElementById('ann-body-in')?.value?.trim() || '';
   if (!title) { showToast('Wpisz tytuł ogłoszenia'); return; }
-  if (!_annAdminPin) { showToast('Brak tokenu admina — zaloguj się ponownie'); return; }
+  if (!_annAdminPin) { showToast('Wejdź ponownie w tryb organizatora'); return; }
   const statusEl = document.getElementById('ann-push-status');
-  if (statusEl) statusEl.textContent = 'Wysyłanie...';
+  if (statusEl) statusEl.textContent = withPush ? 'Publikuję i wysyłam…' : 'Publikuję…';
   try {
-    const r = await fetch('/.netlify/functions/send-push', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ pin: _annAdminPin, title, message }),
-    });
-    const data = await r.json();
-    if (!r.ok) {
-      if (statusEl) statusEl.textContent = '✗ ' + (data.error || 'Błąd');
-      showToast('Błąd: ' + (data.error || r.status));
-    } else {
-      if (statusEl) statusEl.textContent = `✓ Wysłano do ${data.sent} urządzeń (${data.failed} błędów)`;
-      showToast(`🔔 Push wysłany do ${data.sent} urządzeń`);
-    }
-  } catch (e) {
-    if (statusEl) statusEl.textContent = '✗ Błąd połączenia';
-    showToast('Błąd: ' + e.message);
+    const r = await apiCall('admin-announce', { pin: _annAdminPin, title, body, type, push: !!withPush });
+    document.getElementById('ann-title-in').value = '';
+    document.getElementById('ann-body-in').value = '';
+    const msg = r.push ? `Opublikowane. Powiadomienie: ${r.push.sent} z ${r.push.total} urządzeń.` : 'Opublikowane';
+    if (statusEl) statusEl.textContent = msg;
+    showToast(msg, 3500);
+    _loadAnnouncements();
+  } catch (err) {
+    if (statusEl) statusEl.textContent = err.message;
+    showToast(err.message, 3500);
   }
 }
+
+function annSendPush() { return annPost(null, true); }
 
 async function annDelete(id) {
   if (!confirm('Usunąć ogłoszenie?')) return;
-  await fetch(`${ANN_PB}/api/collections/${ANN_COL}/records/${id}`, { method: 'DELETE' });
-  _loadAnnouncements();
+  try { await apiCall('admin-ann-delete', { pin: _annAdminPin, id }); _loadAnnouncements(); }
+  catch (e) { showToast(e.message, 3500); }
 }
 
 async function _loadAnnouncements() {
@@ -2700,26 +2815,28 @@ function _urlBase64ToUint8Array(base64String) {
 async function subscribePush() {
   const btn = document.getElementById('push-sub-btn');
   if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-    showToast('Push nie jest obsługiwany w tej przeglądarce'); return;
+    showToast('Ta przeglądarka nie obsługuje powiadomień. Na iPhonie dodaj appkę do ekranu początkowego.', 4500); return;
   }
   try {
     const perm = await Notification.requestPermission();
-    if (perm !== 'granted') { showToast('Powiadomienia zablokowane — zmień w ustawieniach'); return; }
-    const reg  = await navigator.serviceWorker.ready;
-    const sub  = await reg.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: _urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
-    });
+    if (perm !== 'granted') { showToast('Powiadomienia są zablokowane. Zmień to w ustawieniach telefonu.', 4000); return; }
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: _urlBase64ToUint8Array(VAPID_PUBLIC_KEY) });
     const j = sub.toJSON();
-    await fetch(`${ANN_PB}/api/collections/${PUSH_COL}/records`, {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ uid: getSDUid(), endpoint: j.endpoint, p256dh: j.keys.p256dh, auth: j.keys.auth }),
-    });
+    const body = { endpoint: j.endpoint, p256dh: j.keys.p256dh, auth: j.keys.auth };
+    if (isLoggedIn()) body.owner = Auth.user.id;
+    const r = await pbFetch(`/api/collections/${PUSH_COL}/records`, { method: 'POST', body: JSON.stringify(body) });
+    // 400 = ta subskrypcja już jest zapisana; wtedy tylko przypinamy ją do konta
+    if (!r.ok && r.status !== 400) throw new Error('serwer nie zapisał subskrypcji');
+    if (!r.ok && isLoggedIn()) await apiCall('push-link', { endpoint: j.endpoint }).catch(() => {});
     localStorage.setItem('cien_push_subscribed', '1');
-    if (btn) { btn.textContent = '🔔 Powiadomienia aktywne'; btn.disabled = true; }
-    showToast('🔔 Powiadomienia włączone!');
-  } catch (e) { showToast('Błąd: ' + e.message); }
+    localStorage.setItem('cien_push_enabled', '1');
+    if (btn) { btn.innerHTML = `${snIco('🔔')} Powiadomienia aktywne`; btn.disabled = true; }
+    showToast('Powiadomienia włączone');
+  } catch (e) {
+    showToast('Nie udało się włączyć powiadomień: ' + e.message, 4000);
+    const t = document.getElementById('push-toggle'); if (t) t.checked = false;
+  }
 }
 
 function renderInfo() {
@@ -2763,11 +2880,9 @@ function renderInfo() {
           <span class="info-card-title">Lokalizacja</span>
         </div>
         <div class="info-card-body">
-          <strong>Zamek Świny</strong><br>
-          Świny, gmina Bolków, woj. dolnośląskie<br>
-          <a href="https://maps.google.com/?q=Zamek+Świny+Bolków" style="color:var(--zloto)" target="_blank">
-            Otwórz w Google Maps →
-          </a>
+          <strong>${EDITION_INFO.place}</strong> · CIEŃ ${EDITION_INFO.year}<br>
+          Dokładny adres, dojazd, nocleg i pole namiotowe organizatorzy ogłoszą przed festiwalem.<br>
+          <a href="${EDITION_INFO.site}" style="color:var(--zloto)" target="_blank" rel="noopener">Strona festiwalu →</a>
         </div>
       </div>
 
@@ -2777,13 +2892,12 @@ function renderInfo() {
           <span class="info-card-title">Daty</span>
         </div>
         <div class="info-card-body">
-          <strong>3–5 lipca 2026</strong><br>
-          Przyjazd: czwartek 3.07 od godz. 14:00<br>
-          Wyjazd: niedziela 5.07 do godz. 20:00<br>
-          <br>
-          <strong style="color:var(--zloto)">Nigredo</strong> (3.07) — Albedo (4.07) — <strong style="color:var(--burgund-2)">Rubedo</strong> (5.07)
+          <strong>${EDITION_INFO.dates}</strong><br>
+          ${EDITION_INFO.nights.map(x => `Noc ${x.n} · ${x.day}: <strong style="color:var(--zloto)">${x.name}</strong>`).join('<br>')}
         </div>
       </div>
+
+      <div class="ed-archive-label" style="margin:1.5rem 0 .75rem">Informacje z edycji 2026 · Zamek Świny</div>
 
       <div class="info-card">
         <div class="info-card-header">
@@ -3031,20 +3145,28 @@ function dismissInstall() {
 function registerSW() {
   if (!('serviceWorker' in navigator)) return;
   navigator.serviceWorker.register('sw.js').then(reg => {
-    // Reload page when new SW takes over — ensures fresh app.js on every update
-    navigator.serviceWorker.addEventListener('controllerchange', () => location.reload());
-
-    // If a new SW is waiting, send it a skip-waiting message immediately
+    // Nowa wersja przejmuje stronę: przeładuj, ale nie w trakcie pisania (wtedy po zminimalizowaniu appki)
+    let reloaded = false;
+    const reloadSafely = () => {
+      if (reloaded) return;
+      const typing = document.activeElement && /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName);
+      if (typing) {
+        document.addEventListener('visibilitychange', function once() {
+          if (document.hidden) { document.removeEventListener('visibilitychange', once); reloaded = true; location.reload(); }
+        });
+        return;
+      }
+      reloaded = true;
+      location.reload();
+    };
+    navigator.serviceWorker.addEventListener('controllerchange', reloadSafely);
     if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
     reg.addEventListener('updatefound', () => {
       const newWorker = reg.installing;
-      if (newWorker) {
-        newWorker.addEventListener('statechange', () => {
-          if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-            newWorker.postMessage({ type: 'SKIP_WAITING' });
-          }
-        });
-      }
+      if (!newWorker) return;
+      newWorker.addEventListener('statechange', () => {
+        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) newWorker.postMessage({ type: 'SKIP_WAITING' });
+      });
     });
   }).catch(console.error);
 }
@@ -3067,7 +3189,6 @@ const SD_EMOJIS = ['💫','🌙','☀️','🌊','🔥','🌿','⚡','🦋','�
 const SD_PB = '/pb';
 const SD_COL_PROFILES = 'cien_sd_profiles';
 const SD_COL_LIKES    = 'cien_sd_likes';
-const _SD_MATCH_SECRET = 'cien2026sd';
 
 let _sdTab    = 'odkryj';
 let _sdDeck   = [];
@@ -3075,11 +3196,21 @@ let _sdDeckOk = false;
 let _sdMatchPollerTimer = null;
 
 function getSDProfile() {
-  try { return JSON.parse(localStorage.getItem('cien_sd_profile_2026') || '{}'); } catch { return {}; }
+  const key = 'cien_sd_profile_' + EDITION;
+  // Pierwsze otwarcie w 2027: przenieś nick/opis/tematy z karty 2026 (bez powiązania z serwerem)
+  if (!localStorage.getItem(key) && localStorage.getItem('cien_sd_profile_2026')) {
+    try {
+      const old = JSON.parse(localStorage.getItem('cien_sd_profile_2026'));
+      delete old.pbId; delete old.id;
+      localStorage.setItem(key, JSON.stringify(old));
+      localStorage.setItem('cien_sd_photo_pushed', 'false');
+    } catch {}
+  }
+  try { return JSON.parse(localStorage.getItem(key) || '{}'); } catch { return {}; }
 }
 
 function saveSDProfile(profile) {
-  localStorage.setItem('cien_sd_profile_2026', JSON.stringify(profile));
+  localStorage.setItem('cien_sd_profile_' + EDITION, JSON.stringify(profile));
 }
 
 function getSDMeetings() {
@@ -3090,51 +3221,73 @@ function saveSDMeetings(meetings) {
   localStorage.setItem('cien_sd_meetings_2026', JSON.stringify(meetings));
 }
 
-function getSDUid() {
-  let uid = localStorage.getItem('cien_user_id');
-  if (!uid) {
-    uid = 'u_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
-    localStorage.setItem('cien_user_id', uid);
-  }
-  return uid;
-}
-
 function getSDSeen() {
-  try { return new Set(JSON.parse(localStorage.getItem('cien_sd_seen_2026') || '[]')); }
+  try { return new Set(JSON.parse(localStorage.getItem('cien_sd_seen_' + EDITION) || '[]')); }
   catch { return new Set(); }
 }
 
 function addSDSeen(uid) {
   const seen = getSDSeen();
   seen.add(uid);
-  localStorage.setItem('cien_sd_seen_2026', JSON.stringify([...seen]));
+  localStorage.setItem('cien_sd_seen_' + EDITION, JSON.stringify([...seen]));
 }
 
 function getSDBlocked() {
-  try { return new Set(JSON.parse(localStorage.getItem('cien_sd_blocked') || '[]')); } catch { return new Set(); }
+  return new Set();
 }
 
 // Zgłoś / zablokuj — wymagane przez Google Play i App Store dla treści użytkowników
+// Zgłoś / zablokuj — blokada działa w obie strony na serwerze, zgłoszenie trafia do organizatorów
 function sdReportBlock(uid, nick) {
   if (!uid) return;
-  if (!confirm(`Zablokować ${nick || 'tę osobę'}? Nie zobaczycie się więcej w Slow Dating. Po zablokowaniu możesz też zgłosić profil organizatorom.`)) return;
-  const b = getSDBlocked(); b.add(uid);
-  localStorage.setItem('cien_sd_blocked', JSON.stringify([...b]));
-  addSDSeen(uid);
-  _sdDeck = _sdDeck.filter(p => p.uid !== uid);
-  if (confirm('Zgłosić profil organizatorom? Otworzy się gotowa wiadomość e-mail.')) {
-    const subject = encodeURIComponent('Zgłoszenie profilu Slow Dating');
-    const body = encodeURIComponent(`Zgłaszam profil Slow Dating.\nNick: ${nick || ''}\nID: ${uid}\nPowód: `);
-    location.href = `mailto:kontakt@sacrum.life?subject=${subject}&body=${body}`;
-  }
-  showToast('Zablokowano');
-  _sdRenderTab();
+  document.getElementById('sd-safety-sheet')?.remove();
+  const sheet = document.createElement('div');
+  sheet.id = 'sd-safety-sheet';
+  sheet.className = 'sn-sheet';
+  sheet.setAttribute('role', 'dialog');
+  sheet.setAttribute('aria-modal', 'true');
+  sheet.setAttribute('aria-label', 'Zgłoś lub zablokuj');
+  sheet.innerHTML = `
+    <div class="sn-sheet-panel">
+      <div class="sn-sheet-title">${escHtml(nick || 'Ta osoba')}</div>
+      <p class="sn-sheet-text">Zablokowanie działa w obie strony: nie zobaczycie się w Slow Dating, a polubienia i dopasowanie znikną.</p>
+      <button class="btn btn-gold" style="width:100%" id="sd-sheet-block">Zablokuj</button>
+      <label class="sd-input-label" for="sd-sheet-reason" style="margin-top:1rem;display:block">Zgłoś organizatorom (opcjonalnie)</label>
+      <textarea id="sd-sheet-reason" class="sd-input" rows="3" maxlength="1000" placeholder="Co się stało? Zgłoszenie czyta zespół CIENIA."></textarea>
+      <button class="auth-btn-secondary" style="margin-top:.6rem" id="sd-sheet-report">Wyślij zgłoszenie i zablokuj</button>
+      <button class="dating-btn-text" style="margin-top:.6rem;width:100%" id="sd-sheet-cancel">Anuluj</button>
+    </div>`;
+  const close = () => sheet.remove();
+  sheet.addEventListener('click', e => { if (e.target === sheet) close(); });
+  sheet.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+  document.body.appendChild(sheet);
+  const finish = async (withReport) => {
+    const reason = sheet.querySelector('#sd-sheet-reason').value.trim();
+    if (withReport && !reason) { showToast('Opisz krótko, co się stało'); sheet.querySelector('#sd-sheet-reason').focus(); return; }
+    sheet.querySelectorAll('button').forEach(b => b.disabled = true);
+    try {
+      if (withReport) await apiCall('report', { target: uid, kind: 'profile', reason });
+      await apiCall('block', { target: uid });
+      addSDSeen(uid);
+      _sdDeck = _sdDeck.filter(p => p.owner !== uid);
+      close();
+      showToast(withReport ? 'Zgłoszenie wysłane. Osoba zablokowana.' : 'Zablokowano', 3000);
+      _sdRenderTab();
+    } catch (e) {
+      sheet.querySelectorAll('button').forEach(b => b.disabled = false);
+      showToast(e.message, 3500);
+    }
+  };
+  sheet.querySelector('#sd-sheet-block').onclick = () => finish(false);
+  sheet.querySelector('#sd-sheet-report').onclick = () => finish(true);
+  sheet.querySelector('#sd-sheet-cancel').onclick = close;
+  sheet.querySelector('#sd-sheet-block').focus();
 }
 
 function _sdParseTags(raw) {
-  if (!raw) return [];
-  if (Array.isArray(raw)) return raw;
-  try { return JSON.parse(raw); } catch { return []; }
+  let t = raw;
+  if (typeof t === 'string') { try { t = JSON.parse(t); } catch { t = []; } }
+  return Array.isArray(t) ? t.filter(x => typeof x === 'string') : [];
 }
 
 // ---- main render ----
@@ -3143,28 +3296,22 @@ function renderSlowDating() {
   const container = document.getElementById('slowdating-content');
   if (!container) return;
 
-  if ((localStorage.getItem('cien_user_id') || '').startsWith('guest_')) {
-    container.innerHTML = `
-      <div class="sd-empty">
-        <div class="sd-empty-icon"><i class="ph-light ph-heart sn-ico" aria-hidden="true"></i></div>
-        <div class="sd-empty-title">Slow Dating wymaga konta</div>
-        <div class="sd-empty-text">Jako gość nie masz karty, więc nikt nie mógłby Cię polubić, a dopasowania nie dotarłyby do Ciebie. Załóż konto: wystarczy e-mail i hasło.</div>
-        <button class="btn btn-gold" style="margin-top:1.25rem" onclick="showAuthScreen()">Załóż konto →</button>
-      </div>`;
+  if (!isLoggedIn()) {
+    container.innerHTML = accountRequiredHTML('Slow Dating', 'slowdating');
     return;
   }
 
-  if (!localStorage.getItem('cien_sd_consent_v1')) {
+  if (!localStorage.getItem('cien_sd_consent_' + EDITION)) {
     container.innerHTML = `
       <div class="sd-consent-screen">
         <div class="sd-consent-title"><i class="ph-light ph-heart sn-ico" aria-hidden="true"></i> Slow Dating</div>
         <div class="sd-consent-subtitle">Jak to działa?</div>
         <div class="sd-consent-points">
-          <div class="sd-consent-point"><i class="ph-light ph-user sn-ico" aria-hidden="true"></i> Twój profil (nick, zdjęcie, opis, tagi) jest widoczny dla wszystkich zalogowanych uczestników festiwalu</div>
-          <div class="sd-consent-point"><i class="ph-light ph-heart sn-ico" aria-hidden="true"></i> Dopasowanie następuje gdy oboje się polubiecie — tylko wtedy widzicie się nawzajem</div>
-          <div class="sd-consent-point"><i class="ph-light ph-trash sn-ico" aria-hidden="true"></i> Profil możesz usunąć w każdej chwili w zakładce Moja karta. Wszystkie profile kasujemy 30 dni po zakończeniu festiwalu.</div>
+          <div class="sd-consent-point"><i class="ph-light ph-user sn-ico" aria-hidden="true"></i> Twoja karta (nick, zdjęcie, opis, tematy) jest widoczna dla osób z kontem, które też mają kartę. Nie pokazujemy e-maila.</div>
+          <div class="sd-consent-point"><i class="ph-light ph-heart sn-ico" aria-hidden="true"></i> Dopasowanie następuje, gdy polubicie się nawzajem. Tylko wtedy oboje dostajecie wiadomość.</div>
+          <div class="sd-consent-point"><i class="ph-light ph-trash sn-ico" aria-hidden="true"></i> Każdą kartę możesz zablokować i zgłosić, a swoją usunąć w każdej chwili. Karty kasujemy 30 dni po festiwalu.</div>
         </div>
-        <button class="btn btn-gold" style="width:100%;margin-top:1rem" onclick="localStorage.setItem('cien_sd_consent_v1','1');renderSlowDating()">Rozumiem i dołączam →</button>
+        <button class="btn btn-gold" style="width:100%;margin-top:1rem" onclick="localStorage.setItem('cien_sd_consent_' + EDITION,'1');renderSlowDating()">Rozumiem i dołączam →</button>
         <button class="dating-btn-text" style="margin-top:0.75rem" onclick="navigateTo('teraz')">Nie chcę brać udziału</button>
         <div class="sd-consent-fine-print">Administratorem danych jest Sacrum sp. z o.o., ul. Klaudyny 34c, 01-684 Warszawa. Podstawa prawna: zgoda (art. 6 ust. 1 lit. a RODO). Możesz wycofać zgodę usuwając profil w zakładce Moja karta.</div>
       </div>`;
@@ -3225,20 +3372,16 @@ function _sdRenderDiscover(el) {
 }
 
 async function _sdFetchReal() {
-  const myUid = getSDUid();
+  const wrap0 = () => document.getElementById('sd-deck-wrap');
   try {
-    const res = await fetch(`${SD_PB}/api/collections/${SD_COL_PROFILES}/records?perPage=200&sort=-created`, { headers: {'Content-Type':'application/json'} });
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    const data = await res.json();
+    const [disc, likes] = await Promise.all([apiCall('sd-discover'), apiCall('sd-likes')]);
     const seen = getSDSeen();
-    const blocked = getSDBlocked();
-    _sdDeck = (data.items || []).filter(p => p.uid && p.nick && p.uid !== myUid && !seen.has(p.uid) && !blocked.has(p.uid));
+    const liked = new Set(likes.targets || []);
+    _sdDeck = (disc.items || []).filter(p => p.nick && !seen.has(p.owner) && !liked.has(p.owner));
     _sdDeckOk = true;
-    const wrap = document.getElementById('sd-deck-wrap');
-    if (wrap) _sdRenderDeck(wrap);
-  } catch {
-    const wrap = document.getElementById('sd-deck-wrap');
-    if (wrap) wrap.innerHTML = `<div class="sd-empty"><div class="sd-empty-title">Brak połączenia</div><div class="sd-empty-text">Profile wczytają się, gdy wróci internet.</div><button class="btn btn-outline" style="margin-top:1rem" onclick="_sdRenderDiscover(document.getElementById('sd-tab-content'))">Spróbuj ponownie</button></div>`;
+    if (wrap0()) _sdRenderDeck(wrap0());
+  } catch (e) {
+    if (wrap0()) wrap0().innerHTML = `<div class="sd-empty"><div class="sd-empty-title">Nie udało się wczytać kart</div><div class="sd-empty-text">${escHtml(e.message)}</div><button class="btn btn-outline" style="margin-top:1rem" onclick="_sdRenderDiscover(document.getElementById('sd-tab-content'))">Spróbuj ponownie</button></div>`;
   }
 }
 
@@ -3250,7 +3393,7 @@ function _sdRenderDeck(wrap) {
         <div class="sd-empty-icon"><i class="ph-light ph-sparkle sn-ico" aria-hidden="true"></i></div>
         <div class="sd-empty-title">To na razie wszyscy</div>
         <div class="sd-empty-text">Nowe karty pojawią się, gdy dołączą kolejne osoby. Zajrzyj później.</div>
-        <button class="btn btn-outline" style="margin-top:1.25rem" onclick="localStorage.removeItem('cien_sd_seen_2026');_sdDeckOk=false;_sdRenderDiscover(document.getElementById('sd-tab-content'))">Przejrzyj pominięte jeszcze raz</button>
+        <button class="btn btn-outline" style="margin-top:1.25rem" onclick="localStorage.removeItem('cien_sd_seen_' + EDITION);_sdDeckOk=false;_sdRenderDiscover(document.getElementById('sd-tab-content'))">Przejrzyj pominięte jeszcze raz</button>
       </div>`;
     return;
   }
@@ -3260,7 +3403,7 @@ function _sdRenderDeck(wrap) {
     const tags    = _sdParseTags(p.tags);
     const scale   = 1 - i * 0.025;
     const yOff    = i * 7;
-    const photoUrl = p.photoUrl || (p.photo ? `${SD_PB}/api/files/${p.collectionId}/${p.id}/${p.photo}?thumb=400x400` : '');
+    const photoUrl = p.photo ? `${p.photo}?thumb=400x400` : '';
     const _gradients = [
       'linear-gradient(145deg,#1a1035 0%,#3d1a5c 60%,#1a2535 100%)',
       'linear-gradient(145deg,#0d2535 0%,#1a4a3a 60%,#2d1a10 100%)',
@@ -3268,19 +3411,19 @@ function _sdRenderDeck(wrap) {
       'linear-gradient(145deg,#1a2d10 0%,#2d4a1a 60%,#10251a 100%)',
       'linear-gradient(145deg,#10151a 0%,#1a2d40 60%,#2d1a3a 100%)',
     ];
-    const gradIdx = p.uid ? p.uid.charCodeAt(p.uid.length - 1) % _gradients.length : i % _gradients.length;
+    const gradIdx = p.owner ? p.owner.charCodeAt(p.owner.length - 1) % _gradients.length : i % _gradients.length;
     const bgStyle  = photoUrl
       ? `background-image:url(${photoUrl});background-size:cover;background-position:center 25%;`
       : `background:${_gradients[gradIdx]};`;
     const hintClass = (i === 0 && !localStorage.getItem('cien_sd_hinted')) ? ' swipe-hint' : '';
-    return `<div class="dating-card${i===0?' is-top':''}${photoUrl?' has-photo':''}${hintClass}" data-uid="${escHtml(p.uid)}"
+    return `<div class="dating-card${i===0?' is-top':''}${photoUrl?' has-photo':''}${hintClass}" data-uid="${escHtml(p.owner)}"
               style="transform:scale(${scale}) translateY(${yOff}px);z-index:${3-i};${bgStyle}">
       <div class="dating-card-overlay">
         <div class="dating-card-name">${escHtml(p.emoji||'💫')} ${escHtml(p.nick||'')}</div>
         ${p.about ? `<div class="dating-card-bio">${escHtml(p.about)}</div>` : ''}
         ${tags.length ? `<div style="display:flex;flex-wrap:wrap;gap:0.4rem;margin-top:0.5rem">${tags.map(t=>`<span class="sd-tag">${escHtml(t)}</span>`).join('')}</div>` : ''}
       </div>
-      ${i===0 ? `<button class="sd-report-btn" aria-label="Zgłoś lub zablokuj" data-uid="${escHtml(p.uid)}" data-nick="${escHtml(p.nick||'')}"
+      ${i===0 ? `<button class="sd-report-btn" aria-label="Zgłoś lub zablokuj" data-uid="${escHtml(p.owner)}" data-nick="${escHtml(p.nick||'')}"
           ontouchstart="event.stopPropagation()" onmousedown="event.stopPropagation()"
           onclick="event.stopPropagation();sdReportBlock(this.dataset.uid,this.dataset.nick)"><i class="ph-light ph-flag" aria-hidden="true"></i></button>` : ''}
       <div class="dating-swipe-indicator left">Dalej</div>
@@ -3355,44 +3498,35 @@ function _sdFlyOut(card, dir) {
 }
 
 function _sdHandleSwipe(dir, uid) {
-  const i = _sdDeck.findIndex(p => p.uid === uid);
+  const i = _sdDeck.findIndex(p => p.owner === uid);
   if (i < 0) return;
   const top = _sdDeck[i];
-  addSDSeen(top.uid);
   _sdDeck.splice(i, 1);
   if (dir === 'right') {
     _sdSendLike(top);
     if ('vibrate' in navigator) navigator.vibrate([15, 30, 15]);
+  } else {
+    addSDSeen(top.owner);
   }
   const wrap = document.getElementById('sd-deck-wrap');
   if (wrap) _sdRenderDeck(wrap);
 }
 
+// Polubienie zapisuje serwer; przy błędzie karta wraca na wierzch talii
 async function _sdSendLike(profile) {
-  const toUid = typeof profile === 'string' ? profile : profile.uid;
-  if (toUid.startsWith('_demo')) return;
-  const profileObj = typeof profile === 'object' ? profile : { uid: toUid };
-  const myUid = getSDUid();
-  if (!/^[\w-]+$/.test(toUid) || !/^[\w-]+$/.test(myUid)) return;
   try {
-    const dup = await fetch(`${SD_PB}/api/collections/${SD_COL_LIKES}/records?filter=${encodeURIComponent(`from_uid='${myUid}'&&to_uid='${toUid}'`)}&perPage=1&fields=id`);
-    const dupData = dup.ok ? await dup.json() : { items: [] };
-    if (!(dupData.items && dupData.items.length)) {
-      const res = await fetch(`${SD_PB}/api/collections/${SD_COL_LIKES}/records`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ from_uid: myUid, to_uid: toUid }),
-      });
-      if (!res.ok) { showToast('Nie udało się zapisać polubienia — spróbuj ponownie'); return; }
+    const r = await apiCall('sd-like', { target: profile.owner });
+    addSDSeen(profile.owner);
+    if (r.match && !_sdGetSeenMatches().has(profile.owner)) {
+      _sdMarkMatchSeen(profile.owner);
+      showMatchModal(r.profile || profile);
     }
-    const check = await fetch(`${SD_PB}/api/collections/${SD_COL_LIKES}/records?filter=${encodeURIComponent(`from_uid='${toUid}'&&to_uid='${myUid}'`)}&perPage=1`, { headers:{'Content-Type':'application/json'} });
-    const cd    = check.ok ? await check.json() : {};
-    if (cd.items && cd.items.length && !_sdGetSeenMatches().has(toUid)) {
-      showMatchModal(profileObj);
-      _sdMarkMatchSeen(toUid);
-      _sdNotifyMatch(toUid);
-    }
-  } catch { /* offline */ }
+  } catch (e) {
+    _sdDeck.unshift(profile);
+    const wrap = document.getElementById('sd-deck-wrap');
+    if (wrap) _sdRenderDeck(wrap);
+    showToast('Polubienie nie zostało zapisane: ' + e.message, 3500);
+  }
 }
 
 function _sdGetSeenMatches() {
@@ -3404,21 +3538,11 @@ function _sdMarkMatchSeen(uid) {
   localStorage.setItem('cien_shown_matches', JSON.stringify([...s]));
 }
 
-async function _sdNotifyMatch(toUid) {
-  const myNick = getSDProfile().nick || '';
-  try {
-    await fetch('/.netlify/functions/send-push', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'match', targetUid: toUid, fromUid: getSDUid(), matchNick: myNick, matchSecret: _SD_MATCH_SECRET }),
-    });
-  } catch { /* offline */ }
-}
 
 function _sdStartMatchPoller() {
   _sdStopMatchPoller();
   _sdPollMatches();
-  _sdMatchPollerTimer = setInterval(_sdPollMatches, 30000);
+  _sdMatchPollerTimer = setInterval(() => { if (!document.hidden) _sdPollMatches(); }, 45000);
 }
 
 function _sdStopMatchPoller() {
@@ -3433,35 +3557,18 @@ async function _sdPollMatches() {
 }
 
 async function _sdPollMatchesOnce() {
-  const myUid = getSDUid();
-  if (!myUid || myUid.startsWith('guest_')) return;
+  if (!isLoggedIn() || !_sdHasCard()) return;
   try {
-    const [r1, r2] = await Promise.all([
-      fetch(`${SD_PB}/api/collections/${SD_COL_LIKES}/records?filter=${encodeURIComponent(`from_uid='${myUid}'`)}&perPage=500`, {headers:{'Content-Type':'application/json'}}),
-      fetch(`${SD_PB}/api/collections/${SD_COL_LIKES}/records?filter=${encodeURIComponent(`to_uid='${myUid}'`)}&perPage=500`,   {headers:{'Content-Type':'application/json'}}),
-    ]);
-    const iLiked   = new Set((await r1.json()).items?.map(l=>l.to_uid)   || []);
-    const likedMe  = new Set((await r2.json()).items?.map(l=>l.from_uid) || []);
-    const blockedP = getSDBlocked();
-    const matchUids = [...iLiked].filter(uid => likedMe.has(uid) && !blockedP.has(uid));
+    const { items = [] } = await apiCall('sd-matches');
     const seen = _sdGetSeenMatches();
-    const newUids = matchUids.filter(uid => !seen.has(uid));
-    if (newUids.length) {
-      const filter = newUids.map(u=>`uid='${u}'`).join('||');
-      const pr = await fetch(`${SD_PB}/api/collections/${SD_COL_PROFILES}/records?filter=${encodeURIComponent(filter)}&perPage=20`, {headers:{'Content-Type':'application/json'}});
-      const profiles = (await pr.json()).items || [];
-      for (const p of profiles) {
-        _sdMarkMatchSeen(p.uid);
-        if (State.currentView === 'slowdating') {
-          showMatchModal(p);
-          break;
-        } else {
-          showToast(`💘 Match z ${p.nick || 'kimś'}! Wejdź w Slow Dating`, 5000);
-        }
-      }
+    const fresh = items.filter(p => !seen.has(p.owner));
+    for (const p of fresh) {
+      _sdMarkMatchSeen(p.owner);
+      if (State.currentView === 'slowdating') { showMatchModal(p); break; }
+      showToast(`Wzajemne dopasowanie z ${p.nick || 'kimś'}. Zajrzyj do Slow Dating.`, 5000);
     }
-    _sdUpdateMatchBadge(matchUids.length);
-  } catch { /* offline */ }
+    _sdUpdateMatchBadge(items.length);
+  } catch { /* offline: spróbujemy przy następnym odświeżeniu */ }
 }
 
 function _sdUpdateMatchBadge(count) {
@@ -3482,85 +3589,67 @@ function _sdUpdateMatchBadge(count) {
   }
 }
 
+// Zapisuje kartę na serwerze (jedna karta na konto i edycję)
 async function _sdPushProfile(photoBlob) {
   const profile = getSDProfile();
-  if (!profile.nick) return;
-  const myUid = getSDUid();
+  if (!profile.nick || !isLoggedIn()) return false;
+  const me = Auth.user.id;
   try {
-    const chk  = await fetch(`${SD_PB}/api/collections/${SD_COL_PROFILES}/records?filter=${encodeURIComponent(`uid='${myUid}'`)}&perPage=1`, { headers:{'Content-Type':'application/json'} });
+    const chk = await pbFetch(`/api/collections/${SD_COL_PROFILES}/records?perPage=1&filter=${encodeURIComponent(`owner='${me}' && edition='${EDITION}'`)}`);
+    if (!chk.ok) return false;
     const data = await chk.json();
-    let body, headers;
+    const fields = { owner: me, edition: EDITION, nick: profile.nick, about: profile.about || '', tags: JSON.stringify(profile.tags || []), emoji: profile.emoji || '💫' };
+    let body;
     if (photoBlob) {
-      const fd = new FormData();
-      fd.append('uid',   myUid);
-      fd.append('nick',  profile.nick);
-      fd.append('about', profile.about || '');
-      fd.append('tags',  JSON.stringify(profile.tags || []));
-      fd.append('emoji', profile.emoji || '💫');
-      fd.append('photo', photoBlob, 'photo.jpg');
-      body = fd; headers = {};
+      body = new FormData();
+      Object.entries(fields).forEach(([k, v]) => body.append(k, v));
+      body.append('photo', photoBlob, 'photo.jpg');
     } else {
-      body = JSON.stringify({ uid:myUid, nick:profile.nick, about:profile.about||'', tags:JSON.stringify(profile.tags||[]), emoji:profile.emoji||'💫' });
-      headers = {'Content-Type':'application/json'};
+      body = JSON.stringify(fields);
     }
-    if (data.items && data.items.length) {
-      const existingId = data.items[0].id;
-      const res = await fetch(`${SD_PB}/api/collections/${SD_COL_PROFILES}/records/${existingId}`, { method:'PATCH', headers, body });
-      if (!res.ok) return false;
-      const p2 = getSDProfile(); p2.pbId = existingId; saveSDProfile(p2);
-    } else {
-      const res = await fetch(`${SD_PB}/api/collections/${SD_COL_PROFILES}/records`, { method:'POST', headers, body });
-      if (!res.ok) return false;
-      const created = await res.json(); const p2 = getSDProfile(); p2.pbId = created.id; saveSDProfile(p2);
-    }
+    const existing = data.items && data.items[0];
+    if (existing) delete fields.owner;
+    const res = existing
+      ? await pbFetch(`/api/collections/${SD_COL_PROFILES}/records/${existing.id}`, { method: 'PATCH', body: photoBlob ? (body.delete('owner'), body) : JSON.stringify(fields) })
+      : await pbFetch(`/api/collections/${SD_COL_PROFILES}/records`, { method: 'POST', body });
+    if (!res.ok) return false;
+    const saved = await res.json();
+    const p2 = getSDProfile(); p2.pbId = saved.id; saveSDProfile(p2);
     if (photoBlob) { window._sdPendingPhoto = null; localStorage.setItem('cien_sd_photo_pushed', 'true'); }
     _sdDeckOk = false;
-    return !!getSDProfile().pbId;
+    return true;
   } catch { return false; }
 }
 
 // ---- TAB: Dopasowania ----
 
 async function _sdRenderMatches(el) {
-  el.innerHTML = `<div style="padding:2.5rem;text-align:center;color:var(--szary)">Ładowanie...</div>`;
-  const myUid = getSDUid();
+  el.innerHTML = `<div style="padding:2.5rem;text-align:center;color:var(--szary)">Ładowanie…</div>`;
   try {
-    const [r1, r2] = await Promise.all([
-      fetch(`${SD_PB}/api/collections/${SD_COL_LIKES}/records?filter=${encodeURIComponent(`from_uid='${myUid}'`)}&perPage=500`, {headers:{'Content-Type':'application/json'}}),
-      fetch(`${SD_PB}/api/collections/${SD_COL_LIKES}/records?filter=${encodeURIComponent(`to_uid='${myUid}'`)}&perPage=500`,   {headers:{'Content-Type':'application/json'}}),
-    ]);
-    const iLiked   = new Set((await r1.json()).items?.map(l=>l.to_uid) || []);
-    const likedMe  = new Set((await r2.json()).items?.map(l=>l.from_uid) || []);
-    const blockedM = getSDBlocked();
-    const matchUids= [...iLiked].filter(uid => likedMe.has(uid) && !blockedM.has(uid));
-    if (!matchUids.length) {
-      el.innerHTML = `<div style="padding:3rem 2rem;text-align:center">
-        <div style="font-size:2.5rem;margin-bottom:1rem"><i class="ph-light ph-moon-stars sn-ico" aria-hidden="true"></i></div>
-        <div style="color:var(--pergamin);margin-bottom:0.5rem;font-family:var(--font-display)">Brak dopasowań</div>
-        <div style="color:var(--szary);font-size:0.85rem">Odkryj więcej profili — dopasowania pojawią się tu, gdy ktoś polubi Cię wzajemnie.</div></div>`;
+    const { items = [] } = await apiCall('sd-matches');
+    _sdUpdateMatchBadge(items.length);
+    if (!items.length) {
+      el.innerHTML = `<div class="sd-empty">
+        <div class="sd-empty-icon"><i class="ph-light ph-moon-stars sn-ico" aria-hidden="true"></i></div>
+        <div class="sd-empty-title">Brak dopasowań</div>
+        <div class="sd-empty-text">Dopasowanie pojawi się tutaj, gdy ktoś, kogo polubisz, polubi także Ciebie.</div></div>`;
       return;
     }
-    const filter = matchUids.map(u => `uid='${u}'`).join('||');
-    const pr = await fetch(`${SD_PB}/api/collections/${SD_COL_PROFILES}/records?filter=${encodeURIComponent(filter)}&perPage=100`, {headers:{'Content-Type':'application/json'}});
-    const profiles = (await pr.json()).items || [];
-    el.innerHTML = `<div class="dating-matches-list">${profiles.map(p=>{
-      const photoUrl = p.photo && p.collectionId && p.id
-        ? `${SD_PB}/api/files/${p.collectionId}/${p.id}/${p.photo}?thumb=80x80` : '';
-      const avatarStyle = photoUrl
-        ? `background-image:url(${photoUrl});background-size:cover;background-position:center;`
-        : '';
+    el.innerHTML = `<div class="dating-matches-list">${items.map(p => {
+      const photoUrl = p.photo ? `${p.photo}?thumb=80x80` : '';
+      const avatarStyle = photoUrl ? `background-image:url(${photoUrl});background-size:cover;background-position:center;` : '';
       return `<div class="dating-match-item">
-        <div class="dating-match-avatar" style="${avatarStyle}">${photoUrl ? '' : escHtml(p.emoji||'💫')}</div>
+        <div class="dating-match-avatar" style="${avatarStyle}">${photoUrl ? '' : escHtml(p.emoji || '💫')}</div>
         <div style="flex:1;min-width:0">
-          <div class="dating-match-name">${escHtml(p.nick||'')}</div>
-          <div class="dating-match-last">${escHtml(p.about||'')}</div>
+          <div class="dating-match-name">${escHtml(p.nick || '')}</div>
+          <div class="dating-match-last">${escHtml(p.about || '')}</div>
         </div>
-        <button class="btn-burgund" style="font-size:0.8rem;padding:0.45rem 0.8rem;flex-shrink:0" data-nick="${escHtml(p.nick||'')}" onclick="sdOpenAddMeeting(this.dataset.nick)">+ Spotkanie</button>
-        <button class="sd-report-btn sd-report-btn--row" aria-label="Zgłoś lub zablokuj" data-uid="${escHtml(p.uid)}" data-nick="${escHtml(p.nick||'')}" onclick="sdReportBlock(this.dataset.uid,this.dataset.nick)"><i class="ph-light ph-flag" aria-hidden="true"></i></button>
+        <button class="btn-burgund" style="font-size:0.8rem;padding:0.45rem 0.8rem;flex-shrink:0" data-nick="${escHtml(p.nick || '')}" onclick="sdOpenAddMeeting(this.dataset.nick)">+ Notatka</button>
+        <button class="sd-report-btn sd-report-btn--row" aria-label="Zgłoś lub zablokuj ${escHtml(p.nick || '')}" data-uid="${escHtml(p.owner)}" data-nick="${escHtml(p.nick || '')}" onclick="sdReportBlock(this.dataset.uid,this.dataset.nick)"><i class="ph-light ph-flag" aria-hidden="true"></i></button>
       </div>`;
     }).join('')}</div>`;
-  } catch {
-    el.innerHTML = `<div style="padding:3rem;text-align:center;color:var(--szary)">Brak połączenia — sprawdź internet</div>`;
+  } catch (e) {
+    el.innerHTML = `<div class="sd-empty"><div class="sd-empty-title">Nie udało się wczytać</div><div class="sd-empty-text">${escHtml(e.message)}</div></div>`;
   }
 }
 
@@ -3682,24 +3771,15 @@ function _sdRenderCardForm(el) {
 }
 
 async function sdDeleteProfile() {
-  if (!confirm('Czy na pewno chcesz usunąć profil? Ta operacja jest nieodwracalna.')) return;
-  const profile = getSDProfile();
-  const pbId = profile.pbId || profile.id;
-  if (pbId) {
-    await fetch(`${SD_PB}/api/collections/cien_sd_profiles/records/${pbId}`, {
-      method: 'DELETE',
-    }).catch(() => {});
-  }
+  if (!confirm('Usunąć Twoją kartę Slow Dating? Znikną też polubienia i dopasowania.')) return;
   try {
-    const myUid = getSDUid();
-    const r = await fetch(`${SD_PB}/api/collections/${SD_COL_LIKES}/records?filter=${encodeURIComponent(`from_uid='${myUid}'`)}&perPage=500&fields=id`);
-    const items = r.ok ? ((await r.json()).items || []) : [];
-    await Promise.all(items.map(l => fetch(`${SD_PB}/api/collections/${SD_COL_LIKES}/records/${l.id}`, { method: 'DELETE' }).catch(() => {})));
-  } catch { /* offline — polubienia usuną się przy kasowaniu bazy */ }
-  localStorage.removeItem('cien_sd_seen_2026');
-  localStorage.removeItem('cien_shown_matches');
-  ['cien_sd_photo','cien_sd_crop','cien_sd_photo_pos','cien_sd_profile_2026','cien_sd_consent_v1','cien_sd_photo_pushed'].forEach(k => localStorage.removeItem(k));
-  showToast('Profil usunięty');
+    await apiCall('sd-delete-card');
+  } catch (e) {
+    showToast('Nie udało się usunąć karty: ' + e.message, 4000);
+    return;
+  }
+  ['cien_sd_seen_' + EDITION, 'cien_shown_matches', 'cien_sd_photo', 'cien_sd_crop', 'cien_sd_photo_pos', 'cien_sd_profile_' + EDITION, 'cien_sd_consent_' + EDITION, 'cien_sd_photo_pushed', 'cien_sd_pending'].forEach(k => localStorage.removeItem(k));
+  showToast('Karta usunięta');
   renderSlowDating();
 }
 
@@ -3735,7 +3815,7 @@ function sdShareCard() {
   const profile = getSDProfile();
   if (!profile.nick) { showToast('Najpierw wypełnij kartę'); return; }
   const tags = _sdParseTags(profile.tags || []);
-  const text = `${profile.emoji||'💫'} ${profile.nick}\n${profile.about ? profile.about + '\n' : ''}${tags.length ? tags.join(' · ') + '\n' : ''}\nSłow Dating @ Cień Festiwal 2026 🌙\napp.cienfestiwal.com`;
+  const text = `${profile.emoji||'💫'} ${profile.nick}\n${profile.about ? profile.about + '\n' : ''}${tags.length ? tags.join(' · ') + '\n' : ''}\nSlow Dating · CIEŃ 2027\napp.cienfestiwal.com`;
   if (navigator.share) {
     navigator.share({ title: `${profile.nick} @ Cień Festiwal`, text }).catch(() => {});
   } else if (navigator.clipboard) {
@@ -3941,7 +4021,8 @@ async function sdSaveProfile() {
   }
   showToast('Zapisuję kartę…');
   const ok = await _sdPushProfile(photoBlob);
-  showToast(ok ? 'Karta zapisana — jest już widoczna w Slow Dating ✓' : 'Karta zapisana na telefonie. Wyślę ją, gdy wróci internet.', 3500);
+  if (ok) localStorage.removeItem('cien_sd_pending'); else localStorage.setItem('cien_sd_pending', '1');
+  showToast(ok ? 'Karta zapisana i widoczna w Slow Dating' : 'Nie udało się wysłać karty. Wyślemy ją automatycznie, gdy wróci internet.', 3500);
   renderSlowDating();
 }
 
@@ -4070,6 +4151,8 @@ function showToast(msg, duration = 2500) {
   if (!toast) {
     toast = document.createElement('div');
     toast.id = 'toast';
+    toast.setAttribute('role', 'status');
+    toast.setAttribute('aria-live', 'polite');
     toast.style.cssText = `
       position:fixed; bottom:calc(var(--nav-h) + 1rem); left:50%; transform:translateX(-50%);
       background:var(--noir-3); border:1px solid var(--zloto-2);
@@ -4088,12 +4171,8 @@ function showToast(msg, duration = 2500) {
 // PROFIL — unified profile (alias of SD profile, extended)
 // ============================================
 
-function getProfile() {
-  try { return JSON.parse(localStorage.getItem('cien_sd_profile_2026') || '{}'); } catch { return {}; }
-}
-function saveProfile(p) {
-  localStorage.setItem('cien_sd_profile_2026', JSON.stringify(p));
-}
+function getProfile() { return getSDProfile(); }
+function saveProfile(p) { saveSDProfile(p); }
 
 function renderProfil() {
   const container = document.getElementById('profil-content');
@@ -4197,29 +4276,51 @@ function profilePhotoSelected(evt) {
 function renderUstawienia() {
   const container = document.getElementById('ustawienia-content');
   if (!container) return;
-  const pushEnabled = localStorage.getItem('cien_push_enabled') === '1';
+  const pushEnabled = localStorage.getItem('cien_push_enabled') === '1' && localStorage.getItem('cien_push_subscribed') === '1';
+  const calm = localStorage.getItem('cien_calm') === '1';
+  const u = Auth.user;
+  const account = isLoggedIn() ? `
+      <div class="ustawienia-item">
+        <div class="ustawienia-label">
+          <div class="ustawienia-title">Konto</div>
+          <div class="ustawienia-sub">${escHtml(u.email || '')}</div>
+        </div>
+        <button class="auth-link" onclick="authLogout()">Wyloguj</button>
+      </div>` : `
+      <div class="ustawienia-item">
+        <div class="ustawienia-label">
+          <div class="ustawienia-title">Konto</div>
+          <div class="ustawienia-sub">Korzystasz bez konta. Konto jest potrzebne do Slow Dating i drużyny.</div>
+        </div>
+        <button class="auth-link" onclick="_authMode='login';showAuthScreen('ustawienia')">Zaloguj</button>
+      </div>`;
   container.innerHTML = `
     <div class="view-header">
       <div class="view-title">Ustawienia</div>
     </div>
     <div class="ustawienia-list">
+      ${account}
+      <div class="ustawienia-sep"></div>
       <div class="ustawienia-item">
         <div class="ustawienia-label">
-          <div class="ustawienia-title">Powiadomienia push</div>
-          <div class="ustawienia-sub">Przypomnienia o wykładach i wiadomościach od drużyny</div>
+          <div class="ustawienia-title" id="push-toggle-label">Powiadomienia</div>
+          <div class="ustawienia-sub">Ogłoszenia organizatorów (zmiany w programie, pogoda, bezpieczeństwo) i wzajemne dopasowania w Slow Dating</div>
         </div>
         <label class="toggle-switch">
-          <input type="checkbox" id="push-toggle" ${pushEnabled ? 'checked' : ''} onchange="togglePushNotifs(this.checked)">
+          <input type="checkbox" id="push-toggle" aria-labelledby="push-toggle-label" ${pushEnabled ? 'checked' : ''} onchange="togglePushNotifs(this.checked)">
           <span class="toggle-slider"></span>
         </label>
       </div>
-      <div class="ustawienia-sep"></div>
-      <button class="ustawienia-item ustawienia-danger" onclick="if(confirm('Usunąć konto? Dane zostaną usunięte z tego urządzenia.')) deleteAccount()">
-        <div>
-          <div class="ustawienia-title">Usuń konto</div>
-          <div class="ustawienia-sub">Usuwa wszystkie dane z urządzenia</div>
+      <div class="ustawienia-item">
+        <div class="ustawienia-label">
+          <div class="ustawienia-title" id="calm-toggle-label">Tryb oszczędny</div>
+          <div class="ustawienia-sub">Wyłącza ruchome niebo i efekty. Mniej zużywa baterię i jest spokojniejszy dla oczu.</div>
         </div>
-      </button>
+        <label class="toggle-switch">
+          <input type="checkbox" id="calm-toggle" aria-labelledby="calm-toggle-label" ${calm ? 'checked' : ''} onchange="setCalmMode(this.checked)">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
       <div class="ustawienia-sep"></div>
       <button class="ustawienia-item" onclick="shareApp()">
         <div>
@@ -4227,87 +4328,88 @@ function renderUstawienia() {
           <div class="ustawienia-sub">Wyślij link znajomym jadącym na festiwal</div>
         </div>
       </button>
+      <a class="ustawienia-item" href="mailto:kontakt@cienfestiwal.com?subject=Aplikacja%20CIE%C5%83">
+        <div>
+          <div class="ustawienia-title">Napisz do organizatorów</div>
+          <div class="ustawienia-sub">kontakt@cienfestiwal.com</div>
+        </div>
+      </a>
       <div class="ustawienia-sep"></div>
-      <a class="ustawienia-item" href="/polityka-prywatnosci.html" target="_blank">
+      <a class="ustawienia-item" href="/polityka-prywatnosci" target="_blank" rel="noopener">
         <div class="ustawienia-title">Polityka prywatności</div>
       </a>
-      <a class="ustawienia-item" href="/regulamin.html" target="_blank">
+      <a class="ustawienia-item" href="/regulamin" target="_blank" rel="noopener">
         <div class="ustawienia-title">Regulamin</div>
       </a>
+      <a class="ustawienia-item" href="/usun-konto" target="_blank" rel="noopener">
+        <div class="ustawienia-title">Jak usunąć dane</div>
+      </a>
+      <div class="ustawienia-sep"></div>
+      <button class="ustawienia-item ustawienia-danger" onclick="deleteAccount()">
+        <div>
+          <div class="ustawienia-title">${isLoggedIn() ? 'Usuń konto i dane' : 'Usuń dane z telefonu'}</div>
+          <div class="ustawienia-sub">${isLoggedIn() ? 'Kasuje konto, kartę, polubienia, wiadomości i powiadomienia z serwera oraz dane z tego telefonu' : 'Kasuje plan, dziennik i ustawienia z tego telefonu'}</div>
+        </div>
+      </button>
     </div>
   `;
 }
 
 async function togglePushNotifs(enabled) {
-  localStorage.setItem('cien_push_enabled', enabled ? '1' : '0');
-  if (enabled) {
-    subscribePush();
-    return;
-  }
+  if (enabled) { subscribePush(); return; }
   try {
     const reg = await navigator.serviceWorker?.getRegistration();
     const sub = reg && await reg.pushManager.getSubscription();
     if (sub) {
-      const r = await fetch(`${SD_PB}/api/collections/cien_push_subs/records?filter=${encodeURIComponent(`endpoint='${sub.endpoint.replace(/'/g, '')}'`)}&perPage=50&fields=id`);
-      const items = r.ok ? ((await r.json()).items || []) : [];
-      await Promise.all(items.map(it => fetch(`${SD_PB}/api/collections/cien_push_subs/records/${it.id}`, { method: 'DELETE' })));
+      await apiCall('push-unsubscribe', { endpoint: sub.endpoint });
       await sub.unsubscribe();
     }
     localStorage.removeItem('cien_push_subscribed');
-  } catch { /* offline */ }
-  showToast('Powiadomienia wyłączone');
+    localStorage.setItem('cien_push_enabled', '0');
+    showToast('Powiadomienia wyłączone');
+  } catch (e) {
+    showToast('Nie udało się wyłączyć: ' + e.message, 3500);
+    const t = document.getElementById('push-toggle'); if (t) t.checked = true;
+  }
 }
 
 async function deleteAccount() {
-  if (!confirm('Usunąć konto? Skasujemy Twój profil Slow Dating, polubienia, subskrypcję powiadomień i wszystkie dane z tego telefonu. Tego nie da się cofnąć.')) return;
+  const logged = isLoggedIn();
+  const msg = logged
+    ? 'Usunąć konto? Skasujemy z serwera Twoje konto, kartę Slow Dating, polubienia, dopasowania, wiadomości i notatki w drużynie oraz subskrypcję powiadomień, a z telefonu plan i dziennik. Tego nie da się cofnąć.'
+    : 'Usunąć wszystkie dane z tego telefonu (plan, dziennik, ustawienia)? Tego nie da się cofnąć.';
+  if (!confirm(msg)) return;
   showToast('Usuwam dane…');
-  const failed = [];
-  const myUid = getSDUid();
-  const del = async (col, id) => {
-    const r = await fetch(`${SD_PB}/api/collections/${col}/records/${id}`, { method: 'DELETE' });
-    if (!r.ok && r.status !== 404) failed.push(col);
-  };
-  const list = async (col, filter) => {
-    const r = await fetch(`${SD_PB}/api/collections/${col}/records?filter=${encodeURIComponent(filter)}&perPage=500&fields=id`);
-    if (!r.ok) { failed.push(col); return []; }
-    return (await r.json()).items || [];
-  };
   try {
-    if (/^[\w-]+$/.test(myUid)) {
-      for (const p of await list(SD_COL_PROFILES, `uid='${myUid}'`)) await del(SD_COL_PROFILES, p.id);
-      for (const l of await list(SD_COL_LIKES, `from_uid='${myUid}'`)) await del(SD_COL_LIKES, l.id);
+    const reg = 'serviceWorker' in navigator ? await navigator.serviceWorker.getRegistration() : null;
+    const sub = reg && await reg.pushManager.getSubscription();
+    if (logged) await apiCall('delete-account');
+    if (sub) {
+      await apiCall('push-unsubscribe', { endpoint: sub.endpoint });
+      await sub.unsubscribe().catch(() => {});
     }
-    if ('serviceWorker' in navigator) {
-      const reg = await navigator.serviceWorker.getRegistration();
-      const sub = reg && await reg.pushManager.getSubscription();
-      if (sub) {
-        for (const r of await list('cien_push_subs', `endpoint='${sub.endpoint.replace(/'/g, '')}'`)) await del('cien_push_subs', r.id);
-        await sub.unsubscribe().catch(() => {});
-      }
-    }
-  } catch { failed.push('sieć'); }
-  if (failed.length) {
-    alert('Nie udało się usunąć wszystkich danych z serwera (brak połączenia albo odmowa serwera). Dane na telefonie zostają, żeby można było spróbować ponownie. Możesz też napisać na kontakt@sacrum.life.');
+  } catch (e) {
+    alert('Nie udało się usunąć danych z serwera: ' + e.message + '\nDane na telefonie zostają, żeby można było spróbować ponownie. Możesz też napisać na kontakt@cienfestiwal.com.');
     return;
   }
   Object.keys(localStorage).filter(k => k.startsWith('cien_')).forEach(k => localStorage.removeItem(k));
   location.reload();
 }
 
+// Sprawdza nową wersję bez kasowania pamięci offline (gdy nowej nie ma albo brak sieci, appka dalej działa offline)
 async function updateApp() {
   closeMoreMenu();
-  showToast('Aktualizowanie…');
+  showToast('Sprawdzam aktualizację…');
   try {
-    if ('serviceWorker' in navigator) {
-      const reg = await navigator.serviceWorker.getRegistration();
-      if (reg) await reg.update();
-    }
-    if ('caches' in window) {
-      const keys = await caches.keys();
-      await Promise.all(keys.map(k => caches.delete(k)));
-    }
-  } catch (_e) {}
-  location.reload(true);
+    const reg = await navigator.serviceWorker?.getRegistration();
+    if (!reg) { location.reload(); return; }
+    await reg.update();
+    const w = reg.waiting || reg.installing;
+    if (w) { w.postMessage({ type: 'SKIP_WAITING' }); return; }
+    showToast('Masz najnowszą wersję');
+  } catch {
+    showToast('Brak połączenia. Appka działa dalej offline.', 3000);
+  }
 }
 
 // ============================================
@@ -4530,8 +4632,9 @@ function initParticles() {
   }));
 
   let _rafId = null;
+  // Ukryta karta albo tryb oszczędny: brak pętli (tryb oszczędny = jedna statyczna klatka)
   const draw = () => {
-    if (document.hidden) { _rafId = requestAnimationFrame(draw); return; }
+    if (document.hidden) { _rafId = null; return; }
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     pts.forEach(p => {
       p.tw += p.sp; p.y += p.vy;
@@ -4548,12 +4651,12 @@ function initParticles() {
         ctx.fill();
       }
     });
-    _rafId = requestAnimationFrame(draw);
+    _rafId = document.documentElement.classList.contains('sn-calm') ? null : requestAnimationFrame(draw);
   };
   _rafId = requestAnimationFrame(draw);
-  document.addEventListener('visibilitychange', () => {
-    if (!document.hidden && !_rafId) _rafId = requestAnimationFrame(draw);
-  });
+  const wake = () => { if (!document.hidden && !_rafId) _rafId = requestAnimationFrame(draw); };
+  document.addEventListener('visibilitychange', wake);
+  new MutationObserver(wake).observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
 }
 
 // ============================================
@@ -4614,8 +4717,7 @@ function showMatchModal(profile) {
   if (!modal) return;
   const theirPhoto = modal.querySelector('.match-their-photo');
   if (theirPhoto) {
-    const photoUrl = profile.photo && profile.collectionId && profile.id
-      ? `${SD_PB}/api/files/${profile.collectionId}/${profile.id}/${profile.photo}?thumb=200x200` : '';
+    const photoUrl = profile.photo ? `${profile.photo}?thumb=200x200` : '';
     if (photoUrl) {
       theirPhoto.style.cssText = `background-image:url(${photoUrl});background-size:cover;background-position:center;`;
       theirPhoto.textContent = '';
@@ -4637,7 +4739,7 @@ function showMatchModal(profile) {
   }
   const nameEl = modal.querySelector('.match-their-name');
   if (nameEl) nameEl.textContent = profile.nick || '';
-  modal.dataset.matchUid = profile.uid;
+  modal.dataset.matchUid = profile.owner || '';
   modal.classList.add('open');
   setTimeout(fireConfetti, 50);
 }
@@ -4690,3 +4792,81 @@ Object.assign(window, {
 // ============================================
 
 document.addEventListener('DOMContentLoaded', init);
+
+// Po zalogowaniu przypina istniejącą subskrypcję powiadomień do konta (żeby doszło powiadomienie o dopasowaniu)
+async function _pushLinkToAccount() {
+  try {
+    const reg = await navigator.serviceWorker?.getRegistration();
+    const sub = reg && await reg.pushManager.getSubscription();
+    if (sub && isLoggedIn()) await apiCall('push-link', { endpoint: sub.endpoint });
+  } catch { /* bez znaczenia offline */ }
+}
+
+// Tryb oszczędny: bez ruchomego nieba, bez rozmyć; wybór zapisany na telefonie
+function setCalmMode(on) {
+  localStorage.setItem('cien_calm', on ? '1' : '0');
+  document.documentElement.classList.toggle('sn-calm', !!on);
+  showToast(on ? 'Tryb oszczędny włączony' : 'Tryb oszczędny wyłączony');
+}
+document.documentElement.classList.toggle('sn-calm', localStorage.getItem('cien_calm') === '1');
+
+// ============================================
+// Dane zależne od konta: czyszczenie przy zmianie konta, odtwarzanie po zalogowaniu
+// ============================================
+const ACCOUNT_KEYS = ['cien_sd_profile_' + EDITION, 'cien_sd_profile_2026', 'cien_sd_photo', 'cien_sd_crop', 'cien_sd_photo_pos',
+  'cien_sd_consent_' + EDITION, 'cien_sd_photo_pushed', 'cien_sd_meetings_2026', 'cien_sd_seen_' + EDITION, 'cien_shown_matches',
+  'cien_sd_pending', 'cien_team_id', 'cien_team_code', 'cien_team_name', 'cien_team_snapshot', 'cien_team_sync_hash'];
+
+function _clearAccountLocalData() {
+  ACCOUNT_KEYS.forEach(k => localStorage.removeItem(k));
+}
+
+// Wywoływane po każdym udanym logowaniu/rejestracji
+async function _afterLogin() {
+  const id = Auth.user?.id;
+  const last = localStorage.getItem('cien_last_account');
+  if (last && last !== id) _clearAccountLocalData();
+  localStorage.setItem('cien_last_account', id);
+  try {
+    // konto: imię, opis, tematy, cienie
+    const ur = await pbFetch(`/api/collections/users/records/${id}`);
+    const u = ur.ok ? await ur.json() : null;
+    // karta Slow Dating tej edycji
+    const cr = await pbFetch(`/api/collections/${SD_COL_PROFILES}/records?perPage=1&filter=${encodeURIComponent(`owner='${id}' && edition='${EDITION}'`)}`);
+    const card = cr.ok ? ((await cr.json()).items || [])[0] : null;
+    const p = getSDProfile();
+    if (card) {
+      Object.assign(p, { nick: card.nick, about: card.about, tags: _sdParseTags(card.tags), emoji: card.emoji, pbId: card.id });
+      if (card.photo) { localStorage.setItem('cien_sd_photo', `/pb/api/files/${card.collectionId}/${card.id}/${card.photo}`); localStorage.setItem('cien_sd_photo_pushed', 'true'); }
+      localStorage.setItem('cien_sd_consent_' + EDITION, '1');
+    }
+    if (u) {
+      if (!p.nick && u.name) p.nick = u.name;
+      if (!p.about && u.about) p.about = u.about;
+      if ((!p.tags || !p.tags.length) && u.tags) p.tags = _sdParseTags(u.tags);
+      if (!p.shadows && u.shadows) p.shadows = u.shadows;
+      localStorage.setItem('cien_team_sync_hash', JSON.stringify({ name: (u.name || '').slice(0, 40), about: (u.about || '').slice(0, 200), tags: u.tags || '[]', shadows: (u.shadows || '').slice(0, 1000) }));
+    }
+    saveSDProfile(p);
+    // drużyna z serwera, jeśli na tym telefonie jej nie ma
+    if (!localStorage.getItem('cien_team_id')) {
+      const { teams = [] } = await apiCall('team-mine');
+      if (teams[0] && typeof _persistTeam === 'function') _persistTeam(teams[0]);
+    }
+  } catch { /* offline: odtworzymy przy następnym uruchomieniu */ }
+}
+
+// Karta zapisana tylko na telefonie (brak sieci przy zapisie) wysyła się, gdy wróci internet
+async function _sdRetryPending() {
+  if (!isLoggedIn() || localStorage.getItem('cien_sd_pending') !== '1') return;
+  let photoBlob = null;
+  if (localStorage.getItem('cien_sd_photo_pushed') === 'false') {
+    const dataUrl = localStorage.getItem('cien_sd_photo');
+    if (dataUrl && dataUrl.startsWith('data:')) { try { photoBlob = await (await fetch(dataUrl)).blob(); } catch {} }
+  }
+  if (await _sdPushProfile(photoBlob)) {
+    localStorage.removeItem('cien_sd_pending');
+    showToast('Twoja karta Slow Dating została wysłana', 2500);
+  }
+}
+window.addEventListener('online', _sdRetryPending);

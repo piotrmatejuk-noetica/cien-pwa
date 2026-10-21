@@ -7,43 +7,43 @@ Wszystkie teksty po polsku. Limity znaków podane przy polach.
 **Nazwa aplikacji** (maks. 30): CIEŃ Festiwal
 
 **Krótki opis** (maks. 80):
-Program, mapa, Slow Dating i dziennik przemiany. Twój przewodnik po festiwalu CIEŃ.
+Program, Mój Plan, Slow Dating i dziennik. Twój przewodnik po festiwalu CIEŃ.
 
 **Pełny opis** (maks. 4000):
 
 CIEŃ to festiwal psychologii głębi, hipnozy, ruchu, kina i muzyki. Ta aplikacja prowadzi Cię przez cały festiwal, także tam, gdzie nie ma zasięgu.
 
 Program
-Wszystkie wykłady, warsztaty, seanse i koncerty w jednym miejscu. Filtrujesz po dniu i strefie, szukasz po nazwisku prowadzącego, zapisujesz wydarzenia do własnego planu i dodajesz je do kalendarza w telefonie. Na górze widzisz, co dzieje się w tej chwili.
+Wszystkie wykłady, warsztaty, seanse i koncerty w jednym miejscu. Filtrujesz po dniu i strefie, szukasz po nazwisku prowadzącego i zapisujesz wydarzenia do Mojego Planu. Appka ostrzega, gdy dwa zapisane wydarzenia nachodzą na siebie, a cały plan dodasz jednym przyciskiem do kalendarza w telefonie, z przypomnieniem 15 minut przed. Przed festiwalem widzisz zapowiedź edycji CIEŃ 2027 Śnienie (8–11 lipca, Pałac w Roztoce) i archiwalny program 2026.
 
 Mapa terenu
-Strefy festiwalu i najważniejsze punkty: jedzenie, woda, toalety, pomoc. Przy każdym punkcie godziny otwarcia i opis drogi.
+Strefy festiwalu i najważniejsze punkty: jedzenie, woda, toalety, pomoc.
 
 Slow Dating
-Zakładasz kartę z nickiem, zdjęciem i kilkoma słowami o sobie. Przeglądasz karty innych uczestników. Gdy dwie osoby polubią się nawzajem, obie dostają powiadomienie i mogą umówić się na rozmowę na festiwalu. Każdą kartę możesz zgłosić albo zablokować, a swój profil usunąć jednym przyciskiem.
+Zakładasz konto i kartę z nickiem, zdjęciem i kilkoma słowami o sobie. Przeglądasz karty innych uczestników. Gdy dwie osoby polubią się nawzajem, obie się o tym dowiadują i mogą umówić się na rozmowę na festiwalu. Każdą osobę możesz zablokować (działa w obie strony) i zgłosić organizatorom prosto z aplikacji.
 
 Dziennik przemiany
 Trzy dni festiwalu, trzy etapy: nigredo, albedo, rubedo. Codziennie jedno pytanie do zapisania myśli. Dziennik zostaje wyłącznie na Twoim telefonie.
 
 Koło życia
-Oceniasz osiem obszarów życia, widzisz je na wykresie i układasz plan na teraz, na co tydzień i na rok.
+Oceniasz sześć obszarów życia, widzisz je na wykresie i układasz plan na teraz, na co tydzień i na rok.
 
 Baza wiedzy
 Artykuły o historii miejsca, psychologii i nauce, z przypisami do źródeł.
 
 Pomoc
-Punkt PsyCare SACRUM z opisem, gdzie jest i kiedy działa, oraz szybki dostęp do numeru 112.
+Przycisk Pomoc jest zawsze w nagłówku: numer 112, telefon zaufania 116 123 i informacje o bezpłatnym PsyCare na festiwalu.
 
 Drużyna
-Tworzysz grupę ze znajomymi, piszecie na czacie, zostawiacie notatki i umawiacie spotkania.
+Tworzysz grupę ze znajomymi (dołączają kodem), piszecie na czacie, zostawiacie notatki i umawiacie spotkania. Wiadomość wysłana bez zasięgu czeka i wyślesz ją jednym dotknięciem.
 
-Aplikacja działa offline: program, mapa i baza wiedzy są dostępne bez internetu.
+Aplikacja działa offline: program, Mój Plan, mapa, dziennik i baza wiedzy są dostępne bez internetu. Konto potrzebne jest tylko do Slow Dating i drużyny. Tryb oszczędny wyłącza animacje i oszczędza baterię.
 
 Organizator danych osobowych: Sacrum sp. z o.o., ul. Klaudyny 34c, 01-684 Warszawa.
 
 **Kategoria:** Rozrywka (alternatywnie: Styl życia)
 **Adres polityki prywatności:** https://app.cienfestiwal.com/polityka-prywatnosci
-**E-mail kontaktowy:** kontakt@sacrum.life
+**E-mail kontaktowy:** kontakt@cienfestiwal.com
 **Grupa docelowa:** 18+ (funkcja randkowa, treści o substancjach psychoaktywnych w kontekście redukcji szkód)
 
 ## App Store
@@ -68,16 +68,18 @@ Odpowiedzi zgodne z tym, co appka faktycznie robi (stan kodu 21.10.2026).
 
 | Dane | Zbierane na serwerze? | Cel | Opcjonalne? |
 |---|---|---|---|
-| Nick, opis, zainteresowania, zdjęcie (Slow Dating) | tak | funkcja aplikacji | tak, tylko po zgodzie w Slow Dating |
-| Polubienia między kartami | tak | funkcja aplikacji | tak |
-| Identyfikator urządzenia w aplikacji (losowy) | tak | funkcja aplikacji | nie |
-| Drużyna: nazwa (nick albo część adresu e-mail przed @), opis, „Moje cienie”, wiadomości, notatki, spotkania | tak | funkcja aplikacji | tak, tylko po dołączeniu do drużyny |
-| Pełny adres e-mail i hasło konta | nie, zostają na telefonie | logowanie | nie |
-| Dziennik, wyniki koła życia | nie, zostają na telefonie | funkcja aplikacji | tak |
-| Oceny koła życia wysyłane do AI (bez danych osobowych) | przetwarzane chwilowo | personalizacja planu | tak, tylko po kliknięciu „Generuj plan” |
+| Adres e-mail i hasło (skrót, nie jawny tekst) | tak | konto (Slow Dating, drużyna) | tak, konto jest opcjonalne |
+| Imię lub nick, opis, tematy, „Moje cienie” | tak | funkcja aplikacji (widzi tylko drużyna) | tak |
+| Karta Slow Dating: nick, opis, tematy, zdjęcie | tak | funkcja aplikacji | tak, po zgodzie w Slow Dating |
+| Polubienia, dopasowania, blokady | tak | funkcja aplikacji, bezpieczeństwo | tak |
+| Zgłoszenia naruszeń | tak | bezpieczeństwo, moderacja | tak |
+| Wiadomości, notatki, spotkania drużyny | tak | funkcja aplikacji | tak |
+| Przybliżona/dokładna lokalizacja (radar drużyny) | tak, tylko gdy włączysz udostępnianie | funkcja aplikacji | tak |
 | Subskrypcja powiadomień | tak | powiadomienia | tak |
+| Dziennik, Mój Plan, koło życia | nie, zostają na telefonie | funkcja aplikacji | tak |
+| Oceny koła życia i punkty planu wysyłane do AI | przetwarzane chwilowo (OpenAI) | personalizacja planu | tak, tylko po „Generuj plan” |
 
 - Dane nie są sprzedawane ani udostępniane do reklam.
 - Transmisja szyfrowana (HTTPS).
-- Usunięcie danych: w aplikacji (Ustawienia → Usuń konto; Slow Dating → Moja karta → Usuń profil) oraz mailowo: kontakt@sacrum.life.
+- Usunięcie danych: w aplikacji (Więcej → Ustawienia → Usuń konto i dane) oraz bez aplikacji: https://app.cienfestiwal.com/usun-konto (kontakt@cienfestiwal.com).
 - Ankieta oceny treści (IARC): interakcje użytkowników: tak; wymiana treści między użytkownikami: tak (Slow Dating, czat drużyny); odniesienia do narkotyków: tak (edukacja i redukcja szkód).
