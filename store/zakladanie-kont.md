@@ -1,4 +1,4 @@
-# Zakładanie kont w sklepach: co kliknąć i co wpisać
+11# Zakładanie kont w sklepach: co kliknąć i co wpisać
 
 Kroki, których nie da się zrobić za Ciebie: płatność Twoją kartą, zdjęcie dowodu (czasem selfie), kod SMS lub 2FA,
 zgoda na umowę dewelopera w Twoim imieniu. Wszystko inne jest gotowe w tym folderze.
@@ -12,6 +12,10 @@ zgoda na umowę dewelopera w Twoim imieniu. Wszystko inne jest gotowe w tym fold
 
 Uwaga: strona CIEŃ 2027 podaje jako organizatora **Serenum Divitis sp. z o.o.**, a appka i polityka prywatności **Sacrum sp. z o.o.**
 Konto firmowe zakładaj na tę spółkę, która ma być administratorem danych, i daj znać, to ujednolicę teksty.
+
+**Decyzja Piotra 21.10.2026:** faktury na **Sacrum sp. z o.o., NIP 1182326089**, więc oba konta jako **organizacja** na Sacrum
+(zgodnie z polityką prywatności appki). Oba sklepy wymagają dla organizacji numeru **D-U-N-S** spółki. Sprawdzenie, czy Sacrum go ma,
+oraz bezpłatny wniosek: https://developer.apple.com/enroll/duns-lookup/ (logowanie Apple ID). Wniosek trwa zwykle do 5 dni roboczych.
 
 ## Google Play Console (25 USD jednorazowo)
 
