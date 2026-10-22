@@ -69,3 +69,11 @@ w dniu wysyłki i wpiszę je w formularzach.
 - Zrzuty Google Play przerobione na 1080×2160 (Play przyjmuje najwyżej 2:1; poprzednie 1080×2340 byłyby odrzucone).
 - Paczka: targetSdk 36, minSdk 24, versionCode 1. W `app/build.gradle` `versionName ""` — przy najbliższej przebudowie ustawić 1.0.0.
 - Apple: Piotr nie przeszedł skanu prawa jazdy w aplikacji Apple Developer (iPhone 16 Pro nie łapie ostrości z bliska). Rady: telefon 25–35 cm, ciemne matowe tło, dowód/paszport zamiast prawa jazdy, ewentualnie inne urządzenie zalogowane jego Apple ID.
+
+### 22.10.2026: aplikacja wysłana do sprawdzenia w Google Play
+- Tożsamość zweryfikowana (mail Google 21.10 15:26), oba telefony potwierdzone SMS-em.
+- Aplikacja „CIEŃ Festiwal”, pakiet `com.cienfestiwal.app` (wolny — wcześniejsze „zajęte” to był brak weryfikacji), ID aplikacji 4974778839472727471.
+- Uzupełnione: polityka prywatności, dane logowania dla recenzentów (review@cienfestiwal.com, hasło w `~/Documents/cien-pb/review-account.txt`), reklamy: brak, grupa docelowa 18+, IARC → PEGI 18 (społecznościowa, randki, lokalizacja dla drużyny, blokowanie/zgłaszanie), bezpieczeństwo danych (import CSV, plik źródłowy w `.playwright-mcp/data-safety-cien.csv` w vaulcie), instytucje państwowe/finanse/zdrowie: nie, identyfikator reklam: nie, kategoria Wydarzenia, kontakt kontakt@cienfestiwal.com + app.cienfestiwal.com, karta sklepu (tekst z `opisy-sklepowe.md`, ikona, grafika, 6 zrzutów 1080×1920 — Play wymaga 9:16).
+- Test wewnętrzny 1.0.0 opublikowany (lista testerów „Zespół CIEŃ”: piotr.matejuk@gmail.com, link https://play.google.com/apps/internaltest/4700512939774300085).
+- Produkcja 1.0.0, kraj: Polska. 10 zmian wysłanych do sprawdzenia 22.10 ~15:20 (Google: zwykle do 7 dni).
+- Klucz podpisu Google Play SHA-256 `D0:55:30:F2:…:7D:9D:56:B9` dopisany do `/.well-known/assetlinks.json` (commit 4f41041, prod v88).
