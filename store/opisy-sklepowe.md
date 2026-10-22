@@ -39,7 +39,7 @@ Tworzysz grupę ze znajomymi (dołączają kodem), piszecie na czacie, zostawiac
 
 Aplikacja działa offline: program, Mój Plan, mapa, dziennik i baza wiedzy są dostępne bez internetu. Konto potrzebne jest tylko do Slow Dating i drużyny. Tryb oszczędny wyłącza animacje i oszczędza baterię.
 
-Organizator danych osobowych: Sacrum sp. z o.o., ul. Klaudyny 34c, 01-684 Warszawa.
+Organizator danych osobowych: SACRUM sp. z o.o., ul. Rudzka 5A lok. 16, 01-689 Warszawa.
 
 **Kategoria:** Rozrywka (alternatywnie: Styl życia)
 **Adres polityki prywatności:** https://app.cienfestiwal.com/polityka-prywatnosci

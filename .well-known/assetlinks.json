@@ -1,11 +1,14 @@
 [
   {
-    "relation": ["delegate_permission/common.handle_all_urls"],
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
     "target": {
       "namespace": "android_app",
       "package_name": "com.cienfestiwal.app",
       "sha256_cert_fingerprints": [
-        "4E:E4:36:E8:3B:44:04:9E:63:4C:B7:95:35:18:77:2F:64:E4:98:B0:D7:48:30:62:99:57:1A:B5:DC:3C:41:C3"
+        "4E:E4:36:E8:3B:44:04:9E:63:4C:B7:95:35:18:77:2F:64:E4:98:B0:D7:48:30:62:99:57:1A:B5:DC:3C:41:C3",
+        "D0:55:30:F2:62:FD:1B:7A:70:C7:05:F0:E4:E5:4C:B1:6B:2A:09:8B:B1:24:E3:E0:2C:AF:2E:8E:7D:9D:56:B9"
       ]
     }
   }

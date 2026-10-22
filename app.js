@@ -3313,7 +3313,7 @@ function renderSlowDating() {
         </div>
         <button class="btn btn-gold" style="width:100%;margin-top:1rem" onclick="localStorage.setItem('cien_sd_consent_' + EDITION,'1');renderSlowDating()">Rozumiem i dołączam →</button>
         <button class="dating-btn-text" style="margin-top:0.75rem" onclick="navigateTo('teraz')">Nie chcę brać udziału</button>
-        <div class="sd-consent-fine-print">Administratorem danych jest Sacrum sp. z o.o., ul. Klaudyny 34c, 01-684 Warszawa. Podstawa prawna: zgoda (art. 6 ust. 1 lit. a RODO). Możesz wycofać zgodę usuwając profil w zakładce Moja karta.</div>
+        <div class="sd-consent-fine-print">Administratorem danych jest Sacrum sp. z o.o., ul. Rudzka 5A lok. 16, 01-689 Warszawa. Podstawa prawna: zgoda (art. 6 ust. 1 lit. a RODO). Możesz wycofać zgodę usuwając profil w zakładce Moja karta.</div>
       </div>`;
     return;
   }
