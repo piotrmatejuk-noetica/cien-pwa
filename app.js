@@ -1,5 +1,5 @@
 /* ============================================
-   CIEŃ FESTIWAL 2026 — App JS
+   CIEŃ FESTIWAL 2027 — App JS
    ============================================ */
 
 'use strict';
@@ -82,7 +82,7 @@ async function authRefresh() {
 }
 
 // ============================================
-// EDYCJA: zapowiedź 2027 (dane ze strony festiwalu), program 2026 jako archiwum
+// EDYCJA 2027 „Śnienie” (dane ze strony cien27.piotrmatejuk.com)
 // ============================================
 const EDITION_INFO = {
   year: 2027,
@@ -122,10 +122,10 @@ function _renderEditionHero() {
     <div class="ed-when">${EDITION_INFO.dates} · ${EDITION_INFO.place}</div>
     ${days > 0 ? `<div class="ed-count"><span class="ed-count-num">${days}</span><span class="ed-count-lbl">${days === 1 ? 'dzień' : 'dni'} do festiwalu</span></div>` : ''}
     <div class="ed-nights">${nights}</div>
-    <p class="ed-note">Program 2027 pojawi się tutaj, gdy organizatorzy go opublikują. Do tego czasu poniżej znajdziesz program poprzedniej edycji.</p>
+    <p class="ed-note">Poniżej program wstępny. Kolejne nazwiska i godziny organizatorzy dopisują na bieżąco.</p>
     <a class="btn btn-gold ed-cta" href="${EDITION_INFO.site}" target="_blank" rel="noopener">Bilety i aktualności</a>
   </section>
-  <div class="ed-archive-label">Archiwum · program 2026 · Zamek Świny</div>`;
+  <div class="ed-archive-label">Program wstępny · CIEŃ 2027</div>`;
 }
 
 let _authMode = 'register'; // 'register' | 'login'
@@ -283,7 +283,7 @@ const State = {
   data: null,
   currentView: 'teraz',
   schedule: {
-    activeDay: '2026-07-03',
+    activeDay: '2027-07-08',
     activeZone: 'all',
     showFavOnly: false,
     searchQuery: ''
@@ -293,7 +293,7 @@ const State = {
     view: 'svg'
   },
   journal: {
-    activeStage: 'nigredo',
+    activeStage: 'hipnagogia',
     activeTab: 'journal',
     cachedPrompts: {}
   },
@@ -317,51 +317,59 @@ const ZONES_MAP = {
   anima:          { color: '#7DA2C9', icon: '☯' },
   umbra:          { color: '#EF8448', icon: '⚡' },
   gnoza:          { color: '#7FB59A', icon: '🎬' },
+  ciao:           { color: '#C48A6A', icon: '🧘' },
+  wszystkie:      { color: '#EFEBE2', icon: '✨' },
   lochy:          { color: '#C48A6A', icon: '🕯' }
 };
 
-const DAY_STAGES = {
-  '2026-07-03': 'nigredo',
-  '2026-07-04': 'albedo',
-  '2026-07-05': 'rubedo'
+// Cztery noce CIEŃ 2027; klucz etapu = klasa CSS i klucz dziennika
+const FEST_DAYS = ['2027-07-08', '2027-07-09', '2027-07-10', '2027-07-11'];
+const DAY_META = {
+  '2027-07-08': { stage: 'hipnagogia',   label: 'Hipnagogia',   date: 'Czw 8 VII', short: '8.07',  element: 'Powietrze', symbol: '☽', color: '#A59CD3' },
+  '2027-07-09': { stage: 'sen',          label: 'Sen głęboki',  date: 'Pt 9 VII',  short: '9.07',  element: 'Ziemia',    symbol: '●', color: '#B89A6A' },
+  '2027-07-10': { stage: 'rem',          label: 'REM',          date: 'Sb 10 VII', short: '10.07', element: 'Woda',      symbol: '◐', color: '#7DA2C9' },
+  '2027-07-11': { stage: 'przebudzenie', label: 'Przebudzenie', date: 'Nd 11 VII', short: '11.07', element: 'Ogień',     symbol: '☀', color: '#EF8448' },
 };
+const DAY_STAGES = Object.fromEntries(FEST_DAYS.map(d => [d, DAY_META[d].stage]));
+const STAGE_META = Object.fromEntries(FEST_DAYS.map(d => [DAY_META[d].stage, DAY_META[d]]));
+const STAGE_ORDER = FEST_DAYS.map(d => DAY_META[d].stage);
 
 const JOURNAL_PROMPTS = {
-  nigredo: [
-    'Co chcę zostawić za sobą podczas tego festiwalu? Co chcę rozpuścić?',
-    'Które emocje najtrudniej mi przyjąć? Co one próbują mi powiedzieć?',
-    'Co przykryłem w sobie, żeby móc funkcjonować? Co teraz wychodzi na powierzchnię?',
-    'Jaki fragment siebie przywiozłem tu, który dawno nie był widziany?',
-    'Co mnie tu sprowadziło naprawdę — pod warstwą oczywistej odpowiedzi?',
-    'Czego boję się zobaczyć w sobie na tym festiwalu?',
-    'Co w zachowaniu innych dziś mnie drażniło lub irytowało? Co to mówi o mnie?',
-    'Jakie słowa, obrazy lub dźwięki z dzisiejszego dnia wracają bez zaproszenia?',
-    'Gdyby twój Cień mógł tu przemówić — co by powiedział?',
-    'Co schowałem do torby zanim tu przyjechałem — i czy czas to wyjąć?'
+  hipnagogia: [
+    'Z czym przekraczam dziś fosę? Co zostawiam po tamtej stronie?',
+    'Jaki obraz pojawił się dziś, zanim zdążyłem go nazwać?',
+    'Po co tu przyjechałem naprawdę, pod warstwą oczywistej odpowiedzi?',
+    'Co działo się we mnie podczas dzisiejszej hipnozy, zanim pojawiły się myśli?',
+    'Które zdanie z dzisiejszych rozmów wraca do mnie bez zaproszenia?',
+    'Jaki sen pamiętam z ostatnich tygodni? Co mógłby mi dziś powiedzieć?',
+    'Czego chcę się dowiedzieć o sobie przez te cztery noce?'
   ],
-  albedo: [
-    'Co widzę wyraźniej niż wczoraj? Co się oczyściło?',
-    'Kogo spotkałem dziś — w sobie lub w innych — z czym się rozpoznałem?',
-    'Jaki obraz, uczucie lub myśl wracają do mnie tego dnia?',
-    'Które doświadczenie z dzisiejszego dnia poruszyło coś, czego się nie spodziewałem?',
-    'Co do tej pory zatrzymujesz dla siebie? Co chciałbyś wyrazić głośno?',
-    'Który moment dziś był najbliższy ciszy w środku — bez myśli, bez oceny?',
-    'Z kim nawiązałem kontakt, który wydaje się nieprzypadkowy? Co to połączenie mówi?',
-    'Co ze stref festiwalu (Sacrum, Anima/Animus, Umbra) zostaje w moim ciele?',
-    'Jak czuje się moje ciało teraz, kiedy siadam i naprawdę słucham siebie?',
-    'Która stara historia o sobie staje się dziś mniej prawdziwa?'
+  sen: [
+    'Co moje ciało mówiło mi dziś, kiedy przestałem mu przerywać?',
+    'Co leży najniżej, pod tym, co zwykle pokazuję innym?',
+    'Które emocje najtrudniej mi dziś przyjąć? Co próbują mi powiedzieć?',
+    'Co w zachowaniu innych mnie dziś drażniło? Co to mówi o mnie?',
+    'Gdyby mój Cień mógł dziś przemówić, co by powiedział?',
+    'Czego potrzebuję, żeby naprawdę odpocząć, a nie tylko przestać działać?',
+    'Co przykryłem w sobie, żeby móc funkcjonować? Co teraz wychodzi na powierzchnię?'
   ],
-  rubedo: [
-    'Co zabiorę ze sobą z tego doświadczenia? Co we mnie zostanie?',
-    'Jak będę traktował siebie inaczej po powrocie? Co konkretnie zmienię?',
-    'Komu lub czemu chcę podziękować za to, co przeżyłem?',
-    'Jedno zdanie, które opisuje to, czego nauczyłem się o sobie na CIEŃ Festiwalu.',
-    'Co z tego co przeżyłem wcielę w codzienne życie — konkretne działanie, nie hasło?',
-    'Jaką historię o sobie zabierasz z Zamku Świny, żeby opowiedzieć ją inaczej?',
-    'Który archetyp — Cień, Anima/Animus, Jaźń, Bohater — był tu dla mnie najgłośniejszy?',
+  rem: [
+    'Jaki obraz z dzisiejszego dnia był najżywszy? Gdzie poczułem go w ciele?',
+    'Kogo spotkałem dziś, w sobie albo w innych, i w kim się rozpoznałem?',
+    'Który archetyp był dziś dla mnie najgłośniejszy: Cień, Anima, Animus, Persona?',
+    'Jaką rolę gram na co dzień? Kim jestem, kiedy ją zdejmuję?',
+    'Co poczułem dziś w nocy pod Umbrą, czego zwykle nie pokazuję?',
+    'Z kim nawiązałem kontakt, który nie wydaje się przypadkowy?',
+    'Która stara historia o mnie staje się dziś mniej prawdziwa?'
+  ],
+  przebudzenie: [
+    'Co z tych czterech nocy chcę zapamiętać, zanim zniknie jak sen po przebudzeniu?',
+    'Jedno zdanie o tym, czego dowiedziałem się o sobie na CIEŃ Festiwalu.',
+    'Jakie jedno konkretne działanie zabiorę do codzienności? Nie hasło, działanie.',
+    'Komu albo czemu chcę podziękować za to, co tu przeżyłem?',
+    'Jaką historię o sobie opowiem po powrocie inaczej niż przed przyjazdem?',
     'Co chcę powiedzieć sobie sprzed festiwalu?',
-    'Jak to doświadczenie zmienia sposób, w jaki będę patrzeć na relacje z innymi?',
-    'Zamknij oczy. Zrób wdech. Co czujesz w ciele teraz, gdy festiwal dobiega końca?'
+    'Zamknij oczy i zrób wdech. Co czujesz w ciele teraz, gdy festiwal dobiega końca?'
   ]
 };
 
@@ -859,9 +867,8 @@ function detectFestivalDay() {
     y = prev.getFullYear(); m = prev.getMonth()+1; d = prev.getDate();
   }
   const today = `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-  const days = ['2026-07-03','2026-07-04','2026-07-05'];
-  if (days.includes(today)) return today;
-  return now < new Date('2026-07-03T06:00:00') ? '2026-07-03' : '2026-07-05';
+  if (FEST_DAYS.includes(today)) return today;
+  return now < new Date(FEST_DAYS[0] + 'T06:00:00') ? FEST_DAYS[0] : FEST_DAYS[FEST_DAYS.length - 1];
 }
 
 function setupModalSwipeToClose() {
@@ -1036,8 +1043,8 @@ function updateHeader() {
   const stage = DAY_STAGES[State.schedule.activeDay];
   const stageBadge = document.getElementById('stage-badge');
   if (stageBadge) {
-    const labels = { nigredo: 'Nigredo · 3 VII', albedo: 'Albedo · 4 VII', rubedo: 'Rubedo · 5 VII' };
-    stageBadge.textContent = editionPhase() === 'zapowiedz' ? `${EDITION_INFO.name} · ${EDITION_INFO.year}` : (labels[stage] || 'CIEŃ');
+    const m = STAGE_META[stage];
+    stageBadge.textContent = editionPhase() === 'zapowiedz' ? `${EDITION_INFO.name} · ${EDITION_INFO.year}` : (m ? `${m.label} · ${m.date}` : 'CIEŃ');
   }
 }
 
@@ -1125,21 +1132,15 @@ function renderSchedule() {
   const events = State.data.events || [];
   const zones  = State.data.festival?.zones || [];
 
-  // Program w aplikacji to edycja 2026; „Tu i teraz” i pogoda tylko w trakcie festiwalu z aktualnym programem
-  const programLive     = (State.data.festival?.year || 2026) === EDITION_INFO.year;
+  // „Tu i teraz” i pogoda tylko w trakcie festiwalu z aktualnym programem
+  const programLive     = (State.data.festival?.year || 0) === EDITION_INFO.year;
   const festivalStarted = true;
   const tuITerazHTML    = programLive && editionPhase() === 'trwa' ? renderTuITeraz(events) : '';
-  const countdownHTML   = editionPhase() === 'zapowiedz' && !programLive ? _renderEditionHero() : '';
+  const countdownHTML   = editionPhase() === 'zapowiedz' ? _renderEditionHero() : '';
   const weatherHTML     = programLive && editionPhase() === 'trwa' ? `<div id="weather-widget-slot" style="margin:0 0 0.5rem">${_renderWeatherWidget()}</div>` : '';
 
-  const DAYS = ['2026-07-03', '2026-07-04', '2026-07-05'];
-  const DAY_META = {
-    '2026-07-03': { stage: 'nigredo', label: 'Nigredo', date: 'Pt 3 VII' },
-    '2026-07-04': { stage: 'albedo',  label: 'Albedo',  date: 'Sb 4 VII' },
-    '2026-07-05': { stage: 'rubedo',  label: 'Rubedo',  date: 'Nd 5 VII' },
-  };
-
-  const activeDay = State.schedule.activeDay || '2026-07-03';
+  const DAYS = FEST_DAYS;
+  const activeDay = DAYS.includes(State.schedule.activeDay) ? State.schedule.activeDay : DAYS[0];
 
   // Day tabs
   const dayTabsHTML = DAYS.map(d => {
@@ -1156,7 +1157,7 @@ function renderSchedule() {
   const zoneChipsHTML = [
     `<button class="zone-chip favs ${State.schedule.showFavOnly ? 'active' : ''}" onclick="setFavOnly(${!State.schedule.showFavOnly})">★ Mój Plan${favCount ? ` (${favCount})` : ''}</button>`,
     `<button class="zone-chip all ${!State.schedule.showFavOnly && State.schedule.activeZone === 'all' ? 'active' : ''}" onclick="setActiveZone('all')">Wszystkie</button>`,
-    ...zones.map(z => `
+    ...zones.filter(z => z.id !== 'wszystkie').map(z => `
       <button class="zone-chip ${!State.schedule.showFavOnly && State.schedule.activeZone === z.id ? 'active' : ''}"
               data-zone="${z.id}"
               onclick="setActiveZone('${z.id}')">
@@ -1527,7 +1528,7 @@ function openEventModal(eventId) {
 function shareEvent(eventId) {
   const ev = (State.data?.events || []).find(e => e.id === eventId);
   if (!ev) return;
-  const text = `${ev.title}${ev.artist ? ` — ${ev.artist}` : ''}\n${formatTime(ev.start)}–${formatTime(ev.end)} · Cień Festiwal 3–5 VII 2026`;
+  const text = `${ev.title}${ev.artist ? ` — ${ev.artist}` : ''}\n${formatTime(ev.start)}–${formatTime(ev.end)} · CIEŃ Festiwal ${EDITION_INFO.dates}, ${EDITION_INFO.place}`;
   if (navigator.share) {
     navigator.share({ title: ev.title, text, url: 'https://app.cienfestiwal.com' }).catch(() => {});
   } else {
@@ -1538,7 +1539,7 @@ function shareEvent(eventId) {
 function shareApp() {
   const url = 'https://app.cienfestiwal.com';
   if (navigator.share) {
-    navigator.share({ title: 'CIEŃ Festiwal 2026', text: 'Masz bilet na Cień? Pobierz aplikację uczestnika 📱', url }).catch(() => {});
+    navigator.share({ title: 'CIEŃ Festiwal 2027', text: 'Masz bilet na Cień? Pobierz aplikację uczestnika 📱', url }).catch(() => {});
   } else {
     navigator.clipboard?.writeText(url).then(() => showToast('Link skopiowany!')).catch(() => showToast(url));
   }
@@ -1857,24 +1858,24 @@ function renderJournal() {
   }
   const prompt = State.journal.cachedPrompts[stage];
 
-  const stageColors = { nigredo: '#6B6BFF', albedo: '#E8E0D0', rubedo: '#8B2B2B' };
-  const stageSymbols = { nigredo: '☽', albedo: '○', rubedo: '☀' };
+  const stageColors = Object.fromEntries(STAGE_ORDER.map(s => [s, STAGE_META[s].color]));
+  const stageSymbols = Object.fromEntries(STAGE_ORDER.map(s => [s, STAGE_META[s].symbol]));
 
-  const arcHTML = ['nigredo', 'albedo', 'rubedo'].map(s => {
-    const days = { nigredo: '3.07', albedo: '4.07', rubedo: '5.07' };
+  const arcHTML = STAGE_ORDER.map(s => {
+    const m = STAGE_META[s];
     return `<div class="arc-stage ${s} ${stage===s?'active':''}" onclick="setJournalStage('${s}')">
-        <div class="arc-stage-symbol" style="color:${stageColors[s]}">${stageSymbols[s]}</div>
-        <div class="arc-stage-name">${s}</div>
-        <div class="arc-stage-date">${days[s]}</div>
+        <div class="arc-stage-symbol" style="color:${m.color}">${m.symbol}</div>
+        <div class="arc-stage-name">${m.label}</div>
+        <div class="arc-stage-date">${m.short}</div>
       </div>`;
   }).join('');
 
-  const savedEntries = getJournalEntries();
+  const savedEntries = getJournalEntries().filter(e => STAGE_META[e.stage]);
   const currentEntry = savedEntries.find(e => e.stage === stage) || {};
   const pastEntriesHTML = savedEntries.filter(e => e.text && e.stage !== stage).map(e => `
     <div class="past-entry" style="position:relative">
       <div class="past-entry-header" onclick="toggleEntry(this.closest('.past-entry'))">
-        <span class="past-entry-stage" style="color:${stageColors[e.stage]}">${stageSymbols[e.stage]} ${e.stage}</span>
+        <span class="past-entry-stage" style="color:${stageColors[e.stage] || 'var(--szary)'}">${stageSymbols[e.stage] || ''} ${STAGE_META[e.stage]?.label || e.stage}</span>
         <span class="past-entry-date">${e.savedAt || ''}</span>
         <button onclick="event.stopPropagation();deleteJournalEntry('${e.stage}')" style="background:none;border:none;color:var(--szary);cursor:pointer;font-size:1rem;padding:0 0.25rem;float:right;line-height:1" title="Usuń wpis">✕</button>
       </div>
@@ -1923,7 +1924,7 @@ function _writeJournal(stage, text) {
   const entry = { stage, text, savedAt: new Date().toLocaleDateString('pl-PL') };
   if (idx >= 0) entries[idx] = entry;
   else entries.push(entry);
-  localStorage.setItem('cien_journal_2026', JSON.stringify(entries));
+  localStorage.setItem('cien_journal_2027', JSON.stringify(entries));
 }
 function autoSaveJournal(stage, text) {
   clearTimeout(_journalTimers[stage]);
@@ -1942,7 +1943,7 @@ function deleteJournalEntry(stage) {
   if (!confirm('Usunąć ten wpis?')) return;
   clearTimeout(_journalTimers[stage]); delete _journalTimers[stage];
   const updated = getJournalEntries().filter(e => e.stage !== stage);
-  localStorage.setItem('cien_journal_2026', JSON.stringify(updated));
+  localStorage.setItem('cien_journal_2027', JSON.stringify(updated));
   renderJournal();
 }
 
@@ -1951,24 +1952,24 @@ function emailJournalEntry(stage) {
   const entry = entries.find(e => e.stage === stage);
   if (!entry || !entry.text) { showToast('Najpierw napisz coś'); return; }
 
-  const subject = encodeURIComponent(`CIEŃ Festiwal 2026 — Dziennik ${stage}`);
-  const body = encodeURIComponent(`CIEŃ Festiwal 2026 — Dziennik przemiany\nEtap: ${stage}\nData: ${entry.savedAt}\n\n${entry.text}`);
+  const label = STAGE_META[stage]?.label || stage;
+  const subject = encodeURIComponent(`CIEŃ Festiwal 2027 — Dziennik: ${label}`);
+  const body = encodeURIComponent(`CIEŃ Festiwal 2027 — Dziennik snu\nNoc: ${label}\nData: ${entry.savedAt}\n\n${entry.text}`);
   window.location.href = `mailto:?subject=${subject}&body=${body}`;
 }
 
 function emailAllJournalEntries() {
   const entries = getJournalEntries().filter(e => e.text);
   if (!entries.length) { showToast('Brak wpisów do wysłania'); return; }
-  const stageOrder = ['nigredo', 'albedo', 'rubedo'];
-  const sorted = [...entries].sort((a, b) => stageOrder.indexOf(a.stage) - stageOrder.indexOf(b.stage));
-  const body = sorted.map(e => `=== ${e.stage.toUpperCase()} (${e.savedAt}) ===\n\n${e.text}`).join('\n\n\n');
-  const subject = encodeURIComponent('CIEŃ Festiwal 2026 — Dziennik przemiany');
+  const sorted = entries.filter(e => STAGE_META[e.stage]).sort((a, b) => STAGE_ORDER.indexOf(a.stage) - STAGE_ORDER.indexOf(b.stage));
+  const body = sorted.map(e => `=== ${STAGE_META[e.stage].label.toUpperCase()} (${e.savedAt}) ===\n\n${e.text}`).join('\n\n\n');
+  const subject = encodeURIComponent('CIEŃ Festiwal 2027 — Dziennik snu');
   window.location.href = `mailto:?subject=${subject}&body=${encodeURIComponent(body)}`;
 }
 
 function getJournalEntries() {
   try {
-    return JSON.parse(localStorage.getItem('cien_journal_2026') || '[]');
+    return JSON.parse(localStorage.getItem('cien_journal_2027') || '[]');
   } catch { return []; }
 }
 
@@ -2177,7 +2178,7 @@ function togglePlanItem(areaId, horizon, idx) {
 
 function _buildPlanText(area, plan) {
   const lines = [
-    `CIEŃ Festiwal 2026 — Plan integracji`,
+    `CIEŃ Festiwal 2027 — Plan integracji`,
     `Obszar: ${area.name}`,
     `Wygenerowano: ${plan.createdAt || ''}`,
     ``,
@@ -2199,7 +2200,7 @@ async function sharePlan(areaId) {
   if (!plan) { showToast('Brak planu — najpierw go wygeneruj'); return; }
   const area = WHEEL_AREAS.find(a => a.id === areaId);
   const text = _buildPlanText(area, plan);
-  const title = `Plan integracji — ${area.name} · CIEŃ 2026`;
+  const title = `Plan integracji — ${area.name} · CIEŃ 2027`;
 
   if (navigator.share) {
     try {
@@ -2223,7 +2224,7 @@ async function aiCustomizePlan(areaId) {
   const score = answers.length ? Math.round(answers.reduce((s,v)=>s+(v||0),0)/answers.length*10)/10 : null;
 
   const journalEntries = (() => {
-    try { return JSON.parse(localStorage.getItem('cien_journal_2026') || '[]'); } catch { return []; }
+    try { return JSON.parse(localStorage.getItem('cien_journal_2027') || '[]'); } catch { return []; }
   })();
   const journalSnippet = journalEntries.slice(0, 3).map(e =>
     `[${e.stage || ''}] ${String(e.text || '').slice(0, 300)}`
@@ -2524,8 +2525,8 @@ function emailWheelResults() {
     const avg = ans.length ? ans.reduce((a,b)=>a+b,0)/ans.length : 0;
     return `${area.name}: ${(avg*2).toFixed(1)}/10`;
   });
-  const subject = encodeURIComponent('Moje koło życia — CIEŃ Festiwal 2026');
-  const body = encodeURIComponent(`Moje koło życia — CIEŃ Festiwal 2026\n\n${lines.join('\n')}`);
+  const subject = encodeURIComponent('Moje koło życia — CIEŃ Festiwal 2027');
+  const body = encodeURIComponent(`Moje koło życia — CIEŃ Festiwal 2027\n\n${lines.join('\n')}`);
   window.location.href = `mailto:?subject=${subject}&body=${body}`;
 }
 
@@ -2553,12 +2554,12 @@ function renderSacrum() {
 
     <div class="sacrum-section" style="margin-top:1rem">
       <div class="sacrum-section-title">Gdzie jest punkt pomocy?</div>
-      <p class="ed-inline-note">Edycja 2027: miejsce i godziny dyżurów PsyCare podamy przed festiwalem. Poniżej informacje z edycji 2026.</p>
+      <p class="ed-inline-note">Dokładne miejsce i godziny dyżurów PsyCare w Pałacu w Roztoce podamy przed festiwalem.</p>
       <div class="sacrum-card">
         <div class="sacrum-card-title"><i class="ph-light ph-map-trifold sn-ico" aria-hidden="true"></i> Lokalizacja</div>
         <div class="sacrum-card-body">
-          Strefa SACRUM — Śródzamcze.<br>
-          <strong>Piątek i sobota, godz. 19:00–04:00.</strong><br>
+          Strefa SACRUM, Pałac w Roztoce.<br>
+          Wsparcie terapeutów na miejscu, za darmo, bez oceniania.<br>
           Dyżuruje team PsyCare — wsparcie emocjonalne, harm reduction, pierwsza pomoc psychologiczna.
         </div>
       </div>
@@ -2881,8 +2882,8 @@ function renderInfo() {
         </div>
         <div class="info-card-body">
           <strong>${EDITION_INFO.place}</strong> · CIEŃ ${EDITION_INFO.year}<br>
-          Dokładny adres, dojazd, nocleg i pole namiotowe organizatorzy ogłoszą przed festiwalem.<br>
-          <a href="${EDITION_INFO.site}" style="color:var(--zloto)" target="_blank" rel="noopener">Strona festiwalu →</a>
+          Zamek Roztoka, ul. Zamkowa, Roztoka, gmina Dobromierz. Około 14 km od Jawora.<br>
+          <a href="https://www.google.com/maps/search/?api=1&query=Zamek+Roztoka+Dobromierz" style="color:var(--zloto)" target="_blank" rel="noopener">Otwórz w mapach →</a>
         </div>
       </div>
 
@@ -2897,20 +2898,43 @@ function renderInfo() {
         </div>
       </div>
 
-      <div class="ed-archive-label" style="margin:1.5rem 0 .75rem">Informacje z edycji 2026 · Zamek Świny</div>
+      <div class="info-card">
+        <div class="info-card-header">
+          <span class="info-card-icon"><i class="ph-light ph-ticket sn-ico" aria-hidden="true"></i></span>
+          <span class="info-card-title">Bilety</span>
+        </div>
+        <div class="info-card-body">
+          Bilet obejmuje cztery dni programu, noce pod Umbrą, Kino Gnoza i PsyCare. Nocleg i jedzenie płatne osobno.<br><br>
+          <strong>I pula · Pierwszy sen</strong> · 350 zł · dostępna<br>
+          <strong>II pula · Sen właściwy</strong> · 450 zł · wkrótce<br>
+          <strong>III pula · Ostatni sen</strong> · 550 zł · wkrótce<br>
+          <a href="${EDITION_INFO.site}" style="color:var(--zloto)" target="_blank" rel="noopener">Kup bilet →</a>
+        </div>
+      </div>
 
       <div class="info-card">
         <div class="info-card-header">
           <span class="info-card-icon"><i class="ph-light ph-car sn-ico" aria-hidden="true"></i></span>
-          <span class="info-card-title">Dojazd</span>
+          <span class="info-card-title">Dojazd i nocleg</span>
         </div>
         <div class="info-card-body">
-          <strong>Samochodem:</strong><br>
-          Autostrada A4 → Bolków → Świny (ok. 15 km od Bolkowa).<br>
-          Parking przy zamku — bezpłatny dla uczestników.<br><br>
-          <strong>Pociągiem:</strong><br>
-          Stacja Bolków (PKP) → taxi/Bolt ok. 15 min.<br><br>
-          <strong>Carpooling:</strong> szukaj w grupie festiwalu na FB.
+          Pałac leży w Roztoce (gmina Dobromierz), około 14 km od Jawora.<br>
+          Szczegóły dojazdu, parkingu, pola namiotowego i noclegów w okolicy organizatorzy ogłoszą przed festiwalem.
+        </div>
+      </div>
+
+      <div class="info-card">
+        <div class="info-card-header">
+          <span class="info-card-icon"><i class="ph-light ph-question sn-ico" aria-hidden="true"></i></span>
+          <span class="info-card-title">Zanim zaśniesz · FAQ</span>
+        </div>
+        <div class="info-card-body">
+          <details class="info-faq"><summary>Czy to będzie emocjonalnie trudne?</summary><p>To nie jest retreat, na którym musisz płakać w kręgu przez osiem godzin (ale możesz, jeśli potrzebujesz). Sam wybierasz rytm. Jeśli coś Cię poruszy, jest strefa PsyCare.</p></details>
+          <details class="info-faq"><summary>Mogę przyjechać sam/sama?</summary><p>Oczywiście. Możesz siedzieć z boku i obserwować, nikt nie będzie Cię ciągnął na środek.</p></details>
+          <details class="info-faq"><summary>Co zawiera bilet?</summary><p>Cztery dni programu w sześciu strefach, noce pod sceną Umbra, Kino Gnoza i wsparcie PsyCare. Nocleg i jedzenie są płatne osobno.</p></details>
+          <details class="info-faq"><summary>Przeciwwskazania</summary><p>Jeśli masz skłonności do stanów psychotycznych, nieleczoną ciężką depresję, świeże PTSD albo aktywne uzależnienie, to nie jest jeszcze Twój moment. W razie wątpliwości porozmawiaj ze swoim terapeutą przed przyjazdem.</p></details>
+          <details class="info-faq"><summary>Substancje psychoaktywne</summary><p>Nie zachęcamy do przyjmowania żadnych substancji psychoaktywnych. CIEŃ to przestrzeń edukacji i redukcji szkód.</p></details>
+          <details class="info-faq"><summary>Gdzie spać?</summary><p>Pole namiotowe i noclegi w okolicy ogłosimy wkrótce.</p></details>
         </div>
       </div>
 
@@ -2922,10 +2946,10 @@ function renderInfo() {
         <div class="info-card-body">
           <ul>
             <li>Śpiwór i materac / karimat (camping lub namioty)</li>
-            <li>Ciepłe ubrania na wieczory (góry, noce chłodne)</li>
+            <li>Ciepłe ubrania na wieczory (noce bywają chłodne)</li>
             <li>Kalosze lub wodoodporne buty</li>
             <li>Refillable bidon lub kubek (zero odpadów)</li>
-            <li>Latarka czołowa (zamkowe korytarze)</li>
+            <li>Latarka czołowa (park i pałacowe korytarze nocą)</li>
             <li>Słuchawki zatyczkowe do snu</li>
             <li>Leki na receptę (własne, z opisem)</li>
             <li>Dowód osobisty lub paszport</li>
@@ -2942,8 +2966,8 @@ function renderInfo() {
           <ul>
             <li>Zwierząt domowych</li>
             <li>Dronów bez zgody organizatora</li>
-            <li>Szklanego alkoholu na terenie zamku</li>
-            <li>Agresji — nasz zamek, nasze zasady</li>
+            <li>Szklanego alkoholu na terenie pałacu</li>
+            <li>Agresji — nasz pałac, nasze zasady</li>
           </ul>
         </div>
       </div>
@@ -2954,8 +2978,8 @@ function renderInfo() {
           <span class="info-card-title">Pogoda</span>
         </div>
         <div class="info-card-body">
-          Lipiec w górach = nieprzewidywalny. Pakuj warstwy.<br>
-          Górska burza może przyjść w ciągu godziny.<br>
+          Lipiec na Dolnym Śląsku bywa nieprzewidywalny. Pakuj warstwy.<br>
+          Burza może przyjść w ciągu godziny.<br>
           <strong style="color:var(--zloto)">Bądź gotowy na wszystko — to część doświadczenia.</strong>
         </div>
       </div>
@@ -4106,7 +4130,7 @@ function escHtml(str) {
 }
 
 function getFavorites() {
-  try { return JSON.parse(localStorage.getItem('cien_favs_2026') || '[]'); } catch { return []; }
+  try { return JSON.parse(localStorage.getItem('cien_favs_2027') || '[]'); } catch { return []; }
 }
 
 function toggleFavorite(evId) {
@@ -4114,7 +4138,7 @@ function toggleFavorite(evId) {
   const idx = favs.indexOf(evId);
   const adding = idx < 0;
   if (idx >= 0) favs.splice(idx, 1); else favs.push(evId);
-  localStorage.setItem('cien_favs_2026', JSON.stringify(favs));
+  localStorage.setItem('cien_favs_2027', JSON.stringify(favs));
   if ('vibrate' in navigator) navigator.vibrate(adding ? [20] : [10]);
   renderSchedule();
   if (adding) showToast('★ Dodano do Mojego Planu');
@@ -4445,7 +4469,7 @@ const _ALCHEMIC_QUOTES = [
   { text: 'Nigredo to nie koniec. To gleba, z której wyrasta wszystko inne.', attr: '— Cień Festiwal' },
   { text: 'To, co odrzucasz w sobie, rządzi tobą z cienia.', attr: '— C.G. Jung' },
   { text: 'Rubedo nie jest nagrodą za cierpienie. Jest naturą ognia, który przeżył własne wygaśnięcie.', attr: '— Alchemia' },
-  { text: 'Zamek nie szuka. Zamek czeka. Ty przychodzisz z pytaniem, które już jest odpowiedzią.', attr: '— Zamek Świny' },
+  { text: 'Sen przemawia bez cenzury.', attr: '— CIEŃ 2027 Śnienie' },
   { text: 'Każda transformacja zaczyna się od rozkładu. Bój się stagnacji, nie ciemności.', attr: '— Tradycja hermetyczna' },
   { text: 'Solve et coagula. Rozpuść i scal. Nie inaczej.', attr: '— Paracelsus' },
 ];
@@ -4464,7 +4488,7 @@ function _renderAlchemicQuote() {
 // ============================================
 
 function _renderCountdown() {
-  const festival = new Date('2026-07-03T12:00:00');
+  const festival = EDITION_INFO.start;
   const diff = festival - new Date();
   if (diff <= 0) return '';
   const d = Math.floor(diff / 86400000);
@@ -4473,7 +4497,7 @@ function _renderCountdown() {
   const s = Math.floor((diff % 60000) / 1000);
   return `
 <div class="countdown-block" id="cien-countdown">
-  <div class="countdown-label">DO ZAMKU ŚWINY</div>
+  <div class="countdown-label">DO PAŁACU W ROZTOCE</div>
   <div class="countdown-units">
     <div class="countdown-unit"><span class="countdown-num" id="cd-d">${d}</span><span class="countdown-lbl">dni</span></div>
     <span class="countdown-colon">:</span>
@@ -4483,7 +4507,7 @@ function _renderCountdown() {
     <span class="countdown-colon">:</span>
     <div class="countdown-unit"><span class="countdown-num" id="cd-s">${String(s).padStart(2,'0')}</span><span class="countdown-lbl">sek</span></div>
   </div>
-  <div class="countdown-sub">3–5 LIPCA · ZAMEK ŚWINY · BOLKÓW</div>
+  <div class="countdown-sub">8–11 LIPCA 2027 · PAŁAC W ROZTOCE</div>
 </div>`;
 }
 
@@ -4493,7 +4517,7 @@ function _startCountdownTimer() {
   const cd = document.getElementById('cien-countdown');
   if (!cd) return;
   _cdTimer = setInterval(() => {
-    const festival = new Date('2026-07-03T12:00:00');
+    const festival = EDITION_INFO.start;
     const diff = festival - new Date();
     if (diff <= 0) { clearInterval(_cdTimer); _cdTimer = null; return; }
     const d = Math.floor(diff / 86400000);
@@ -4524,7 +4548,7 @@ document.addEventListener('visibilitychange', () => {
 let _weatherData = null;
 async function _fetchWeather() {
   try {
-    const cached = localStorage.getItem('cien_weather_v3');
+    const cached = localStorage.getItem('cien_weather_v4');
     if (cached) {
       const { data, ts } = JSON.parse(cached);
       if (Date.now() - ts < 60 * 60 * 1000) {
@@ -4534,11 +4558,11 @@ async function _fetchWeather() {
       }
     }
     // Fetch current + 3-day daily for festival dates
-    const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=50.9388&longitude=16.1125&current=temperature_2m,weathercode&daily=temperature_2m_max,temperature_2m_min,weathercode,precipitation_sum&timezone=Europe%2FWarsaw&forecast_days=14');
+    const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=50.93&longitude=16.25&current=temperature_2m,weathercode&daily=temperature_2m_max,temperature_2m_min,weathercode,precipitation_sum&timezone=Europe%2FWarsaw&forecast_days=14');
     if (!res.ok) return;
     const json = await res.json();
     _weatherData = json;
-    localStorage.setItem('cien_weather_v3', JSON.stringify({ data: _weatherData, ts: Date.now() }));
+    localStorage.setItem('cien_weather_v4', JSON.stringify({ data: _weatherData, ts: Date.now() }));
     _updateWeatherWidget();
   } catch { /* offline */ }
 }
@@ -4562,8 +4586,8 @@ function _renderWeatherWidget() {
   // Try to show 3-day festival forecast if daily data available
   const daily = _weatherData.daily;
   if (daily && daily.time) {
-    const festDays = ['2026-07-03', '2026-07-04', '2026-07-05'];
-    const labels   = ['Pt 3 VII',  'Sb 4 VII',  'Nd 5 VII'];
+    const festDays = FEST_DAYS;
+    const labels   = FEST_DAYS.map(d => DAY_META[d].date);
     const dayItems = festDays.map((date, i) => {
       const idx = daily.time.indexOf(date);
       if (idx < 0) return null;
@@ -4582,7 +4606,7 @@ function _renderWeatherWidget() {
 
     if (dayItems) {
       return `<div class="weather-forecast">
-        <div class="weather-forecast-title">Pogoda na festiwal · Zamek Świny</div>
+        <div class="weather-forecast-title">Pogoda na festiwal · Roztoka</div>
         <div class="weather-forecast-days">${dayItems}</div>
       </div>`;
     }
@@ -4593,7 +4617,7 @@ function _renderWeatherWidget() {
   const temp = Math.round(cur.temperature_2m ?? 0);
   const emoji = snIco(_weatherEmoji(cur.weathercode ?? 0));
   return `<div class="weather-widget" onclick="_fetchWeather()" title="Kliknij, żeby odświeżyć">
-    <span class="weather-loc">Zamek Świny</span>
+    <span class="weather-loc">Roztoka</span>
     <span class="weather-temp">${emoji} ${temp}°C</span>
   </div>`;
 }

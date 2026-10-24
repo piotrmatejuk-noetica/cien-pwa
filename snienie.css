@@ -472,3 +472,27 @@ img[src=""] { visibility: hidden; }
 /* ---- Kontrast drobnych napisów ---- */
 .team-msg-ts { color: var(--szary) !important; font-size: .72rem !important; }
 #toast { font-family: var(--font-body) !important; font-size: .85rem !important; letter-spacing: 0 !important; line-height: 1.4; }
+
+/* CIEŃ 2027: cztery noce (Powietrze, Ziemia, Woda, Ogień) */
+.day-tab.hipnagogia.active   { border-bottom-color: #A59CD3; color: #C3BCE6; }
+.day-tab.sen.active          { border-bottom-color: #B89A6A; color: #D8BE8E; }
+.day-tab.rem.active          { border-bottom-color: #7DA2C9; color: #A3C1E0; }
+.day-tab.przebudzenie.active { border-bottom-color: #EF8448; color: #F4A577; }
+.alchemy-arc { gap: .4rem; }
+.arc-stage { min-width: 0; padding: .7rem .3rem; }
+.arc-stage.hipnagogia   { background: rgba(165,156,211,.10); }
+.arc-stage.sen          { background: rgba(184,154,106,.10); }
+.arc-stage.rem          { background: rgba(125,162,201,.10); }
+.arc-stage.przebudzenie { background: rgba(239,132,72,.10); }
+.arc-stage.active.hipnagogia   { border-color: #A59CD3; }
+.arc-stage.active.sen          { border-color: #B89A6A; }
+.arc-stage.active.rem          { border-color: #7DA2C9; }
+.arc-stage.active.przebudzenie { border-color: #EF8448; }
+.arc-stage .arc-stage-name { font-size: clamp(.7rem, 3.3vw, .9rem); letter-spacing: 0; line-height: 1.15; white-space: nowrap; }
+.info-faq { border-top: 1px solid rgba(216,185,130,.18); padding: .55rem 0; }
+.info-faq:first-child { border-top: 0; padding-top: 0; }
+.info-faq summary { cursor: pointer; color: var(--pergamin); font-weight: 500; list-style: none; }
+.info-faq summary::-webkit-details-marker { display: none; }
+.info-faq summary::after { content: '+'; float: right; color: var(--zloto); }
+.info-faq[open] summary::after { content: '–'; }
+.info-faq p { margin: .45rem 0 0; color: var(--szary); line-height: 1.5; }
